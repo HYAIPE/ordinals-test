@@ -1,0 +1,16 @@
+# 0xflick ordinals
+
+You're expecting documentations?
+
+You want me to make this easy?
+
+Well sorry.... I'm still figuring out a lot of this stuff myself.
+
+## Packages
+
+ - [apps/cli](./apps/cli/) Command line tools for doing all sorts of useful things
+ - [apps/www](./apps/www/) This will eventually be a minting website
+ - [ordinals/axolotl-valley](./ordinals/axolotl-valley/) A fully functioning example recursive ordinal with reveal and $4 inscriptions
+ - [packages/assets](./packages/assets/) Tools for generating assets on a canvas in Typescript
+ - [packages/inscriptions](./packages/inscriptions/) Typescript inscription library
+ 

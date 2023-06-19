@@ -1,0 +1,18 @@
+{
+  "name": "@0xflick/inscriptions",
+  "version": "1.0.0",
+  "main": "src/index.ts",
+  "license": "MIT",
+  "type": "module",
+  "dependencies": {
+    "@cmdcode/crypto-utils": "^1.9.8",
+    "@cmdcode/tapscript": "^1.2.10",
+    "@noble/secp256k1": "^2.0.0",
+    "bitcoin-address-validation": "^2.2.1",
+    "qrcode": "^1.5.3"
+  },
+  "devDependencies": {
+    "@types/qrcode": "^1.5.0",
+    "typescript": "^5.1.3"
+  }
+}
