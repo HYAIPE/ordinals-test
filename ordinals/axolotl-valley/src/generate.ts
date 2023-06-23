@@ -79,12 +79,16 @@ export function generateTraits(_seed: Uint8Array) {
   const frills = weightSampleFromWeights(weights.frillWeights, seedChomper);
   const face = weightSampleFromWeights(weights.faceWeights, seedChomper);
   const mouth = weightSampleFromWeights(weights.mouthWeights, seedChomper);
+  let mustache = weightSampleFromWeights(weights.mustacheWeights, seedChomper);
   const head = weightSampleFromWeights(weights.headWeights, seedChomper);
   const special = weightSampleFromWeights(
     weights.specialFeatureWeights,
     seedChomper
   );
-
+  // mustache not allowed with face === "Cloud Goggles", "Troll" or "Visor"
+  if (["Cloud Goggles", "Troll", "Visor"].includes(face)) {
+    mustache = "Clean Shaven";
+  }
   const metadata: IAttributeMetadata = {
     seed: uint8ArrayToHexString(_seed),
     attributes: [
@@ -135,6 +139,10 @@ export function generateTraits(_seed: Uint8Array) {
         value: mouth,
       },
       {
+        trait_type: "Facial Hair",
+        value: mustache,
+      },
+      {
         trait_type: "Head",
         value: head,
       },
@@ -155,6 +163,7 @@ export function generateTraits(_seed: Uint8Array) {
     frills,
     mouth,
     head,
+    mustache,
   };
 }
 
@@ -179,6 +188,7 @@ export default async function (
     frills,
     mouth,
     head,
+    mustache,
   } = generateTraits(_seed);
   return {
     metadata,
@@ -212,6 +222,7 @@ export default async function (
           specialType: special,
           color: baseColor,
           splitColor: secondaryColor,
+          mustache: mustache === "Mustache",
         },
         imageFetcher
       )),

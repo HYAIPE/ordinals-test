@@ -56,16 +56,16 @@ export const colorWeights: IWeights<BaseColor> = mapWeightedValuesToRange(
 
 export const splitWeights: IWeights<"Split" | "Not Split"> =
   mapWeightedValuesToRange(0, 255, {
-    Split: 1,
-    "Not Split": 49,
+    Split: 2,
+    "Not Split": 48,
   });
 
 export const specialFeatureWeights: IWeights<ISpecialType> =
   mapWeightedValuesToRange(0, 255, {
-    None: 96,
-    "Skull Face": 0.25,
-    "TV Head": 0.25,
-    "Giant Eye": 0.25,
+    None: 98.5,
+    "Skull Face": 0.5,
+    "TV Head": 0.5,
+    "Giant Eye": 0.5,
   });
 
 export const armWeights: IWeights<IArmType> = mapWeightedValuesToRange(0, 255, {
@@ -110,14 +110,14 @@ export const faceWeights: IWeights<IFaceType> = mapWeightedValuesToRange(
   255,
   {
     Anger: 10,
-    "Clout Goggles": 1,
+    "Clout Goggles": 3,
     Derp: 7,
-    Lash: 20,
-    Oval: 40,
+    Lash: 25,
+    Oval: 30,
     Troll: 4,
     Visor: 6,
     Bored: 9,
-    Disapproval: 2,
+    Disapproval: 4,
   }
 );
 
@@ -127,16 +127,21 @@ export const mouthWeights: IWeights<IMouthType> = mapWeightedValuesToRange(
   {
     Bleh: 11,
     Blunt: 2,
-    "Happy mouth": 16,
-    Moustache: 3,
+    "Happy mouth": 17,
     owo: 14,
     Plain: 10,
     Smile: 19,
     Smirk: 18,
     "Smol frown": 7,
-    Fangs: 3,
+    Fangs: 4,
   }
 );
+
+export const mustacheWeights: IWeights<"Mustache" | "Clean Shaven"> =
+  mapWeightedValuesToRange(0, 255, {
+    Mustache: 3,
+    "Clean Shaven": 97,
+  });
 
 export const headWeights: IWeights<IHeadType> = mapWeightedValuesToRange(
   0,
@@ -144,9 +149,9 @@ export const headWeights: IWeights<IHeadType> = mapWeightedValuesToRange(
   {
     Bald: 40,
     Tuft: 22,
-    Side: 14.5,
+    Side: 14,
     "Cowboy Hat": 5,
-    Crown: 0.5,
+    Crown: 1,
     Halo: 2,
     Octopus: 1.5,
     "Party Hat": 3,

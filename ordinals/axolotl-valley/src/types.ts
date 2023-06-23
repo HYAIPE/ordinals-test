@@ -15,10 +15,7 @@ export type BaseColor =
   | "Diamond"
   | "Lime"
   | "Black";
-export type HoodieColor =
-  | "Red"
-  | "Orange"
-  | "Purple"
+export type HoodieColor = "Red" | "Orange" | "Purple";
 export type ISpecialType = "None" | "Skull Face" | "TV Head" | "Giant Eye";
 export type TailTypes = "Short" | "Normal" | "Curled" | "Wiggles";
 export type IFrillType =
@@ -42,7 +39,6 @@ export type IMouthType =
   | "Bleh"
   | "Blunt"
   | "Happy mouth"
-  | "Moustache"
   | "owo"
   | "Plain"
   | "Smile"

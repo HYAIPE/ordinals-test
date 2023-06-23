@@ -313,6 +313,7 @@ interface IEarsLayer extends IBaseLayer {
 }
 interface IMouthLayer {
   mouthType: IMouthType;
+  mustache?: boolean;
 }
 interface IFaceLayer {
   faceType: IFaceType;
@@ -337,6 +338,7 @@ export async function makeSpecialOrHeadThingsLayer(
     headType,
     specialType,
     splitColor,
+    mustache,
   }: ISpecialLayer,
   imageFetcher: IImageFetcher
 ) {
@@ -350,12 +352,13 @@ export async function makeSpecialOrHeadThingsLayer(
         },
         imageFetcher
       )),
-      makeMouthLayer(
+      ...(await makeMouthLayer(
         {
           mouthType,
+          mustache,
         },
         imageFetcher
-      ),
+      )),
       makeEyeLayer(
         {
           faceType,
@@ -483,17 +486,30 @@ async function makeEarsLayer(
   ];
 }
 
-function makeMouthLayer(
-  { mouthType }: IMouthLayer,
+async function makeMouthLayer(
+  { mouthType, mustache }: IMouthLayer,
   imageFetcher: IImageFetcher
 ) {
-  return {
-    draw: cachedDrawImage(
-      resolveProperties(`Mouths/${mouthType}.webp`),
-      imageFetcher
-    ),
-    zIndex: 9999990,
-  };
+  return [
+    {
+      draw: cachedDrawImage(
+        resolveProperties(`Mouths/${mouthType}.webp`),
+        imageFetcher
+      ),
+      zIndex: 9999990,
+    },
+    ...(mustache
+      ? [
+          {
+            draw: cachedDrawImage(
+              resolveProperties(`Mouths/Moustache.webp`),
+              imageFetcher
+            ),
+            zIndex: 10000010,
+          },
+        ]
+      : []),
+  ];
 }
 
 function makeEyeLayer({ faceType }: IFaceLayer, imageFetcher: IImageFetcher) {
