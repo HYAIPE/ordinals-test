@@ -1,0 +1,27 @@
+{
+  "extends": "@0xflick/tsconfig/tsconfig.base.json",
+  "compilerOptions": {
+    "module": "NodeNext",
+    "composite": true,
+    "rootDir": "./src",
+    "outDir": "dist",
+    "paths": {
+      "@0xflick/ordinals-models": ["../models/src/index"],
+      "@0xflick/ordinals-models/*": ["../models/src/*"]
+    },
+    "noErrorTruncation": true,
+    "noImplicitAny": false,
+    "noImplicitThis": true,
+    "alwaysStrict": true,
+    "strictBindCallApply": true,
+    "strictFunctionTypes": true,
+    "strictNullChecks": false
+  },
+  "include": ["**/*.ts"],
+  "exclude": ["**/node_modules", "**/.*/", "dist", "build"],
+  "references": [
+    {
+      "path": "../models"
+    }
+  ]
+}

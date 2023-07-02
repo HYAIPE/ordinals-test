@@ -10,4 +10,8 @@ export class PaddingTooLowError extends Error {
   }
 }
 export class InvalidKeyError extends Error {}
-export class InvalidAddressError extends Error {}
+export class InvalidAddressError extends Error {
+  constructor(address: string) {
+    super(`Invalid address: ${address}`);
+  }
+}

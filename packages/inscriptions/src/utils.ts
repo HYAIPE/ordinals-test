@@ -92,6 +92,14 @@ export function satsToBitcoin(sats: bigint) {
   if (string.substring(0, 1) == ".") string = "0" + string;
   return string;
 }
+
+export function bitcoinToSats(bitcoin: string): bigint {
+  let [whole, decimal] = bitcoin.split(".");
+  if (!decimal) decimal = "0";
+  if (decimal.length > 8) decimal = decimal.slice(0, 8);
+  if (decimal.length < 8) decimal = decimal.padEnd(8, "0");
+  return BigInt(whole) * 100000000n + BigInt(decimal);
+}
 export function arrayBufferToBuffer(ab: ArrayBuffer) {
   return Buffer.from(new Uint8Array(ab));
 }

@@ -74,7 +74,7 @@ export async function generateFundingAddress({
 }: FundingAddressRequest): Promise<FundingAddressResponse> {
   const files: InscriptionFile[] = [];
   if (!isValidAddress(address)) {
-    throw new InvalidAddressError();
+    throw new InvalidAddressError(address);
   }
 
   for (const { content, mimeType } of inscriptions) {
@@ -255,7 +255,7 @@ export async function generateFundingAddress({
     qrValue: qr_value,
     qrSrc: await createQR(qr_value),
     files,
-    totalFee: total_fee,
+    totalFee: total_fees,
     inscriptionsToWrite,
     overhead,
     padding,
@@ -266,6 +266,65 @@ export async function generateFundingAddress({
     initCBlock: init_cblock,
     secKey,
   };
+}
+
+export interface RefundTransactionRequest {
+  feeRate: number;
+  initTapKey: string;
+  secKey: cryptoUtils.SecretKey;
+  refundCBlock: string;
+  txid: string;
+  vout: number;
+  amount: number | bigint;
+  address: string;
+}
+
+export async function generateRefundTransaction({
+  feeRate,
+  initTapKey,
+  secKey,
+  refundCBlock,
+  txid,
+  vout,
+  amount,
+  address,
+}: RefundTransactionRequest) {
+  let pubKey = secKey.pub.x;
+  const refundScript = [pubKey, "OP_CHECKSIG"];
+  const refundTx = Tx.create({
+    vin: [
+      {
+        txid: txid,
+        vout: vout,
+        prevout: {
+          value: amount,
+          scriptPubKey: ["OP_1", initTapKey],
+        },
+      },
+    ],
+    vout: [
+      {
+        value: amount,
+        scriptPubKey: Address.toScriptPubKey(address),
+      },
+    ],
+  });
+  const refundTxSize = Tx.util.getTxSize(refundTx);
+  const txSize = refundTxSize.size;
+  const fee = Math.ceil(feeRate * txSize);
+  refundTx.vout[0].value = Number(amount) - fee;
+
+  const sig = await Signer.taproot.sign(secKey.raw, refundTx, 0, {
+    extension: Tap.encodeScript(refundScript),
+  });
+  refundTx.vin[0].witness = [sig.hex, refundScript, refundCBlock];
+  // console.log(inspect(refundTx, false, 10, true));
+  const isValid = Signer.taproot.verify(refundTx, 0, { pubkey: pubKey });
+  if (!isValid) {
+    throw new Error("Invalid signature");
+  }
+
+  return Tx.encode(refundTx).hex;
 }
 
 export interface GenesisTransactionRequest {
