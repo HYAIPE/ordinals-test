@@ -1,5 +1,0 @@
-type Axolotl {
-  id: ID!
-  token: Int!
-  inscriptionFunding: InscriptionFunding
-}
