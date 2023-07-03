@@ -1,7 +1,6 @@
 export interface InscriptionFile {
   content: ArrayBuffer;
   mimetype: string;
-  sha256: string;
 }
 
 export interface WritableInscription {
@@ -11,8 +10,9 @@ export interface WritableInscription {
   inscriptionAddress: string;
   txsize: number;
   fee: number;
-  script: string[];
-  script_orig: (string | Uint8Array)[];
+  file?: InscriptionFile;
+  script: BitcoinScriptData[];
 }
 
+export type BitcoinScriptData = { base64: string } | string;
 export type BitcoinNetworkNames = "mainnet" | "testnet" | "regtest";

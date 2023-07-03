@@ -2,21 +2,21 @@ import { getData, postData } from "./network.js";
 import { BitcoinNetworkNames, WritableInscription } from "./types.js";
 import { isValidJson } from "./utils.js";
 
-function urlForNetworkName(network: BitcoinNetworkNames) {
+export function urlForNetworkName(network: BitcoinNetworkNames) {
   switch (network) {
     case "mainnet":
-      return "https://mempool.space/api";
+      return "https://mempool.space";
     case "testnet":
-      return "https://mempool.space/testnet/api";
+      return "https://mempool.space/testnet";
     case "regtest":
-      return "http://localhost/api";
+      return "http://localhost";
   }
 }
 
 export async function broadcastTx(rawTx: string, network: BitcoinNetworkNames) {
   const url = urlForNetworkName(network);
   // try {
-  const txId = await postData(url + "/tx", rawTx);
+  const txId = await postData(url + "/api/tx", rawTx);
   return txId;
 }
 
@@ -30,7 +30,7 @@ export async function addressReceivedMoneyInThisTx(
   let amt: number;
   let nonjson: any;
 
-  nonjson = await getData(url + "/address/" + address + "/txs");
+  nonjson = await getData(url + "/api/address/" + address + "/txs");
 
   const json = JSON.parse(nonjson);
   for (const tx of json) {
@@ -72,7 +72,7 @@ export async function addressOnceHadMoney(
   let url = urlForNetworkName(network);
   let nonjson;
 
-  url += "/address/" + address;
+  url += "/api/address/" + address;
   nonjson = await getData(url);
 
   if (!isValidJson(nonjson)) return false;

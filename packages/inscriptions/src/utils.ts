@@ -1,7 +1,7 @@
 import { Network, validate } from "bitcoin-address-validation";
 import { Address, Networks } from "@cmdcode/tapscript";
 import * as secp from "@noble/secp256k1";
-import { BitcoinNetworkNames } from "./types";
+import { BitcoinNetworkNames, BitcoinScriptData } from "./types";
 
 export function generatePrivKey() {
   return bytesToHex(secp.utils.randomPrivateKey());
@@ -91,6 +91,28 @@ export function satsToBitcoin(sats: bigint) {
     String(sats).padStart(8, "0").slice(-9);
   if (string.substring(0, 1) == ".") string = "0" + string;
   return string;
+}
+
+export function scriptDataToSerializedScript(
+  scriptData: (string | Uint8Array)[]
+): BitcoinScriptData[] {
+  return scriptData.map((data) => {
+    if (typeof data === "string") {
+      return data;
+    }
+    return { base64: Buffer.from(data).toString("base64") };
+  });
+}
+
+export function serializedScriptToScriptData(
+  serializedScript: BitcoinScriptData[]
+): (string | Uint8Array)[] {
+  return serializedScript.map((data) => {
+    if (typeof data === "string") {
+      return data;
+    }
+    return Buffer.from(data.base64, "base64");
+  });
 }
 
 export function bitcoinToSats(bitcoin: string): bigint {

@@ -1,0 +1,5 @@
+enum BitcoinNetwork {
+  MAINNET
+  TESTNET
+  REGTEST
+}

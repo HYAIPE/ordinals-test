@@ -1,0 +1,10 @@
+type InscriptionTransaction {
+  inscriptions: [InscriptionTransactionContent!]!
+  overhead: Int!
+  padding: Int!
+  initScript: [BitcoinScriptItem!]!
+  initTapKey: String!
+  initLeaf: String!
+  initCBlock: String!
+  privateKey: String!
+}

@@ -9,6 +9,7 @@ import {
 } from "./errors.js";
 import {
   BitcoinNetworkNames,
+  BitcoinScriptData,
   InscriptionFile,
   WritableInscription,
 } from "./types.js";
@@ -17,6 +18,8 @@ import {
   isValidAddress,
   networkNamesToTapScriptName,
   satsToBitcoin,
+  scriptDataToSerializedScript,
+  serializedScriptToScriptData,
 } from "./utils.js";
 import { createQR } from "./qrcode.js";
 
@@ -55,8 +58,7 @@ export interface FundingAddressResponse {
   inscriptionsToWrite: WritableInscription[];
   overhead: number;
   padding: number;
-  initScriptBuffer: (string | Uint8Array)[];
-  initScript: string[];
+  initScript: BitcoinScriptData[];
   initTapKey: string;
   initLeaf: string;
   initCBlock: string;
@@ -106,8 +108,6 @@ export async function generateFundingAddress({
   const ec = new TextEncoder();
 
   const init_script = [pubkey, "OP_CHECKSIG"];
-
-  const init_script_backup = ["0x" + buf2hex(pubkey), "OP_CHECKSIG"];
 
   let init_leaf = Tap.tree.getLeaf(Script.encode(init_script));
   let [init_tapkey, init_cblock] = Tap.getPubKey(pubkey, {
@@ -171,19 +171,6 @@ export async function generateFundingAddress({
       "OP_ENDIF",
     ];
 
-    const script_backup = [
-      "0x" + buf2hex(pubkey.buffer),
-      "OP_CHECKSIG",
-      "OP_0",
-      "OP_IF",
-      "0x" + buf2hex(ec.encode("ord")),
-      "01",
-      "0x" + buf2hex(mimetype),
-      "OP_0",
-      "0x" + buf2hex(data),
-      "OP_ENDIF",
-    ];
-
     const leaf = Tap.tree.getLeaf(Script.encode(script));
     const [tapKey, cblock] = Tap.getPubKey(pubkey, { target: leaf });
 
@@ -210,8 +197,8 @@ export async function generateFundingAddress({
       inscriptionAddress: inscriptionAddress,
       txsize: txsize,
       fee: fee,
-      script: script_backup,
-      script_orig: script,
+      script: scriptDataToSerializedScript(script),
+      file: files[i],
     });
   }
 
@@ -226,8 +213,6 @@ export async function generateFundingAddress({
     init_tapkey,
     networkNamesToTapScriptName(network)
   );
-
-  let toAddress = address;
 
   if (!isNaN(tip) && tip >= 500) {
     total_fees += 50 * feeRate + tip;
@@ -259,8 +244,7 @@ export async function generateFundingAddress({
     inscriptionsToWrite,
     overhead,
     padding,
-    initScriptBuffer: init_script,
-    initScript: init_script_backup,
+    initScript: scriptDataToSerializedScript(init_script),
     initTapKey: init_tapkey,
     initLeaf: init_leaf,
     initCBlock: init_cblock,
@@ -335,8 +319,7 @@ export interface GenesisTransactionRequest {
   tip?: number;
   padding: number;
   tippingAddress?: string;
-  initScriptBuffer: (string | Uint8Array)[];
-  initScript: string[];
+  initScript: BitcoinScriptData[];
   initTapKey: string;
   initLeaf: string;
   initCBlock: string;
@@ -352,7 +335,6 @@ export async function generateGenesisTransaction({
   tip,
   padding,
   tippingAddress,
-  initScriptBuffer,
   initScript,
   initTapKey,
   initLeaf,
@@ -361,25 +343,10 @@ export async function generateGenesisTransaction({
 }: GenesisTransactionRequest) {
   let outputs = [];
 
-  const transaction: PendingTransaction[] = [];
-  transaction.push({
-    txsize: 60,
-    vout: vout,
-    script: initScript,
-    output: { value: amount, scriptPubKey: ["OP_1", initTapKey] },
-  });
-
   for (let i = 0; i < inscriptions.length; i++) {
     outputs.push({
       value: padding + inscriptions[i].fee,
       scriptPubKey: ["OP_1", inscriptions[i].tapkey],
-    });
-
-    transaction.push({
-      txsize: inscriptions[i].txsize,
-      vout: i,
-      script: inscriptions[i].script,
-      output: outputs[outputs.length - 1],
     });
   }
 
@@ -406,7 +373,11 @@ export async function generateGenesisTransaction({
   const init_sig = await Signer.taproot.sign(secKey.raw, initRedeemTx, 0, {
     extension: initLeaf,
   });
-  initRedeemTx.vin[0].witness = [init_sig.hex, initScriptBuffer, initCBlock];
+  initRedeemTx.vin[0].witness = [
+    init_sig.hex,
+    serializedScriptToScriptData(initScript),
+    initCBlock,
+  ];
 
   let rawTx = Tx.encode(initRedeemTx).hex;
   return rawTx;
@@ -454,7 +425,7 @@ export async function generateRevealTransaction({
   });
   redeemtx.vin[0].witness = [
     sig.hex,
-    inscription.script_orig,
+    serializedScriptToScriptData(inscription.script),
     inscription.cblock,
   ];
   const rawtx2 = Tx.encode(redeemtx).hex;

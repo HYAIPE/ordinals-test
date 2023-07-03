@@ -1,15 +1,9 @@
-import { BitcoinNetworkNames } from "../bitcoin.js";
+import { ID_AddressInscription } from "../addressInscription.js";
+import { TInscriptionDoc } from "../doc/inscriptionTransaction.js";
 
 export interface INewFundingAddressModel {
-  address: string;
-  amount: number;
-  network: BitcoinNetworkNames;
-  totalFee: number;
-  overhead: number;
-  padding: number;
-  s3Key: string;
-  s3Bucket: string;
-  s3Region: string;
+  id: ID_AddressInscription;
+  transaction?: TInscriptionDoc;
 }
 
 export const newFundingAddressEventType = "ordinal_funding_request_start";

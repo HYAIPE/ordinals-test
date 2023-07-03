@@ -70,7 +70,6 @@ export async function bulkMint({
     initCBlock: response.initCBlock,
     initLeaf: response.initLeaf,
     initScript: response.initScript,
-    initScriptBuffer: response.initScriptBuffer,
     initTapKey: response.initTapKey,
     inscriptions: response.inscriptionsToWrite,
     padding: response.padding,

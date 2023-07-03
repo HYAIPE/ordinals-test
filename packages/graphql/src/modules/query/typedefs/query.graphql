@@ -1,0 +1,4 @@
+type Query {
+  inscriptionTransaction(id: ID!): InscriptionTransaction
+  inscriptionFunding(id: ID!): InscriptionFunding
+}

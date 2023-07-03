@@ -9,8 +9,7 @@
     "composite": true,
     "jsx": "preserve",
     "paths": {
-      "@0xflick/ordinals-models": ["../../packages/models/src/index"],
-      "@0xflick/ordinals-models/*": ["../../packages/models/src/*"]
+      "@0xflick/inscriptions": ["../../packages/inscriptions/src/index"]
     },
     "plugins": []
   },
@@ -18,7 +17,7 @@
   "exclude": ["./node_modules"],
   "references": [
     {
-      "path": "../../packages/models"
+      "path": "../../packages/inscriptions"
     }
   ]
 }

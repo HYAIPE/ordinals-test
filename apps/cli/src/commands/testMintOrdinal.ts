@@ -59,7 +59,6 @@ export async function testMintOrdinals({
     initCBlock: response.initCBlock,
     initLeaf: response.initLeaf,
     initScript: response.initScript,
-    initScriptBuffer: response.initScriptBuffer,
     initTapKey: response.initTapKey,
     inscriptions: response.inscriptionsToWrite,
     padding: response.padding,

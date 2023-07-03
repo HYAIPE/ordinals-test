@@ -1,11 +1,41 @@
-import fs from "fs";
-import { dirname, resolve } from "path";
-import { fileURLToPath } from "url";
 import handlebars from "handlebars";
 import { minify } from "html-minifier-terser";
 
 const { compile } = handlebars;
-const __dirname = dirname(fileURLToPath(import.meta.url));
+
+const htmlTemplate = `
+<!DOCTYPE html>
+<html>
+    <head>
+        <style>
+            body, html {
+                margin: 0;
+                padding: 0;
+                width: 100%;
+                height: 100%;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                overflow: hidden;
+                background-color: #ffffff;
+            }
+            #main {
+                width: 560px;
+                height: 560px;
+            }
+        </style>
+    </head>
+    <body>
+        <canvas id="main" width="569" height="569"></canvas>
+        <script type="text/javascript">
+          window.tokenId = {{ tokenId }};
+          window.genesis = {{ genesis }};
+          window.revealedAt = {{ revealedAt }};
+        </script>
+        <script src="{{ scriptUrl }}" type="text/javascript"></script>
+    </body>
+</html>
+`;
 
 export async function generateHTML(
   scriptUrl: string,
@@ -13,11 +43,7 @@ export async function generateHTML(
   genesis: boolean,
   revealedAt: number
 ) {
-  const htmlText = await fs.promises.readFile(
-    resolve(__dirname, "..", "html", "index.hbs"),
-    "utf8"
-  );
-  const template = compile(htmlText);
+  const template = compile(htmlTemplate);
 
   const renderedHtml = template({
     scriptUrl,

@@ -1,29 +1,32 @@
+import type {
+  BitcoinScriptData,
+  WritableInscription,
+} from "@0xflick/inscriptions";
 import { BitcoinNetworkNames } from "../bitcoin";
 
-export interface IInitScript {
-  type: "utf8" | "hex";
-  value: string;
-}
+export { WritableInscription, InscriptionFile } from "@0xflick/inscriptions";
 
 export interface IInscriptionDocCommon {
   network: BitcoinNetworkNames;
+  fundingAddress: string;
+  fundingAmountBtc: string;
   initTapKey: string;
   initLeaf: string;
   initCBlock: string;
+  initScript: BitcoinScriptData[];
   secKey: string;
   totalFee: number;
   overhead: number;
   padding: number;
+  writableInscriptions: WritableInscription[];
+}
+
+export interface IInscriptionDocFundingWait extends IInscriptionDocCommon {
+  status: "funding-wait";
 }
 
 export interface IInscriptionDocFunding extends IInscriptionDocCommon {
   status: "funding";
-  fundingAddress: string;
-  fundingAmount: number;
-  initScript: IInitScript;
-  initTapKey: string;
-  initLeaf: string;
-  initCBlock: string;
 }
 
 export interface IInscriptionDocFunded
@@ -44,3 +47,10 @@ export interface IInscriptionDocReveal
   status: "reveal";
   revealTxid: string;
 }
+
+export type TInscriptionDoc =
+  | IInscriptionDocFundingWait
+  | IInscriptionDocFunding
+  | IInscriptionDocFunded
+  | IInscriptionDocGenesis
+  | IInscriptionDocReveal;

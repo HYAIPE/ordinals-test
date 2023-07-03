@@ -1,37 +1,84 @@
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
-import { IFundingModel, toBitcoinNetworkName } from "@0xflick/ordinals-models";
+import {
+  IAddressInscriptionModel,
+  toAddressInscriptionId,
+  toCollectionId,
+  ICollectionModel,
+  toBitcoinNetworkName,
+  ID_Collection,
+} from "@0xflick/ordinals-models";
 import { IFundingDao } from "../dao/funding.js";
-import { DeleteCommand, GetCommand, PutCommand } from "@aws-sdk/lib-dynamodb";
+import {
+  DeleteCommand,
+  GetCommand,
+  PutCommand,
+  UpdateCommand,
+} from "@aws-sdk/lib-dynamodb";
 
 export interface IFundingDb {
   pk: string;
-  fundingAddress: string;
-  fundingAmount: number;
-  fundingPrivateKey: string;
-  fundingNetwork: string;
-  cloudWatchEventRuleId: string;
+  id: string;
+  address: string;
+  network: string;
+  contentIds: string[];
+  collectionId: string;
 }
 
-export function toDb(item: IFundingModel): IFundingDb {
+export interface IFundingCollectionDb {
+  pk: string;
+  collectionId: string;
+  collectionName: string;
+  maxSupply: number;
+  totalCount: number;
+}
+
+export function toFundingDb({
+  address,
+  contentIds,
+  collectionId,
+  id,
+  network,
+}: IAddressInscriptionModel): IFundingDb {
   return {
-    pk: `FUNDING#${item.fundingEvent.address}`,
-    fundingAddress: item.fundingEvent.address,
-    fundingAmount: item.fundingEvent.amount,
-    fundingPrivateKey: item.fundingEvent.privateKey,
-    fundingNetwork: item.fundingEvent.network,
-    cloudWatchEventRuleId: item.cloudWatchEventRuleId,
+    pk: `FUNDING#${id}`,
+    id,
+    address,
+    collectionId,
+    contentIds,
+    network,
+  };
+}
+export function toCollectionDb({
+  id,
+  maxSupply,
+  totalCount,
+  name,
+}: ICollectionModel): IFundingCollectionDb {
+  return {
+    pk: `COLLECTION#${id}`,
+    maxSupply,
+    totalCount,
+    collectionName: name,
+    collectionId: id,
   };
 }
 
-export function fromDb(item: IFundingDb): IFundingModel {
+export function fromFundingDb(item: IFundingDb): IAddressInscriptionModel {
   return {
-    fundingEvent: {
-      address: item.fundingAddress,
-      amount: item.fundingAmount,
-      privateKey: item.fundingPrivateKey,
-      network: toBitcoinNetworkName(item.fundingNetwork),
-    },
-    cloudWatchEventRuleId: item.cloudWatchEventRuleId,
+    address: item.address,
+    contentIds: item.contentIds,
+    id: toAddressInscriptionId(item.id),
+    network: toBitcoinNetworkName(item.network),
+    collectionId: toCollectionId(item.collectionId),
+  };
+}
+
+export function fromCollectionDb(item: IFundingCollectionDb): ICollectionModel {
+  return {
+    id: toCollectionId(item.collectionId),
+    maxSupply: item.maxSupply,
+    name: item.collectionName,
+    totalCount: item.totalCount,
   };
 }
 
@@ -44,8 +91,8 @@ export class FundingDao implements IFundingDao {
     this.client = client;
   }
 
-  public async createFunding(item: IFundingModel) {
-    const db = toDb(item);
+  public async createFunding(item: IAddressInscriptionModel) {
+    const db = toFundingDb(item);
     await this.client.send(
       new PutCommand({
         TableName: FundingDao.TABLE_NAME,
@@ -54,24 +101,99 @@ export class FundingDao implements IFundingDao {
     );
   }
 
-  public async getFunding(address: string) {
+  public async getFunding(id: string) {
     const db = await this.client.send(
       new GetCommand({
         TableName: FundingDao.TABLE_NAME,
         Key: {
-          pk: `FUNDING#${address}`,
+          pk: `FUNDING#${id}`,
         },
       })
     );
-    return fromDb(db.Item as IFundingDb);
+    return fromFundingDb(db.Item as IFundingDb);
   }
 
-  public async deleteFunding(address: string) {
+  public async deleteFunding(id: string) {
     await this.client.send(
       new DeleteCommand({
         TableName: FundingDao.TABLE_NAME,
         Key: {
-          pk: `FUNDING#${address}`,
+          pk: `FUNDING#${id}`,
+        },
+      })
+    );
+  }
+
+  public async createCollection(item: ICollectionModel) {
+    const db = toCollectionDb(item);
+    await this.client.send(
+      new PutCommand({
+        TableName: FundingDao.TABLE_NAME,
+        Item: db,
+      })
+    );
+  }
+
+  public async getCollection(id: ID_Collection) {
+    const db = await this.client.send(
+      new GetCommand({
+        TableName: FundingDao.TABLE_NAME,
+        Key: {
+          pk: `COLLECTION#${id}`,
+        },
+      })
+    );
+    return fromCollectionDb(db.Item as IFundingCollectionDb);
+  }
+
+  public async deleteCollection(id: ID_Collection) {
+    await this.client.send(
+      new DeleteCommand({
+        TableName: FundingDao.TABLE_NAME,
+        Key: {
+          pk: `COLLECTION#${id}`,
+        },
+      })
+    );
+  }
+
+  public async incrementCollectionTotalCount(
+    id: ID_Collection
+  ): Promise<number> {
+    const response = await this.client.send(
+      new UpdateCommand({
+        TableName: FundingDao.TABLE_NAME,
+        Key: {
+          pk: `COLLECTION#${id}`,
+        },
+        ConditionExpression: "attribute_exists(pk)",
+        UpdateExpression: "ADD totalCount :one",
+        ExpressionAttributeValues: {
+          ":one": 1,
+        },
+        ReturnValues: "ALL_NEW",
+      })
+    );
+    if (!response.Attributes) {
+      throw new Error("Collection not found");
+    }
+    return (response.Attributes?.totalCount as number) ?? 0;
+  }
+
+  public async updateMaxSupply(
+    id: ID_Collection,
+    maxSupply: number
+  ): Promise<void> {
+    await this.client.send(
+      new UpdateCommand({
+        TableName: FundingDao.TABLE_NAME,
+        Key: {
+          pk: `COLLECTION#${id}`,
+        },
+        ConditionExpression: "attribute_exists(pk)",
+        UpdateExpression: "SET maxSupply = :maxSupply",
+        ExpressionAttributeValues: {
+          ":maxSupply": maxSupply,
         },
       })
     );

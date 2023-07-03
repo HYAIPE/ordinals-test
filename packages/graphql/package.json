@@ -1,0 +1,25 @@
+{
+  "name": "@0xflick/ordinals-graphql",
+  "version": "1.0.0",
+  "main": "index.js",
+  "type": "module",
+  "license": "MIT",
+  "scripts": {
+    "schema:types": "yarn graphql-codegen --config codegen.ts"
+  },
+  "devDependencies": {
+    "@graphql-codegen/add": "^5.0.0",
+    "@graphql-codegen/cli": "^4.0.1",
+    "@graphql-codegen/graphql-modules-preset": "^4.0.1",
+    "@graphql-codegen/typescript": "^4.0.1",
+    "@graphql-codegen/typescript-resolvers": "^4.0.1",
+    "@types/node": "^20.3.3",
+    "@types/qrcode": "^1.5.1",
+    "typescript": "^5.1.6"
+  },
+  "dependencies": {
+    "graphql": "^16.7.1",
+    "graphql-modules": "^2.1.2",
+    "qrcode": "^1.5.3"
+  }
+}

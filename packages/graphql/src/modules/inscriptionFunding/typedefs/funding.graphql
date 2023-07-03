@@ -1,0 +1,23 @@
+type S3Object {
+  bucket: String!
+  key: String!
+}
+
+type InscriptionFunding {
+  id: ID!
+
+  s3Object: S3Object!
+  fundingAmountBtc: String!
+  fundingAddress: String!
+  network: BitcoinNetwork!
+  totalFee: Int!
+  qrValue: String!
+  qrSrc: String!
+  inscriptionTransaction: InscriptionTransaction!
+  overhead: Float!
+  padding: Float!
+  overhead: Int!
+  padding: Int!
+
+  inscriptionContent(tapKey: String!): InscriptionData!
+}

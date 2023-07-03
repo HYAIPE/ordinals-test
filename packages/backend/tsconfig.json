@@ -7,7 +7,7 @@
     "outDir": "dist",
     "paths": {
       "@0xflick/ordinals-models": ["../models/src/index"],
-      "@0xflick/ordinals-models/*": ["../models/src/*"]
+      "@0xflick/inscriptions": ["../../packages/inscriptions/src/index"]
     },
     "noErrorTruncation": true,
     "noImplicitAny": false,
@@ -21,7 +21,10 @@
   "exclude": ["**/node_modules", "**/.*/", "dist", "build"],
   "references": [
     {
-      "path": "../models"
+      "path": "../../packages/models"
+    },
+    {
+      "path": "../../packages/inscriptions"
     }
   ]
 }

@@ -1,0 +1,29 @@
+type InscriptionTransactionContent {
+  leaf: String!
+  tapKey: String!
+  cblock: String!
+  txsize: Int!
+  fee: Int!
+  script: [BitcoinScriptItem!]!
+}
+
+type InscriptionData {
+  textContent: String
+  base64Content: String
+  contentType: String!
+}
+
+enum FeeLevel {
+  GLACIAL
+  LOW
+  MEDIUM
+  HIGH
+}
+
+input InscriptionRequest {
+  files: [InscriptionData!]!
+  destinationAddress: String!
+  network: BitcoinNetwork!
+  feeLevel: FeeLevel
+  feePerByte: Int
+}
