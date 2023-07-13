@@ -1,0 +1,28 @@
+input AxolotlRequest {
+  destinationAddress: String!
+  request: String
+  proof: String
+  network: BitcoinNetwork!
+  feeLevel: FeeLevel
+  feePerByte: Int
+}
+
+type AxolotlFunding {
+  id: ID!
+  inscriptionFunding: InscriptionFunding
+
+  request: String
+  proof: String
+
+  tokenId: Int!
+  createdAt: String!
+  originAddress: String!
+  chameleon: Boolean!
+}
+
+type AxolotlFundingPage {
+  items: [AxolotlFunding]
+  totalCount: Int!
+  page: Int!
+  cursor: String
+}

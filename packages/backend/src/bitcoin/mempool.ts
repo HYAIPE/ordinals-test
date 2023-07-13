@@ -28,17 +28,16 @@ function urlForNetworkName(network: BitcoinNetworkNames) {
 export type MempoolClient = ReturnType<typeof createMempoolClient>;
 export function createMempoolClient({
   network,
+  hostname,
+  protocol,
 }: {
+  hostname: string;
+  protocol: "http" | "https";
   network: BitcoinNetworkNames;
 }) {
-  const url = new URL(urlForNetworkName(network));
-  const protocol = url.protocol.slice(0, -1);
-  if (["http", "https"].includes(protocol)) {
-    throw new Error(`Unsupported protocol: ${protocol}`);
-  }
   return mempoolJS({
     network,
-    hostname: url.hostname,
-    protocol: protocol as "http" | "https",
+    hostname,
+    protocol,
   });
 }

@@ -4,9 +4,10 @@ export function toCollectionId(id: string): ID_Collection {
   return id as ID_Collection;
 }
 
-export interface ICollectionModel {
+export type TCollectionModel<T = Record<string, any>> = {
   id: ID_Collection;
   name: string;
   maxSupply: number;
   totalCount: number;
-}
+  meta?: T;
+};

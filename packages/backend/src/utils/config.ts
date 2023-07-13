@@ -12,6 +12,10 @@ export const inscriptionBucket = lazySingleton(() => {
   return process.env.INSCRIPTION_BUCKET || "inscriptions";
 });
 
+export const dynamoDbUrl = lazySingleton(() => {
+  return process.env.DYNAMODB_URL;
+});
+
 export const dynamoDbRegion = lazySingleton(() => {
   return process.env.DYNAMODB_REGION || "us-east-1";
 });
@@ -32,11 +36,11 @@ export const tableNames = lazySingleton(() => {
 });
 
 export const regtestMempoolUrl = lazySingleton(() => {
-  return process.env.REGTEST_MEMPOOL_URL;
+  return process.env.REGTEST_MEMPOOL_URL ?? "http://localhost:80";
 });
 export const testnetMempoolUrl = lazySingleton(() => {
-  return process.env.TESTNET_MEMPOOL_URL;
+  return process.env.TESTNET_MEMPOOL_URL ?? "https://mempool.space/testnet";
 });
 export const mainnetMempoolUrl = lazySingleton(() => {
-  return process.env.MAINNET_MEMPOOL_URL;
+  return process.env.MAINNET_MEMPOOL_URL ?? "https://mempool.space";
 });

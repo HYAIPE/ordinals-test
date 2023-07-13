@@ -1,7 +1,7 @@
 // const buf = buffer;
 // const { Address, Script, Signer, Tap, Tx } = window.tapscript;\
-import { Address, Script, Signer, Tap, Tx } from "@cmdcode/tapscript";
-import * as cryptoUtils from "@cmdcode/crypto-utils";
+import { Address, Script, Signer, Tap, Tx } from "@0xflick/tapscript";
+import * as cryptoUtils from "@0xflick/crypto-utils";
 import {
   InvalidAddressError,
   InvalidKeyError,
@@ -24,6 +24,7 @@ import {
 import { createQR } from "./qrcode.js";
 
 export interface InscriptionContent {
+  isBin?: boolean;
   content: ArrayBuffer;
   mimeType: string;
 }
@@ -83,12 +84,10 @@ export async function generateFundingAddress({
     files.push({
       content,
       mimetype: mimeType,
-      sha256: "",
     });
   }
 
-  let is_bin = files[0].sha256 != "" ? true : false;
-  let min_padding = !is_bin ? 546 : 1000;
+  const min_padding = 546;
 
   if (
     isNaN(padding) ||
@@ -97,20 +96,13 @@ export async function generateFundingAddress({
   ) {
     throw new PaddingTooLowError(padding, min_padding);
   }
-  let tip_check = tip;
-  tip_check = isNaN(tip_check) ? 0 : tip_check;
-
   const KeyPair = cryptoUtils.KeyPair;
-
-  let secKey = new KeyPair(privKey);
-  let pubkey = secKey.pub.x;
-
+  const secKey = new KeyPair(privKey);
+  const pubkey = secKey.pub.x;
   const ec = new TextEncoder();
-
   const init_script = [pubkey, "OP_CHECKSIG"];
-
-  let init_leaf = Tap.tree.getLeaf(Script.encode(init_script));
-  let [init_tapkey, init_cblock] = Tap.getPubKey(pubkey, {
+  const init_leaf = Tap.tree.getLeaf(Script.encode(init_script));
+  const [init_tapkey, init_cblock] = Tap.getPubKey(pubkey, {
     target: init_leaf,
   });
 
@@ -149,10 +141,9 @@ export async function generateFundingAddress({
     );
   }
 
-  let inscriptionsToWrite: WritableInscription[] = [];
+  const inscriptionsToWrite: WritableInscription[] = [];
   let total_fee = 0;
-
-  let base_size = 160;
+  const base_size = 160;
 
   for (let i = 0; i < files.length; i++) {
     const data = files[i].content;
@@ -174,20 +165,14 @@ export async function generateFundingAddress({
     const leaf = Tap.tree.getLeaf(Script.encode(script));
     const [tapKey, cblock] = Tap.getPubKey(pubkey, { target: leaf });
 
-    let inscriptionAddress = Address.p2tr.encode(
+    const inscriptionAddress = Address.p2tr.encode(
       tapKey,
       networkNamesToTapScriptName(network)
     );
 
-    let prefix = 160;
-
-    if (files[i].sha256 != "") {
-      prefix = feeRate > 1 ? 546 : 700;
-    }
-
-    let txsize = prefix + data.byteLength;
-
-    let fee = Math.ceil(feeRate * txsize);
+    const prefix = 160;
+    const txsize = prefix + data.byteLength;
+    const fee = Math.ceil(feeRate * txsize);
     total_fee += fee;
 
     inscriptionsToWrite.push({

@@ -1,9 +1,9 @@
 /* eslint-disable */
-import { GraphQLResolveInfo } from 'graphql';
-import { InscriptionTransactionModel } from '../modules/inscriptionTransaction/models.js';
-import { InscriptionFundingModel } from '../modules/inscriptionFunding/models.js';
-import { InscriptionTransactionContentModel } from '../modules/inscriptionRequest/models.js';
-import { Context } from '../context/index.js';
+import type { GraphQLResolveInfo } from 'graphql';
+import type { InscriptionTransactionModel } from '../modules/inscriptionTransaction/models.js';
+import type { InscriptionFundingModel } from '../modules/inscriptionFunding/models.js';
+import type { InscriptionTransactionContentModel } from '../modules/inscriptionRequest/models.js';
+import type { Context } from '../context/index.js';
 export type Maybe<T> = T | null;
 export type InputMaybe<T> = Maybe<T>;
 export type Exact<T extends { [key: string]: unknown }> = { [K in keyof T]: T[K] };
@@ -11,6 +11,7 @@ export type MakeOptional<T, K extends keyof T> = Omit<T, K> & { [SubKey in K]?: 
 export type MakeMaybe<T, K extends keyof T> = Omit<T, K> & { [SubKey in K]: Maybe<T[SubKey]> };
 export type MakeEmpty<T extends { [key: string]: unknown }, K extends keyof T> = { [_ in K]?: never };
 export type Incremental<T> = T | { [P in keyof T]?: P extends ' $fragmentName' | '__typename' ? T[P] : never };
+export type Omit<T, K extends keyof T> = Pick<T, Exclude<keyof T, K>>;
 export type RequireFields<T, K extends keyof T> = Omit<T, K> & { [P in K]-?: NonNullable<T[P]> };
 /** All built-in and custom scalars, mapped to their actual values */
 export type Scalars = {
@@ -19,6 +20,35 @@ export type Scalars = {
   Boolean: { input: boolean; output: boolean; }
   Int: { input: number; output: number; }
   Float: { input: number; output: number; }
+};
+
+export type AxolotlFunding = {
+  __typename?: 'AxolotlFunding';
+  chameleon: Scalars['Boolean']['output'];
+  createdAt: Scalars['String']['output'];
+  id: Scalars['ID']['output'];
+  inscriptionFunding?: Maybe<InscriptionFunding>;
+  originAddress: Scalars['String']['output'];
+  proof?: Maybe<Scalars['String']['output']>;
+  request?: Maybe<Scalars['String']['output']>;
+  tokenId: Scalars['Int']['output'];
+};
+
+export type AxolotlFundingPage = {
+  __typename?: 'AxolotlFundingPage';
+  cursor?: Maybe<Scalars['String']['output']>;
+  items?: Maybe<Array<Maybe<AxolotlFunding>>>;
+  page: Scalars['Int']['output'];
+  totalCount: Scalars['Int']['output'];
+};
+
+export type AxolotlRequest = {
+  destinationAddress: Scalars['String']['input'];
+  feeLevel?: InputMaybe<FeeLevel>;
+  feePerByte?: InputMaybe<Scalars['Int']['input']>;
+  network: BitcoinNetwork;
+  proof?: InputMaybe<Scalars['String']['input']>;
+  request?: InputMaybe<Scalars['String']['input']>;
 };
 
 export type BitcoinNetwork =
@@ -62,16 +92,14 @@ export type InscriptionFunding = {
   __typename?: 'InscriptionFunding';
   fundingAddress: Scalars['String']['output'];
   fundingAmountBtc: Scalars['String']['output'];
+  fundingAmountSats: Scalars['Int']['output'];
   id: Scalars['ID']['output'];
   inscriptionContent: InscriptionData;
   inscriptionTransaction: InscriptionTransaction;
   network: BitcoinNetwork;
-  overhead: Scalars['Int']['output'];
-  padding: Scalars['Int']['output'];
   qrSrc: Scalars['String']['output'];
   qrValue: Scalars['String']['output'];
   s3Object: S3Object;
-  totalFee: Scalars['Int']['output'];
 };
 
 
@@ -111,13 +139,13 @@ export type InscriptionTransactionContent = {
 
 export type Mutation = {
   __typename?: 'Mutation';
-  axolotlFundingAddressRequest: InscriptionFunding;
+  axolotlFundingAddressRequest: AxolotlFunding;
   requestFundingAddress: InscriptionFunding;
 };
 
 
 export type MutationAxolotlFundingAddressRequestArgs = {
-  address: Scalars['String']['input'];
+  request: AxolotlRequest;
 };
 
 
@@ -218,6 +246,9 @@ export type DirectiveResolverFn<TResult = {}, TParent = {}, TContext = {}, TArgs
 
 /** Mapping between all available schema types and the resolvers types */
 export type ResolversTypes = {
+  AxolotlFunding: ResolverTypeWrapper<Omit<AxolotlFunding, 'inscriptionFunding'> & { inscriptionFunding?: Maybe<ResolversTypes['InscriptionFunding']> }>;
+  AxolotlFundingPage: ResolverTypeWrapper<Omit<AxolotlFundingPage, 'items'> & { items?: Maybe<Array<Maybe<ResolversTypes['AxolotlFunding']>>> }>;
+  AxolotlRequest: AxolotlRequest;
   BitcoinNetwork: BitcoinNetwork;
   BitcoinScriptItem: ResolverTypeWrapper<BitcoinScriptItem>;
   Boolean: ResolverTypeWrapper<Scalars['Boolean']['output']>;
@@ -239,6 +270,9 @@ export type ResolversTypes = {
 
 /** Mapping between all available schema types and the resolvers parents */
 export type ResolversParentTypes = {
+  AxolotlFunding: Omit<AxolotlFunding, 'inscriptionFunding'> & { inscriptionFunding?: Maybe<ResolversParentTypes['InscriptionFunding']> };
+  AxolotlFundingPage: Omit<AxolotlFundingPage, 'items'> & { items?: Maybe<Array<Maybe<ResolversParentTypes['AxolotlFunding']>>> };
+  AxolotlRequest: AxolotlRequest;
   BitcoinScriptItem: BitcoinScriptItem;
   Boolean: Scalars['Boolean']['output'];
   Collection: Collection;
@@ -254,6 +288,26 @@ export type ResolversParentTypes = {
   Query: {};
   S3Object: S3Object;
   String: Scalars['String']['output'];
+};
+
+export type AxolotlFundingResolvers<ContextType = Context, ParentType extends ResolversParentTypes['AxolotlFunding'] = ResolversParentTypes['AxolotlFunding']> = {
+  chameleon?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
+  createdAt?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
+  inscriptionFunding?: Resolver<Maybe<ResolversTypes['InscriptionFunding']>, ParentType, ContextType>;
+  originAddress?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  proof?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  request?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  tokenId?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+};
+
+export type AxolotlFundingPageResolvers<ContextType = Context, ParentType extends ResolversParentTypes['AxolotlFundingPage'] = ResolversParentTypes['AxolotlFundingPage']> = {
+  cursor?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  items?: Resolver<Maybe<Array<Maybe<ResolversTypes['AxolotlFunding']>>>, ParentType, ContextType>;
+  page?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  totalCount?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 };
 
 export type BitcoinScriptItemResolvers<ContextType = Context, ParentType extends ResolversParentTypes['BitcoinScriptItem'] = ResolversParentTypes['BitcoinScriptItem']> = {
@@ -280,16 +334,14 @@ export type InscriptionDataResolvers<ContextType = Context, ParentType extends R
 export type InscriptionFundingResolvers<ContextType = Context, ParentType extends ResolversParentTypes['InscriptionFunding'] = ResolversParentTypes['InscriptionFunding']> = {
   fundingAddress?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   fundingAmountBtc?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  fundingAmountSats?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
   id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
   inscriptionContent?: Resolver<ResolversTypes['InscriptionData'], ParentType, ContextType, RequireFields<InscriptionFundingInscriptionContentArgs, 'tapKey'>>;
   inscriptionTransaction?: Resolver<ResolversTypes['InscriptionTransaction'], ParentType, ContextType>;
   network?: Resolver<ResolversTypes['BitcoinNetwork'], ParentType, ContextType>;
-  overhead?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
-  padding?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
   qrSrc?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   qrValue?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   s3Object?: Resolver<ResolversTypes['S3Object'], ParentType, ContextType>;
-  totalFee?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 };
 
@@ -316,7 +368,7 @@ export type InscriptionTransactionContentResolvers<ContextType = Context, Parent
 };
 
 export type MutationResolvers<ContextType = Context, ParentType extends ResolversParentTypes['Mutation'] = ResolversParentTypes['Mutation']> = {
-  axolotlFundingAddressRequest?: Resolver<ResolversTypes['InscriptionFunding'], ParentType, ContextType, RequireFields<MutationAxolotlFundingAddressRequestArgs, 'address'>>;
+  axolotlFundingAddressRequest?: Resolver<ResolversTypes['AxolotlFunding'], ParentType, ContextType, RequireFields<MutationAxolotlFundingAddressRequestArgs, 'request'>>;
   requestFundingAddress?: Resolver<ResolversTypes['InscriptionFunding'], ParentType, ContextType, RequireFields<MutationRequestFundingAddressArgs, 'request'>>;
 };
 
@@ -332,6 +384,8 @@ export type S3ObjectResolvers<ContextType = Context, ParentType extends Resolver
 };
 
 export type Resolvers<ContextType = Context> = {
+  AxolotlFunding?: AxolotlFundingResolvers<ContextType>;
+  AxolotlFundingPage?: AxolotlFundingPageResolvers<ContextType>;
   BitcoinScriptItem?: BitcoinScriptItemResolvers<ContextType>;
   Collection?: CollectionResolvers<ContextType>;
   InscriptionData?: InscriptionDataResolvers<ContextType>;

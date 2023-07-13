@@ -1,10 +1,10 @@
 /* eslint-disable */
-import * as Types from "../../../generated-types/graphql";
-import * as gm from "graphql-modules";
+import type * as Types from "../../../generated-types/graphql.js";
+import type * as gm from "@0xflick/graphql-modules";
 export namespace InscriptionFundingModule {
   interface DefinedFields {
     S3Object: 'bucket' | 'key';
-    InscriptionFunding: 'id' | 's3Object' | 'fundingAmountBtc' | 'fundingAddress' | 'network' | 'totalFee' | 'qrValue' | 'qrSrc' | 'inscriptionTransaction' | 'overhead' | 'padding' | 'inscriptionContent';
+    InscriptionFunding: 'id' | 's3Object' | 'fundingAmountBtc' | 'fundingAmountSats' | 'fundingAddress' | 'network' | 'qrValue' | 'qrSrc' | 'inscriptionTransaction' | 'inscriptionContent';
   };
   
   export type S3Object = Pick<Types.S3Object, DefinedFields['S3Object']>;
@@ -35,16 +35,12 @@ export namespace InscriptionFundingModule {
       id?: gm.Middleware[];
       s3Object?: gm.Middleware[];
       fundingAmountBtc?: gm.Middleware[];
+      fundingAmountSats?: gm.Middleware[];
       fundingAddress?: gm.Middleware[];
       network?: gm.Middleware[];
-      totalFee?: gm.Middleware[];
       qrValue?: gm.Middleware[];
       qrSrc?: gm.Middleware[];
       inscriptionTransaction?: gm.Middleware[];
-      overhead?: gm.Middleware[];
-      padding?: gm.Middleware[];
-      overhead?: gm.Middleware[];
-      padding?: gm.Middleware[];
       inscriptionContent?: gm.Middleware[];
     };
   };

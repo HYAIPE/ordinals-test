@@ -1,6 +1,6 @@
 import { createS3Client } from "@0xflick/ordinals-backend";
 import type { S3Client } from "@aws-sdk/client-s3";
-import { IConfigContext } from "./config";
+import { IConfigContext } from "./config.js";
 
 export interface IAwsContext {
   s3Client: S3Client;

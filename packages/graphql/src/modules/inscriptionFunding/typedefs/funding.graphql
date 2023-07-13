@@ -8,16 +8,12 @@ type InscriptionFunding {
 
   s3Object: S3Object!
   fundingAmountBtc: String!
+  fundingAmountSats: Int!
   fundingAddress: String!
   network: BitcoinNetwork!
-  totalFee: Int!
   qrValue: String!
   qrSrc: String!
   inscriptionTransaction: InscriptionTransaction!
-  overhead: Float!
-  padding: Float!
-  overhead: Int!
-  padding: Int!
 
   inscriptionContent(tapKey: String!): InscriptionData!
 }

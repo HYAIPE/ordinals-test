@@ -1,4 +1,4 @@
 type Mutation {
   requestFundingAddress(request: InscriptionRequest!): InscriptionFunding!
-  axolotlFundingAddressRequest(address: String!): InscriptionFunding!
+  axolotlFundingAddressRequest(request: AxolotlRequest!): AxolotlFunding!
 }

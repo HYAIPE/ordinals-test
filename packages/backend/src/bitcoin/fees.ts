@@ -5,8 +5,8 @@ export type IFeesRecommended = Awaited<
 >;
 
 export async function estimateFees(
-  mempool: MempoolClient
+  mempool: MempoolClient["bitcoin"]
 ): Promise<IFeesRecommended> {
-  const fees = await mempool.bitcoin.fees.getFeesRecommended();
+  const fees = await mempool.fees.getFeesRecommended();
   return fees;
 }

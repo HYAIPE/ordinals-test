@@ -1,10 +1,15 @@
 import {
   BitcoinNetworkNames,
   InscriptionContent,
+  InscriptionFile,
   generateFundingAddress,
   generatePrivKey,
 } from "@0xflick/inscriptions";
-import { IInscriptionDocFundingWait } from "../../../models/src/doc";
+import {
+  hashInscriptions,
+  toAddressInscriptionId,
+  IInscriptionDocFundingWait,
+} from "@0xflick/ordinals-models";
 
 export async function createInscriptionTransaction({
   address,
@@ -18,7 +23,7 @@ export async function createInscriptionTransaction({
   feeRate: number;
   tip: number;
   inscriptions: InscriptionContent[];
-}): Promise<IInscriptionDocFundingWait> {
+}): Promise<IInscriptionDocFundingWait & { files: InscriptionFile[] }> {
   const privKey = generatePrivKey();
   const {
     amount,
@@ -31,6 +36,7 @@ export async function createInscriptionTransaction({
     overhead,
     padding,
     totalFee,
+    files,
   } = await generateFundingAddress({
     address,
     inscriptions,
@@ -41,6 +47,13 @@ export async function createInscriptionTransaction({
   });
 
   return {
+    id: toAddressInscriptionId(
+      hashInscriptions(
+        fundingAddress,
+        inscriptionsToWrite.map((i) => i.tapkey)
+      )
+    ),
+    files,
     fundingAddress,
     fundingAmountBtc: amount,
     initCBlock,

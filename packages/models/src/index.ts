@@ -4,3 +4,4 @@ export * from "./factory.js";
 export * from "./doc/index.js";
 export * from "./collection.js";
 export * from "./addressInscription.js";
+export * from "./ordinals/index.js";

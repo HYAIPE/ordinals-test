@@ -1,23 +1,21 @@
-import { IMetadataFetchEvent } from "@0xflick/models";
-import {
-  EventBridgeClient,
-  EventBridgeClientConfig,
-} from "@aws-sdk/client-eventbridge";
+import { EventBridgeClient } from "@aws-sdk/client-eventbridge";
 import { PutEventsCommand } from "@aws-sdk/client-eventbridge";
-import { createLogger } from "../utils";
+import { createLogger } from "../utils/logger.js";
 
 const logger = createLogger({
   name: "backend/events/bus",
 });
 
-
-export async function emitMetadataEvent({
+export async function emitMetadataEvent<T>({
   event,
   eventBridge,
   eventBusName,
   source,
 }: {
-  event: IMetadataFetchEvent;
+  event: {
+    DetailType: string;
+    Detail: T;
+  };
   eventBridge: EventBridgeClient;
   eventBusName?: string;
   source: string;
@@ -34,14 +32,12 @@ export async function emitMetadataEvent({
         },
       ],
     });
-    logger.info(
-      `Sending event ${event.DetailType} to EventBridge for job ${event.Detail.jobId}`
-    );
+    logger.debug(`Sending event ${event.DetailType} to EventBridge`);
     const response = await eventBridge.send(command);
-    logger.info(
-      `Event ${event.DetailType} sent to EventBridge for job ${
-        event.Detail.jobId
-      }: ${response.Entries.map((e) => e.EventId).join(", ")}`
+    logger.debug(
+      `Event ${event.DetailType} sent to EventBridge: ${response.Entries?.map(
+        (e) => e.EventId
+      ).join(", ")}`
     );
     return response;
   } catch (error) {
@@ -51,4 +47,4 @@ export async function emitMetadataEvent({
     );
     throw error;
   }
-},
+}

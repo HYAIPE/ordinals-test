@@ -1,4 +1,11 @@
+export interface InscriptionId {
+  id: string;
+  fundingAddress: string;
+  tapKey: string;
+}
+
 export interface InscriptionFile {
+  id?: InscriptionId;
   content: ArrayBuffer;
   mimetype: string;
 }

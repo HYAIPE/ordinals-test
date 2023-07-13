@@ -2,11 +2,13 @@ import { createDbContext, DbContext } from "./db.js";
 import { createConfigContext, IConfigContext } from "./config.js";
 import { createAwsContext, IAwsContext } from "./aws.js";
 import { createStorageContext, IStorageContext } from "./storage.js";
+import { createBitcoinContext, IBitcoinContext } from "./bitcoin.js";
 
 export type Context = DbContext &
   IConfigContext &
   IAwsContext &
-  IStorageContext;
+  IStorageContext &
+  IBitcoinContext;
 
 export function createContext(): Context {
   const config = createConfigContext();
@@ -15,6 +17,10 @@ export function createContext(): Context {
     ...config,
     ...aws,
     ...createDbContext(),
-    ...createStorageContext(aws),
+    ...createStorageContext({
+      ...config,
+      ...aws,
+    }),
+    ...createBitcoinContext(config),
   };
 }

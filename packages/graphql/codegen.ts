@@ -5,8 +5,11 @@ const config: CodegenConfig = {
   emitLegacyCommonJSImports: false,
   generates: {
     "./src/modules/": {
-      preset: "graphql-modules",
+      preset: "@0xflick/graphql-modules-preset" as "graphql-modules",
       config: {
+        useTypeImports: true,
+        useEsmImports: true,
+        graphqlModulesImportPath: "@0xflick/graphql-modules",
         contextType: "../context/index.js#Context",
         mappers: {
           InscriptionTransaction:

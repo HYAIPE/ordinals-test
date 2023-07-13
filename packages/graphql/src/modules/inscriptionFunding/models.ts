@@ -9,47 +9,41 @@ import { toDataURL, QRCodeToDataURLOptions } from "qrcode";
 
 export class InscriptionFundingModel {
   private id: string;
-  private document?: TInscriptionDoc;
-  private readonly fundingAddressModel: INewFundingAddressModel;
+  private document: TInscriptionDoc;
   private readonly bucket: string;
 
   constructor({
     id,
-    fundingAddressModel,
     document,
     bucket,
   }: {
     id: string;
-    fundingAddressModel: INewFundingAddressModel;
-    document?: TInscriptionDoc;
+    document: TInscriptionDoc;
     bucket: string;
   }) {
     this.id = id;
-    this.fundingAddressModel = fundingAddressModel;
-    if (document) {
-      this.document = document;
-    }
+    this.document = document;
     this.bucket = bucket;
   }
 
   public get fundingAddress() {
-    return this.fundingAddressModel.fundingAddress;
+    return this.document.fundingAddress;
   }
 
   public get network() {
-    return this.fundingAddressModel.network;
+    return this.document.network;
   }
 
   public get rootDocumentKey() {
-    return `address/${this.fundingAddress}/inscriptions/${this.id}/metadata.json`;
+    return `address/${this.fundingAddress}/inscriptions/${this.id}/transaction.json`;
   }
   private _fetchingDocPromise?: Promise<TInscriptionDoc>;
-  public async fetchInscriptions(s3Client: S3Client) {
+  public async fetchInscription(s3Client: S3Client) {
     if (this.document) {
       return;
     }
     if (this._fetchingDocPromise) {
-      return this._fetchingDocPromise;
+      return await this._fetchingDocPromise;
     }
     this._fetchingDocPromise = Promise.resolve().then(async () => {
       const getObjectResponse = await s3Client.send(
@@ -88,17 +82,10 @@ export class InscriptionFundingModel {
       return document;
     });
     this.document = await this._fetchingDocPromise;
-  }
-
-  private ensureDocument() {
-    if (!this.document) {
-      throw new Error("Inscriptions not fetched, call fetchInscriptions first");
-    }
     return this.document;
   }
-
   public getInscriptionContentKey(tapKey: string) {
-    return `address/${this.fundingAddress}/inscriptions/${this.id}/content/${tapKey}`;
+    return `address/${this.fundingAddress}/inscriptions/${this.id}/content/${tapKey}.json`;
   }
 
   private _inscriptions: Map<string, Promise<InscriptionFile>> = new Map();
@@ -140,7 +127,7 @@ export class InscriptionFundingModel {
   }
 
   public async fetchAllInscriptionContent(s3Client: S3Client) {
-    const inscriptions = this.ensureDocument().writableInscriptions;
+    const inscriptions = this.document.writableInscriptions;
     // returns inscriptions in the order they are inscribed
     // Assumes all fetched
     const inscriptionOrder = (): Promise<InscriptionFile>[] => {
@@ -173,21 +160,8 @@ export class InscriptionFundingModel {
     return inscriptionOrder();
   }
 
-  private ensureInscriptions() {
-    if (!this._inscriptions) {
-      throw new Error(
-        "Inscriptions not fetched, call fetchAllInscriptionContent first"
-      );
-    }
-    return this._inscriptions;
-  }
-
-  public get files() {
-    return this.ensureInscriptions();
-  }
-
   public get inscriptions() {
-    return this.ensureDocument().writableInscriptions;
+    return this.document.writableInscriptions;
   }
 
   public get qrValue() {
@@ -195,7 +169,7 @@ export class InscriptionFundingModel {
   }
 
   public get fundingAmountBtc() {
-    return this.ensureDocument().fundingAmountBtc;
+    return this.document.fundingAmountBtc;
   }
 
   private _qrSrc?: {
@@ -217,7 +191,7 @@ export class InscriptionFundingModel {
   }
 
   public get initScript() {
-    return this.ensureDocument().initScript.map((script) => {
+    return this.document.initScript.map((script) => {
       if (typeof script === "string") {
         return {
           text: script,
@@ -231,26 +205,26 @@ export class InscriptionFundingModel {
   }
 
   public get initTapKey() {
-    return this.ensureDocument().initTapKey;
+    return this.document.initTapKey;
   }
 
   public get initLeaf() {
-    return this.ensureDocument().initLeaf;
+    return this.document.initLeaf;
   }
 
   public get initCBlock() {
-    return this.ensureDocument().initCBlock;
+    return this.document.initCBlock;
   }
 
   public get overhead() {
-    return this.ensureDocument().overhead;
+    return this.document.overhead;
   }
 
   public get privateKey() {
-    return this.ensureDocument().secKey;
+    return this.document.secKey;
   }
 
   public get padding() {
-    return this.ensureDocument().padding;
+    return this.document.padding;
   }
 }

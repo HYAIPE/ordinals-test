@@ -1,18 +1,19 @@
-import { BitcoinNetworkNames } from "./bitcoin";
-import { Address } from "@cmdcode/tapscript";
-import { ID_Collection } from "./collection";
+import { BitcoinNetworkNames } from "./bitcoin.js";
+import { Address } from "@0xflick/tapscript";
+import { ID_Collection } from "./collection.js";
 export type ID_AddressInscription = string & { __id_addressInscription: never };
 
 export function toAddressInscriptionId(id: string): ID_AddressInscription {
   return id as ID_AddressInscription;
 }
 
-export interface IAddressInscriptionModel {
+export interface IAddressInscriptionModel<T = Record<string, any>> {
   address: string;
   network: BitcoinNetworkNames;
   id: ID_AddressInscription;
-  collectionId: ID_Collection;
+  collectionId?: ID_Collection;
   contentIds: string[];
+  meta?: T;
 }
 
 function xor(buf1: Uint8Array, buf2: Uint8Array) {
@@ -31,7 +32,7 @@ export function hashInscriptions(address: string, tapKeys: string[]) {
 export class AddressInscriptionModel implements IAddressInscriptionModel {
   public address: string;
   public network: BitcoinNetworkNames;
-  public collectionId: ID_Collection;
+  public collectionId?: ID_Collection;
   public contentIds: string[];
 
   constructor(item: Omit<IAddressInscriptionModel, "id"> & { id?: string }) {

@@ -1,6 +1,6 @@
 /* eslint-disable */
-import * as Types from "../../../generated-types/graphql";
-import * as gm from "graphql-modules";
+import type * as Types from "../../../generated-types/graphql.js";
+import type * as gm from "@0xflick/graphql-modules";
 export namespace QueryModule {
   interface DefinedFields {
     Query: 'inscriptionTransaction' | 'inscriptionFunding';

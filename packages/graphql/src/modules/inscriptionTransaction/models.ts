@@ -1,6 +1,6 @@
-import { InscriptionTransaction } from "../../generated-types/graphql";
-import { InscriptionFundingModel } from "../inscriptionFunding/models";
-import { InscriptionTransactionContentModel } from "../inscriptionRequest/models";
+import { InscriptionTransaction } from "../../generated-types/graphql.js";
+import { InscriptionFundingModel } from "../inscriptionFunding/models.js";
+import { InscriptionTransactionContentModel } from "../inscriptionRequest/models.js";
 
 export class InscriptionTransactionModel implements InscriptionTransaction {
   private readonly inscriptionFunding: InscriptionFundingModel;
