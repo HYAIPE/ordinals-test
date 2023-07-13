@@ -67,5 +67,6 @@ export async function createInscriptionTransaction({
     totalFee,
     status: "funding-wait",
     writableInscriptions: inscriptionsToWrite,
+    tip,
   };
 }

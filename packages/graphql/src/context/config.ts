@@ -12,11 +12,23 @@ export const axolotlInscriptionBucket = lazySingleton(() => {
   return process.env.AXOLOTL_INSCRIPTION_BUCKET || "inscriptions";
 });
 
+export const axolotlInscriptionTip = lazySingleton(() => {
+  const envNum = Number(process.env.AXOLOTL_INSCRIPTION_TIP);
+  return Number.isInteger(envNum) ? envNum : 0;
+});
+
+export const inscriptionTip = lazySingleton(() => {
+  const envNum = Number(process.env.INSCRIPTION_TIP);
+  return Number.isInteger(envNum) ? envNum : 0;
+});
+
 export interface IConfigContext {
   awsEndpoint?: string;
   awsRegion?: string;
   inscriptionBucket: string;
+  inscriptionTip: number;
   axolotlInscriptionBucket: string;
+  axolotlInscriptionTip: number;
   bitcoinRegtestMempoolEndpoint: string;
   bitcoinTestnetMempoolEndpoint: string;
   bitcoinMainnetMempoolEndpoint: string;
@@ -33,8 +45,14 @@ export function createConfigContext(): IConfigContext {
     get inscriptionBucket() {
       return inscriptionBucket.get();
     },
+    get inscriptionTip() {
+      return inscriptionTip.get();
+    },
     get axolotlInscriptionBucket() {
       return axolotlInscriptionBucket.get();
+    },
+    get axolotlInscriptionTip() {
+      return axolotlInscriptionTip.get();
     },
     get bitcoinRegtestMempoolEndpoint() {
       return regtestMempoolUrl.get();

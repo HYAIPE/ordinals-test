@@ -26,6 +26,7 @@ export interface IInscriptionDocCommon {
   overhead: number;
   padding: number;
   writableInscriptions: WritableInscription[];
+  tip: number;
 }
 
 export interface IInscriptionDocFundingWait extends IInscriptionDocCommon {

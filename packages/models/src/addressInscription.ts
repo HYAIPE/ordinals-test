@@ -13,7 +13,7 @@ export interface IAddressInscriptionModel<T = Record<string, any>> {
   id: ID_AddressInscription;
   collectionId?: ID_Collection;
   contentIds: string[];
-  meta?: T;
+  meta: T;
 }
 
 function xor(buf1: Uint8Array, buf2: Uint8Array) {
@@ -29,13 +29,16 @@ export function hashInscriptions(address: string, tapKeys: string[]) {
   ).toString("hex");
 }
 
-export class AddressInscriptionModel implements IAddressInscriptionModel {
+export class AddressInscriptionModel<T extends Record<string, any> = {}>
+  implements IAddressInscriptionModel<T>
+{
   public address: string;
   public network: BitcoinNetworkNames;
   public collectionId?: ID_Collection;
   public contentIds: string[];
+  public meta: T;
 
-  constructor(item: Omit<IAddressInscriptionModel, "id"> & { id?: string }) {
+  constructor(item: Omit<IAddressInscriptionModel<T>, "id"> & { id?: string }) {
     this.address = item.address;
     this.network = item.network;
     this.contentIds = item.contentIds;
@@ -43,6 +46,7 @@ export class AddressInscriptionModel implements IAddressInscriptionModel {
       this._id = toAddressInscriptionId(item.id);
     }
     this.collectionId = item.collectionId;
+    this.meta = item.meta;
   }
 
   private _id?: ID_AddressInscription;

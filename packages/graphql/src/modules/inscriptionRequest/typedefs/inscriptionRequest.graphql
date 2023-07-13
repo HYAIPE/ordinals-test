@@ -20,8 +20,14 @@ enum FeeLevel {
   HIGH
 }
 
+input InscriptionDataInput {
+  textContent: String
+  base64Content: String
+  contentType: String!
+}
+
 input InscriptionRequest {
-  files: [InscriptionData!]!
+  files: [InscriptionDataInput!]!
   destinationAddress: String!
   network: BitcoinNetwork!
   feeLevel: FeeLevel

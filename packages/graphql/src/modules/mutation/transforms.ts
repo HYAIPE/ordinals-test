@@ -1,5 +1,5 @@
 import { InscriptionContent } from "@0xflick/ordinals-models";
-import { InscriptionData } from "../../generated-types/graphql";
+import { InscriptionData } from "../../generated-types/graphql.js";
 
 export function fileToInscription(file: InscriptionData): InscriptionContent {
   if (!file.textContent && !file.base64Content) {

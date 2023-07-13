@@ -1,9 +1,9 @@
 import { BitcoinNetworkNames } from "@0xflick/ordinals-models";
-import { BitcoinNetwork, FeeLevel } from "../../generated-types/graphql";
+import { BitcoinNetwork, FeeLevel } from "../../generated-types/graphql.js";
 import { IFeesRecommended } from "@0xflick/ordinals-backend";
 
 export function toBitcoinNetworkName(
-  bitcoinNetworkName: BitcoinNetwork
+  bitcoinNetworkName: BitcoinNetwork,
 ): BitcoinNetworkNames {
   switch (bitcoinNetworkName) {
     case "MAINNET":

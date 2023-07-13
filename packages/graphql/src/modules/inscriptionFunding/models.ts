@@ -50,14 +50,14 @@ export class InscriptionFundingModel {
         new GetObjectCommand({
           Bucket: this.bucket,
           Key: this.rootDocumentKey,
-        })
+        }),
       );
       const data = await getObjectResponse.Body?.transformToString();
       if (!data) {
         throw new UnableToGetS3ObjectError(
           this.bucket,
           this.rootDocumentKey,
-          "No data returned from S3"
+          "No data returned from S3",
         );
       }
       const mimeType = getObjectResponse.ContentType;
@@ -66,7 +66,7 @@ export class InscriptionFundingModel {
         throw new UnableToGetS3ObjectError(
           this.bucket,
           this.rootDocumentKey,
-          `Invalid mime type ${mimeType}`
+          `Invalid mime type ${mimeType}`,
         );
       }
       let document: TInscriptionDoc;
@@ -76,7 +76,7 @@ export class InscriptionFundingModel {
         throw new UnableToGetS3ObjectError(
           this.bucket,
           this.rootDocumentKey,
-          "Unable to parse JSON"
+          "Unable to parse JSON",
         );
       }
       return document;
@@ -99,14 +99,14 @@ export class InscriptionFundingModel {
         new GetObjectCommand({
           Bucket: this.bucket,
           Key: key,
-        })
+        }),
       );
       const data = await getObjectResponse.Body?.transformToString();
       if (!data) {
         throw new UnableToGetS3ObjectError(
           this.bucket,
           key,
-          "No data returned from S3"
+          "No data returned from S3",
         );
       }
       let doc: InscriptionFile;
@@ -116,7 +116,7 @@ export class InscriptionFundingModel {
         throw new UnableToGetS3ObjectError(
           this.bucket,
           key,
-          "Unable to parse JSON"
+          "Unable to parse JSON",
         );
       }
       return doc;
@@ -134,8 +134,8 @@ export class InscriptionFundingModel {
       return inscriptions.map(
         (inscription) =>
           this._inscriptions.get(
-            this.getInscriptionContentKey(inscription.tapKey)
-          )!
+            this.getInscriptionContentKey(inscription.tapkey),
+          )!,
       );
     };
     // full, no need to check for missing
@@ -150,12 +150,12 @@ export class InscriptionFundingModel {
       return memo;
     }, new Map<string, boolean>());
     const missingTapKeys = inscriptions.filter(
-      (inscription) => !existingTapKeys.has(inscription.tapKey)
+      (inscription) => !existingTapKeys.has(inscription.tapkey),
     );
     await Promise.all(
       missingTapKeys.map(async (inscription) =>
-        this.fetchInscriptionContent(s3Client, inscription.tapKey)
-      )
+        this.fetchInscriptionContent(s3Client, inscription.tapkey),
+      ),
     );
     return inscriptionOrder();
   }

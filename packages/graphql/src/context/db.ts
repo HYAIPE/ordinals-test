@@ -8,65 +8,19 @@ import {
 export interface DbContext {
   fundingDao: IFundingDao;
   typedFundingDao<
-    ItemInputType extends Record<string, any> = {},
     ItemMeta extends Record<string, any> = {},
-    ItemReturnType = any,
-    CollectionInputType extends Record<string, any> = {},
     CollectionMeta extends Record<string, any> = {},
-    CollectionReturnType = any,
-  >({
-    itemFundingUpdater,
-    collectionFundingUpdater,
-  }: {
-    itemFundingUpdater: TFundingItemReturner<ItemInputType, ItemReturnType>;
-    collectionFundingUpdater: TFundingCollectionReturner<
-      CollectionInputType,
-      CollectionReturnType
-    >;
-  }): IFundingDao<
-    ItemInputType,
-    ItemMeta,
-    ItemReturnType,
-    CollectionInputType,
-    CollectionMeta,
-    CollectionReturnType
-  >;
+  >(): IFundingDao<ItemMeta, CollectionMeta>;
 }
 
 export function createDbContext() {
   const context: DbContext = {
-    fundingDao: createDynamoDbFundingDao<{}, {}, void, {}, {}, void>({
-      itemFundingUpdater: async () => {},
-      collectionFundingUpdater: async () => {},
-    }),
+    fundingDao: createDynamoDbFundingDao<{}, {}>(),
     typedFundingDao<
-      ItemInputType extends Record<string, any> = {},
       ItemMeta extends Record<string, any> = {},
-      ItemReturnType = any,
-      CollectionInputType extends Record<string, any> = {},
       CollectionMeta extends Record<string, any> = {},
-      CollectionReturnType = any,
-    >({
-      itemFundingUpdater,
-      collectionFundingUpdater,
-    }: {
-      itemFundingUpdater: TFundingItemReturner<ItemInputType, ItemReturnType>;
-      collectionFundingUpdater: TFundingCollectionReturner<
-        CollectionInputType,
-        CollectionReturnType
-      >;
-    }) {
-      return createDynamoDbFundingDao<
-        ItemInputType,
-        ItemMeta,
-        ItemReturnType,
-        CollectionInputType,
-        CollectionMeta,
-        CollectionReturnType
-      >({
-        itemFundingUpdater,
-        collectionFundingUpdater,
-      });
+    >() {
+      return createDynamoDbFundingDao<ItemMeta, CollectionMeta>();
     },
   };
   return context;

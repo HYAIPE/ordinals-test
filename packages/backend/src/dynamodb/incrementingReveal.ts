@@ -3,34 +3,16 @@ import { IIncrementingRevealDao } from "../dao/ordinals/incrementingReveal.js";
 import { IFundingDao } from "../dao/funding.js";
 
 export class IncrementingRevealDao<
-  ItemInputType extends Record<string, any> = {},
   ItemMeta extends Record<string, any> = {},
-  ItemReturnType = any,
-  CollectionInputType extends Record<string, any> = {},
-  CollectionMeta extends Record<string, any> = {},
-  CollectionReturnType = any
+  CollectionMeta extends Record<string, any> = {}
 > implements IIncrementingRevealDao
 {
-  private fundingDao: IFundingDao<
-    ItemInputType,
-    ItemMeta,
-    ItemReturnType,
-    CollectionInputType,
-    CollectionMeta,
-    CollectionReturnType
-  >;
+  private fundingDao: IFundingDao<ItemMeta, CollectionMeta>;
   public collectionId: ID_Collection;
 
   constructor(
     collectionId: ID_Collection,
-    fundingDao: IFundingDao<
-      ItemInputType,
-      ItemMeta,
-      ItemReturnType,
-      CollectionInputType,
-      CollectionMeta,
-      CollectionReturnType
-    >
+    fundingDao: IFundingDao<ItemMeta, CollectionMeta>
   ) {
     this.fundingDao = fundingDao;
     this.collectionId = collectionId;

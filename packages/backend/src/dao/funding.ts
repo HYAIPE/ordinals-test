@@ -8,21 +8,13 @@ import {
 } from "@0xflick/ordinals-models";
 
 export interface IFundingDao<
-  ItemInputType extends Record<string, any> = {},
   ItemMeta extends Record<string, any> = {},
-  ItemReturnType = any,
-  CollectionInputType extends Record<string, any> = {},
-  CollectionMeta extends Record<string, any> = {},
-  CollectionReturnType = any
+  CollectionMeta extends Record<string, any> = {}
 > {
-  createFunding(
-    item: IAddressInscriptionModel<ItemInputType>
-  ): Promise<ItemReturnType>;
+  createFunding(item: IAddressInscriptionModel<ItemMeta>): Promise<void>;
   getFunding(id: string): Promise<IAddressInscriptionModel<ItemMeta>>;
   deleteFunding(id: string): Promise<void>;
-  createCollection(
-    item: TCollectionModel<CollectionInputType>
-  ): Promise<CollectionReturnType>;
+  createCollection(item: TCollectionModel<CollectionMeta>): Promise<void>;
   getCollection(id: ID_Collection): Promise<TCollectionModel<CollectionMeta>>;
   deleteCollection(id: ID_Collection): Promise<void>;
   incrementCollectionTotalCount(id: ID_Collection): Promise<number>;

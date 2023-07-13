@@ -8,13 +8,12 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 export * from "./context/index.js";
 export async function createGraphqlApplication() {
   const [typeDefs, resolvers] = await Promise.all([
-    loadFiles(join(__dirname, "./modules/**/typeDefs/*.graphql")),
-    loadFiles([
-      join(__dirname, "./modules/**/resolver?s.ts"),
-      join(__dirname, "./modules/**/resolvers/**/*.ts"),
-    ]),
+    loadFiles(join(__dirname, "./modules/**/typedefs/*.graphql")),
+    loadFiles(join(__dirname, "./modules/**/resolvers.ts")),
   ]);
 
+  console.log(`Found ${typeDefs.length} typeDefs files`);
+  console.log(`Found ${resolvers.length} resolvers files`);
   const module = createModule({
     id: "ordinals",
     typeDefs,

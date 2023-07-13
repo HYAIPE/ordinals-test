@@ -5,23 +5,28 @@ import {
   BitcoinNetworkNames,
   ID_Collection,
   InscriptionContent,
+  AddressInscriptionModel,
+  IInscriptionDocFundingWait,
 } from "@0xflick/ordinals-models";
 import { InscriptionFundingModel } from "../inscriptionFunding/models.js";
 import { InscriptionTransactionModel } from "../inscriptionTransaction/models.js";
 import {
   IFundingDao,
   IFundingDocDao,
-  IncrementingRevealDao,
   createDynamoDbFundingDao,
+  createInscriptionTransaction,
 } from "@0xflick/ordinals-backend";
 import handlebars from "handlebars";
 import { minify } from "html-minifier-terser";
 import { MempoolModel } from "../bitcoin/models.js";
+import { estimateFeesWithMempool } from "../bitcoin/fees.js";
+import { FeeLevel, InputMaybe } from "../../generated-types/graphql.js";
 
 const { compile } = handlebars;
 
-export interface IAxolotlInput {
-  genesis: boolean;
+export interface IAxolotlMeta {
+  tokenId: number;
+  chameleon: boolean;
   revealedAt: number;
 }
 
@@ -41,15 +46,11 @@ export interface IAxolotlCollectionIncrementalRevealMeta
 }
 
 export type TAxolotlFundingDao = IFundingDao<
-  IAxolotlInput,
-  IAxolotlInput,
-  void,
-  IAxolotlCollectionIncrementalRevealMeta,
-  IAxolotlCollectionIncrementalRevealMeta,
-  void
+  IAxolotlMeta,
+  IAxolotlCollectionIncrementalRevealMeta
 >;
 
-export class AxolotlModel {
+export class AxolotlModel implements IAxolotlMeta {
   // just needs to be unique
   public static ID = "277fcc72-ea5c-4c55-b273-e623db668949" as ID_Collection;
 
@@ -57,108 +58,38 @@ export class AxolotlModel {
 
   public static MAX_SUPPLY = 10000;
 
-  public inscriptionFunding?: InscriptionFundingModel;
-  public inscriptionTransaction?: InscriptionTransactionModel;
-  public inscriptionDocument?: TInscriptionDoc;
-
-  private fundingDocDao: IFundingDocDao;
-  private incrementingRevealDao: TAxolotlFundingDao;
-  public readonly id: ID_AddressInscription;
-  public readonly fundingAddress: string;
-  public readonly bucket;
+  public readonly inscriptionFunding: InscriptionFundingModel;
+  public readonly inscriptionTransaction: InscriptionTransactionModel;
+  public readonly inscriptionDocument: TInscriptionDoc;
+  public readonly addressInscription: AddressInscriptionModel<IAxolotlMeta>;
 
   constructor({
-    id,
-    bucket,
-    fundingAddress,
-    fundingDocDao,
-    incrementingRevealDao,
+    inscriptionDocument,
+    inscriptionFunding,
+    inscriptionTransaction,
+    addressInscription,
   }: {
-    id: ID_AddressInscription;
-    bucket: string;
-    fundingAddress: string;
-    fundingDocDao: IFundingDocDao;
-    incrementingRevealDao: TAxolotlFundingDao;
+    inscriptionFunding: InscriptionFundingModel;
+    inscriptionTransaction: InscriptionTransactionModel;
+    inscriptionDocument: TInscriptionDoc;
+    addressInscription: AddressInscriptionModel<IAxolotlMeta>;
   }) {
-    this.fundingDocDao = fundingDocDao;
-    this.bucket = bucket;
-    this.id = id;
-    this.fundingAddress = fundingAddress;
-    this.incrementingRevealDao = incrementingRevealDao;
+    this.inscriptionFunding = inscriptionFunding;
+    this.inscriptionTransaction = inscriptionTransaction;
+    this.inscriptionDocument = inscriptionDocument;
+    this.addressInscription = addressInscription;
   }
 
-  private _promisingInscriptionFunding?: Promise<InscriptionFundingModel>;
-  public promiseInscriptionFunding() {
-    if (!this._promisingInscriptionFunding) {
-      this._promisingInscriptionFunding = Promise.resolve(
-        this.promiseInscriptionDocument()
-      )
-        .then(
-          (document) =>
-            new InscriptionFundingModel({
-              bucket: this.bucket,
-              id: this.id,
-              document,
-            })
-        )
-        .then((inscriptionFunding) => {
-          this.inscriptionFunding = inscriptionFunding;
-          return inscriptionFunding;
-        });
-    }
-    return this._promisingInscriptionFunding;
+  public get tokenId() {
+    return this.addressInscription.meta.tokenId;
   }
 
-  private _promisingInscriptionTransaction?: Promise<InscriptionTransactionModel>;
-  public promiseInscriptionTransaction() {
-    if (!this._promisingInscriptionTransaction) {
-      this._promisingInscriptionTransaction = this.promiseInscriptionFunding()
-        .then(
-          (inscriptionFunding) =>
-            new InscriptionTransactionModel(inscriptionFunding)
-        )
-        .then((inscriptionTransaction) => {
-          this.inscriptionTransaction = inscriptionTransaction;
-          return inscriptionTransaction;
-        });
-    }
-    return this._promisingInscriptionTransaction;
+  public get chameleon() {
+    return this.addressInscription.meta.chameleon;
   }
 
-  private _promisingInscriptionDocument?: Promise<TInscriptionDoc>;
-  public promiseInscriptionDocument() {
-    if (!this._promisingInscriptionDocument) {
-      this._promisingInscriptionDocument = this.fundingDocDao
-        .getInscriptionTransaction({
-          id: this.id,
-          fundingAddress: this.fundingAddress,
-        })
-        .then((inscriptionDocument) => {
-          this.inscriptionDocument = inscriptionDocument;
-          return inscriptionDocument;
-        });
-    }
-    return this._promisingInscriptionDocument;
-  }
-
-  private _promiseConfig?: Promise<TAxolotlCollectionConfig>;
-  async config(): Promise<TAxolotlCollectionConfig> {
-    if (!this._promiseConfig) {
-      this._promiseConfig = this.incrementingRevealDao
-        .getCollection(AxolotlModel.ID)
-        .then((collection) => {
-          const config = collection.meta?.config;
-          if (!config) {
-            return {
-              mainnet: undefined,
-              regtest: undefined,
-              testnet: undefined,
-            };
-          }
-          return JSON.parse(config);
-        });
-    }
-    return this._promiseConfig;
+  public get revealedAt() {
+    return this.addressInscription.meta.revealedAt;
   }
 
   public static htmlTemplate() {
@@ -226,31 +157,32 @@ export class AxolotlModel {
 
   public static createDefaultIncrementingRevealDao(): TAxolotlFundingDao {
     const dao = createDynamoDbFundingDao<
-      IAxolotlInput,
-      IAxolotlInput,
-      void,
-      IAxolotlCollectionIncrementalRevealMeta,
-      IAxolotlCollectionIncrementalRevealMeta,
-      void
-    >({
-      collectionFundingUpdater(item) {
-        return item;
-      },
-      itemFundingUpdater(item) {
-        return item;
-      },
-    });
+      IAxolotlMeta,
+      IAxolotlCollectionIncrementalRevealMeta
+    >();
     return dao;
   }
 
   public static async create({
     incrementingRevealDao,
+    fundingDocDao,
+    destinationAddress,
     network,
     mempool,
+    feePerByte,
+    inscriptionBucket,
+    feeLevel,
+    tip,
   }: {
     incrementingRevealDao: TAxolotlFundingDao;
+    fundingDocDao: IFundingDocDao;
+    destinationAddress: string;
     network: BitcoinNetworkNames;
     mempool: MempoolModel;
+    feePerByte?: InputMaybe<number>;
+    feeLevel?: InputMaybe<FeeLevel>;
+    inscriptionBucket: string;
+    tip: number;
   }) {
     const collection = await incrementingRevealDao.getCollection(
       AxolotlModel.ID
@@ -274,7 +206,9 @@ export class AxolotlModel {
     const tipHeight = await mempool.tipHeight();
     const revealedAt = tipHeight + revealBlockDelta;
 
-    const { tokenId } = await incrementingRevealDao.nextTokenId();
+    const tokenId = await incrementingRevealDao.incrementCollectionTotalCount(
+      AxolotlModel.ID
+    );
     const htmlContent = await AxolotlModel.promiseMinifiedHtml({
       genesis: false,
       scriptUrl,
@@ -285,5 +219,81 @@ export class AxolotlModel {
       content: Buffer.from(htmlContent, "utf8"),
       mimeType: "text/html",
     };
+    const finalFee = await estimateFeesWithMempool({
+      mempoolBitcoinClient: mempool,
+      feePerByte,
+      feeLevel,
+    });
+
+    const {
+      fundingAddress,
+      fundingAmountBtc,
+      initCBlock,
+      initLeaf,
+      initScript,
+      initTapKey,
+      overhead,
+      padding,
+      secKey,
+      status,
+      totalFee,
+      writableInscriptions,
+      files,
+    } = await createInscriptionTransaction({
+      address: destinationAddress,
+      feeRate: finalFee,
+      network,
+      tip,
+      inscriptions: [inscriptionContent],
+    });
+
+    const addressModel = new AddressInscriptionModel<IAxolotlMeta>({
+      address: fundingAddress,
+      network,
+      contentIds: writableInscriptions.map((inscription) => inscription.tapkey),
+      meta: {
+        chameleon: false,
+        revealedAt,
+        tokenId,
+      },
+    });
+    const doc: IInscriptionDocFundingWait = {
+      id: addressModel.id,
+      fundingAddress,
+      fundingAmountBtc,
+      initCBlock,
+      initLeaf,
+      initScript,
+      initTapKey,
+      network,
+      overhead,
+      padding,
+      secKey,
+      status,
+      totalFee,
+      writableInscriptions,
+      tip,
+    };
+    const inscriptionFundingModel = new InscriptionFundingModel({
+      id: addressModel.id,
+      bucket: inscriptionBucket,
+      document: doc,
+    });
+    await Promise.all([
+      fundingDocDao.updateOrSaveInscriptionTransaction(doc),
+      incrementingRevealDao.createFunding(addressModel),
+      ...files.map((f) => fundingDocDao.saveInscriptionContent(f)),
+    ]);
+
+    const inscriptionTransactionModel = new InscriptionTransactionModel(
+      inscriptionFundingModel
+    );
+
+    return new AxolotlModel({
+      inscriptionDocument: doc,
+      inscriptionFunding: inscriptionFundingModel,
+      inscriptionTransaction: inscriptionTransactionModel,
+      addressInscription: addressModel,
+    });
   }
 }

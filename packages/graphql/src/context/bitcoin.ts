@@ -32,5 +32,6 @@ export function createBitcoinContext(config: IConfigContext): IBitcoinContext {
         hostname: url.hostname,
         protocol: protocol as "http" | "https",
       }).bitcoin;
-    }
+    },
+  };
 }

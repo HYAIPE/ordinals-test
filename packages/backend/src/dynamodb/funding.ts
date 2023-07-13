@@ -42,66 +42,26 @@ export type TFundingCollectionReturner<
 > = (item: TCollectionModel<ItemInputType>) => Promise<ItemReturnType>;
 
 export class FundingDao<
-  ItemInputType extends Record<string, any> = {},
   ItemMeta extends Record<string, any> = {},
-  ItemReturnType = any,
-  CollectionInputType extends Record<string, any> = {},
-  CollectionMeta extends Record<string, any> = {},
-  CollectionReturnType = any
-> implements
-    IFundingDao<
-      ItemInputType,
-      ItemMeta,
-      ItemReturnType,
-      CollectionInputType,
-      CollectionMeta,
-      CollectionReturnType
-    >
+  CollectionMeta extends Record<string, any> = {}
+> implements IFundingDao<ItemMeta, CollectionMeta>
 {
   public static TABLE_NAME = "Funding";
 
   private client: DynamoDBClient;
-  private itemFundingUpdater: TFundingItemReturner<
-    ItemInputType,
-    ItemReturnType
-  >;
-  private collectionFundingUpdater: TFundingCollectionReturner<
-    CollectionInputType,
-    CollectionReturnType
-  >;
 
-  constructor({
-    client,
-    itemFundingUpdater,
-    collectionFundingUpdater,
-  }: {
-    client: DynamoDBClient;
-    itemFundingUpdater: TFundingItemReturner<ItemInputType, ItemReturnType>;
-    collectionFundingUpdater: TFundingCollectionReturner<
-      CollectionInputType,
-      CollectionReturnType
-    >;
-  }) {
+  constructor(client: DynamoDBClient) {
     this.client = client;
-    this.itemFundingUpdater = itemFundingUpdater;
-    this.collectionFundingUpdater = collectionFundingUpdater;
   }
 
-  public async createFunding(item: IAddressInscriptionModel<ItemInputType>) {
+  public async createFunding(item: IAddressInscriptionModel<ItemMeta>) {
     const db = this.toFundingDb(item);
-    const response = await this.client.send(
+    await this.client.send(
       new PutCommand({
         TableName: FundingDao.TABLE_NAME,
         Item: db,
+        ReturnValues: "NONE",
       })
-    );
-    if (response.Attributes === undefined) {
-      throw new Error("Failed to create funding");
-    }
-    return this.itemFundingUpdater(
-      this.fromFundingDb<ItemInputType>(
-        response.Attributes as TFundingDb<ItemInputType>
-      )
     );
   }
 
@@ -128,21 +88,14 @@ export class FundingDao<
     );
   }
 
-  public async createCollection(item: TCollectionModel<CollectionInputType>) {
+  public async createCollection(item: TCollectionModel<CollectionMeta>) {
     const db = this.toCollectionDb(item);
-    const response = await this.client.send(
+    await this.client.send(
       new PutCommand({
         TableName: FundingDao.TABLE_NAME,
         Item: db,
+        ReturnValues: "NONE",
       })
-    );
-    if (response.Attributes === undefined) {
-      throw new Error("Failed to create funding");
-    }
-    return this.collectionFundingUpdater(
-      this.fromCollectionDb<CollectionInputType>(
-        response.Attributes as TFundingCollectionDb<CollectionInputType>
-      )
     );
   }
 
@@ -226,14 +179,14 @@ export class FundingDao<
         ...acc,
         [`:${key}`]: meta[key],
       }),
-      {}
+      {} as Record<string, any>
     );
     const expressionAttributeNames = Object.keys(meta).reduce(
       (acc, key) => ({
         ...acc,
         [`#${key}`]: key,
       }),
-      {}
+      {} as Record<string, string>
     );
     if (incrementCollectionTotalCount) {
       updateExpression += " ADD #totalCount :one";
@@ -326,7 +279,7 @@ export class FundingDao<
       contentIds,
       id: toAddressInscriptionId(id),
       network: toBitcoinNetworkName(network),
-      collectionId: toCollectionId(collectionId),
+      ...(collectionId ? { collectionId: toCollectionId(collectionId) } : {}),
       meta: meta as T,
     };
   }
