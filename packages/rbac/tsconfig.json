@@ -1,0 +1,26 @@
+{
+  "extends": "@0xflick/tsconfig/tsconfig.base.json",
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["dom", "dom.iterable", "esnext"],
+    "module": "ES2022",
+    "outDir": "./dist",
+    "composite": true,
+    "jsx": "preserve",
+    "paths": {
+      "@0xflick/ordinals-backend": ["../../packages/backend/src/index"],
+      "@0xflick/ordinals-models": ["../../packages/models/src/index"]
+    },
+    "plugins": []
+  },
+  "include": ["src/**/*.ts"],
+  "exclude": ["./node_modules"],
+  "references": [
+    {
+      "path": "../../packages/backend"
+    },
+    {
+      "path": "../../packages/models"
+    }
+  ]
+}

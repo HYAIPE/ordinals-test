@@ -1,0 +1,21 @@
+{
+  "name": "@0xflick/ordinals-rbac",
+  "version": "1.0.0",
+  "main": "src/index.ts",
+  "type": "module",
+  "license": "MIT",
+  "scripts": {
+    "test": "yarn node --experimental-vm-modules $(yarn bin jest)"
+  },
+  "devDependencies": {
+    "jest": "^29.6.0",
+    "jest-dynalite": "^3.6.1",
+    "ts-jest": "^29.1.1",
+    "typescript": "^5.1.6"
+  },
+  "dependencies": {
+    "@types/jest": "^29.5.2",
+    "jose": "^4.14.4",
+    "uuid": "^9.0.0"
+  }
+}
