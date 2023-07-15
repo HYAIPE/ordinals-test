@@ -14,10 +14,13 @@ export function namespacedClaim(claim: string) {
 
 export function generateRolesFromIds(roles?: string[]) {
   return roles?.length
-    ? roles.reduce((memo, role) => {
-        memo[namespacedClaim(`role/${role}`)] = true;
-        return memo;
-      }, {} as Record<string, boolean>)
+    ? roles.reduce(
+        (memo, role) => {
+          memo[namespacedClaim(`role/${role}`)] = true;
+          return memo;
+        },
+        {} as Record<string, boolean>,
+      )
     : {};
 }
 
@@ -30,19 +33,21 @@ export function decodeJwtToken(token: string): null | UserWithRolesModel {
   const roleIds = Object.entries(result)
     .filter(([k, v]) => v && k.includes(roleNamespace))
     .map(([k]) => k.replace(roleNamespace, ""));
-  const nonceClaim = result[namespacedClaim("nonce")] as string;
   return UserWithRolesModel.fromJson({
     address: result.sub,
-    nonceClaim,
     roleIds,
   });
 }
 
-export async function createJweRequest(
-  signature: string,
-  nonce: number,
-  pubKeyStr?: string
-) {
+export async function createJweRequest({
+  signature,
+  nonce,
+  pubKeyStr,
+}: {
+  signature: string;
+  nonce: string;
+  pubKeyStr?: string;
+}) {
   const ge = new CompactEncrypt(new TextEncoder().encode(signature));
   const pubKey = pubKeyStr
     ? await importSPKI(pubKeyStr, "ECDH-ES+A128KW", {
@@ -51,7 +56,7 @@ export async function createJweRequest(
     : await promisePublicKey;
   const jwe = await ge
     .setProtectedHeader({
-      kid: nonce.toString(),
+      kid: nonce,
       alg: "ECDH-ES+A128KW",
       enc: "A128GCM",
       crv: "P-521",
@@ -62,5 +67,5 @@ export async function createJweRequest(
 
 export class TokenModel {
   public static JWT_CLAIM_ISSUER =
-    process.env.NEXT_PUBLIC_JWT_CLAIM_ISSUER ?? "dapp";
+    process.env.AUTH_MESSAGE_JWT_CLAIM_ISSUER ?? "dapp";
 }

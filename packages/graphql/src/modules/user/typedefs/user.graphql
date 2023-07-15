@@ -1,0 +1,25 @@
+type Nonce {
+  nonce: String!
+  messageToSign: String!
+  domain: String!
+  expiration: String!
+  issuedAt: String!
+  uri: String!
+  version: String
+  chainId: Int
+  pubKey: String!
+}
+
+type Web3User {
+  address: ID!
+  type: BlockchainNetwork!
+  nonce: String!
+  roles: [Role!]!
+  allowedActions: [Permission!]!
+}
+
+type Web3LoginUser {
+  address: ID!
+  user: Web3User!
+  token: String!
+}

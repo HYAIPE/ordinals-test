@@ -25,12 +25,10 @@ describe("#UserRoles DAO", () => {
 
   it("can unlink a role binding", async () => {
     const address = createUuid();
-    const roleId = createUuid();
     const db = getDb();
     const dao = new UserRolesDAO(db as any);
     const rolesDao = new RolesDAO(db as any);
-    await rolesDao.create({
-      id: roleId,
+    const { id: roleId } = await rolesDao.create({
       name: "test",
     });
     await dao.bind({ address, roleId, rolesDao });
@@ -155,12 +153,10 @@ describe("#UserRoles DAO", () => {
   it("does not decrement an already unbound role", async () => {
     const address1 = createUuid();
     const address2 = createUuid();
-    const roleId = createUuid();
     const db = getDb();
     const dao = new UserRolesDAO(db as any);
     const rolesDao = new RolesDAO(db as any);
-    await rolesDao.create({
-      id: roleId,
+    const { id: roleId } = await rolesDao.create({
       name: "test",
     });
     await dao.bind({ address: address1, roleId, rolesDao });

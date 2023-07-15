@@ -4,6 +4,12 @@ import {
   MempoolClient,
   createInscriptionTransaction,
 } from "@0xflick/ordinals-backend";
+import {
+  decryptJweToken,
+  createJwtTokenSingleSubject,
+  promisePublicKey,
+} from "@0xflick/ordinals-rbac";
+import { verifyMessage } from "ethers";
 import { MutationModule } from "./generated-types/module-types.js";
 import { toBitcoinNetworkName } from "../bitcoin/transforms.js";
 import { fileToInscription } from "./transforms.js";
@@ -14,10 +20,14 @@ import {
   BitcoinNetworkNames,
   IInscriptionDocFundingWait,
   InscriptionContent,
+  authMessageBitcoin,
+  authMessageEthereum,
 } from "@0xflick/ordinals-models";
 import { AxolotlModel } from "../axolotl/models.js";
 import { FeeLevel, InputMaybe } from "../../generated-types/graphql.js";
 import { MempoolModel } from "../bitcoin/models.js";
+import { addressToBitcoinNetwork } from "../user/resolvers.js";
+import { Web3LoginUserModel, Web3UserModel } from "../user/models.js";
 
 async function createTranscriptionFunding({
   address,
@@ -114,6 +124,151 @@ async function createTranscriptionFunding({
 
 export const resolvers: MutationModule.Resolvers = {
   Mutation: {
+    nonceEthereum: async (
+      _,
+      { address, chainId },
+      {
+        userDao,
+        authMessageDomain,
+        authMessageExpirationTimeSeconds,
+        authMessageJwtClaimIssuer,
+      },
+    ) => {
+      const now = Date.now();
+      const expirationTime = new Date(
+        now + authMessageExpirationTimeSeconds * 1000,
+      ).toISOString();
+      const issuedAt = new Date(now).toISOString();
+      const nonce = await userDao.create({
+        address,
+        domain: authMessageDomain,
+        expiresAt: expirationTime,
+        issuedAt,
+        uri: authMessageJwtClaimIssuer,
+        version: "1",
+        chainId,
+      });
+
+      const messageToSign = authMessageEthereum({
+        address,
+        chainId,
+        nonce,
+        domain: authMessageDomain,
+        expirationTime,
+        issuedAt,
+        uri: authMessageJwtClaimIssuer,
+        version: "1",
+      });
+
+      return {
+        nonce,
+        messageToSign,
+        domain: authMessageDomain,
+        expiration: expirationTime,
+        issuedAt,
+        uri: authMessageJwtClaimIssuer,
+        version: "1",
+        chainId,
+        pubKey: process.env.AUTH_MESSAGE_PUBLIC_KEY!,
+      };
+    },
+    nonceBitcoin: async (
+      _,
+      { address },
+      {
+        userDao,
+        authMessageDomain,
+        authMessageExpirationTimeSeconds,
+        authMessageJwtClaimIssuer,
+      },
+    ) => {
+      const now = Date.now();
+      const expirationTime = new Date(
+        now + authMessageExpirationTimeSeconds * 1000,
+      ).toISOString();
+      const issuedAt = new Date(now).toISOString();
+      const nonce = await userDao.create({
+        address,
+        domain: authMessageDomain,
+        expiresAt: expirationTime,
+        issuedAt,
+        uri: authMessageJwtClaimIssuer,
+      });
+
+      const messageToSign = authMessageBitcoin({
+        address,
+        nonce,
+        domain: authMessageDomain,
+        expirationTime,
+        issuedAt,
+        uri: authMessageJwtClaimIssuer,
+        network: addressToBitcoinNetwork(address),
+      });
+
+      return {
+        nonce,
+        messageToSign,
+        domain: authMessageDomain,
+        expiration: expirationTime,
+        issuedAt,
+        uri: authMessageJwtClaimIssuer,
+        pubKey: process.env.AUTH_MESSAGE_PUBLIC_KEY!,
+      };
+    },
+    siwe: async (
+      _,
+      { address, jwe },
+      { authMessageDomain, authMessageJwtClaimIssuer, userDao },
+    ) => {
+      const { protectedHeader, plaintext } = await decryptJweToken(jwe);
+      const signature = Buffer.from(plaintext).toString("utf8");
+      const nonce = protectedHeader.kid!;
+      const userNonceRequest = await userDao.get(address, nonce);
+      if (!userNonceRequest) {
+        throw new Error("Invalid nonce");
+      }
+      const { domain, expiresAt, issuedAt, uri, version, chainId } =
+        userNonceRequest;
+
+      if (domain !== authMessageDomain) {
+        throw new Error("Invalid domain");
+      }
+      if (uri !== authMessageJwtClaimIssuer) {
+        throw new Error("Invalid uri");
+      }
+      if (version !== "1") {
+        throw new Error("Invalid version");
+      }
+      if (expiresAt < new Date().toISOString()) {
+        throw new Error("Expired nonce");
+      }
+
+      const messageToSign = authMessageEthereum({
+        address,
+        chainId: chainId!,
+        domain,
+        expirationTime: expiresAt,
+        issuedAt,
+        uri,
+        version: version!,
+        nonce,
+      });
+      const recoveredAddress = verifyMessage(messageToSign, signature);
+      if (recoveredAddress !== address) {
+        throw new Error("Invalid signature");
+      }
+      const token = await createJwtTokenSingleSubject({
+        user: {
+          address,
+          roleIds: [] as string[],
+        },
+        nonce,
+      });
+      return new Web3LoginUserModel({
+        address,
+        token,
+      });
+    },
     axolotlFundingAddressRequest: async (
       _,
       {

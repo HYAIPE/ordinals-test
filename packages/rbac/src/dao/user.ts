@@ -1,83 +1,154 @@
 import {
   DynamoDBDocumentClient,
+  QueryCommand,
   GetCommand,
   PutCommand,
-  UpdateCommand,
 } from "@aws-sdk/lib-dynamodb";
-import { UserModel, IUser, UserWithRolesModel } from "../models/index.js";
+import { v4 as uuidV4 } from "uuid";
+import {
+  UserModel,
+  IUser,
+  UserWithRolesModel,
+  INonceRequest,
+} from "../models/index.js";
 import { EActions, EResource } from "../models/permissions.js";
 import { RolePermissionsDAO } from "./rolePermissions.js";
 import { UserRolesDAO } from "./userRoles.js";
 
+function toId(address: string, nonce: string) {
+  return `USER#${address}NONCE#${nonce}`;
+}
+
+interface IUserDb {
+  pk: string;
+  sk: string;
+  Address: string;
+  Nonce: string;
+  TTL: number;
+  Domain: string;
+  Uri: string;
+  ExpiresAt: string;
+  IssuedAt: string;
+  Version?: string;
+  ChainId?: number;
+}
+
+function toDb(input: INonceRequest): IUserDb {
+  return {
+    Address: input.address,
+    Nonce: input.nonce,
+    Domain: input.domain,
+    Uri: input.uri,
+    ExpiresAt: input.expiresAt,
+    IssuedAt: input.issuedAt,
+    pk: toId(input.address, input.nonce),
+    sk: input.address,
+    TTL: Math.floor(Date.now() / 1000) + UserDAO.TTL,
+    ...(input.version && { Version: input.version }),
+    ...(input.chainId && { ChainId: input.chainId }),
+  };
+}
+
+function fromDb(input: IUserDb): INonceRequest {
+  return {
+    address: input.Address,
+    nonce: input.Nonce,
+    domain: input.Domain,
+    expiresAt: input.ExpiresAt,
+    issuedAt: input.IssuedAt,
+    uri: input.Uri,
+    version: input.Version,
+    chainId: input.ChainId,
+  };
+}
+
 export class UserDAO {
   public static TABLE_NAME = process.env.TABLE_NAME_USER_NONCE || "UserNonce";
+  public static TTL = 60 * 60 * 24 * 2; // 2 days
   private db: DynamoDBDocumentClient;
 
   constructor(db: DynamoDBDocumentClient) {
     this.db = db;
   }
 
-  public async create(user: Omit<IUser, "nonce">): Promise<UserModel> {
+  public async create({
+    nonce,
+    ...request
+  }: Omit<INonceRequest, "nonce"> & { nonce?: string }): Promise<string> {
+    nonce = nonce ?? uuidV4();
     await this.db.send(
       new PutCommand({
         TableName: UserDAO.TABLE_NAME,
-        Item: {
-          Address: user.address,
-          Nonce: 0,
-        },
-      })
+        Item: toDb({
+          ...request,
+          nonce,
+        }),
+      }),
     );
-    return UserModel.fromJson({
-      address: user.address,
-      nonce: 0,
-    });
+    return nonce;
   }
 
-  public async incSessionNonce(address: string): Promise<UserDAO> {
-    await this.db.send(
-      new UpdateCommand({
-        TableName: UserDAO.TABLE_NAME,
-        Key: {
-          Address: address,
-        },
-        UpdateExpression: "SET Nonce = Nonce + :inc",
-        ExpressionAttributeValues: {
-          ":inc": 1,
-        },
-      })
-    );
-    return this;
-  }
-
-  public async getUser(address: string): Promise<UserModel | null> {
-    const userRecord = await this.db.send(
+  public async get(
+    address: string,
+    nonce: string,
+  ): Promise<INonceRequest | null> {
+    const response = await this.db.send(
       new GetCommand({
         TableName: UserDAO.TABLE_NAME,
-        Key: { Address: address },
-      })
+        Key: {
+          pk: toId(address, nonce),
+          sk: address,
+        },
+      }),
     );
-    if (!userRecord.Item) {
+    if (!response.Item) {
       return null;
     }
-    return new UserModel({
-      address: userRecord.Item.Address,
-      nonce: userRecord.Item.Nonce,
-    });
+    return fromDb(response.Item as IUserDb);
+  }
+
+  public async validNonceForUser(address: string, nonce: string) {
+    const response = await this.db.send(
+      new GetCommand({
+        TableName: UserDAO.TABLE_NAME,
+        Key: {
+          pk: toId(address, nonce),
+          sk: address,
+        },
+      }),
+    );
+    if (!response.Item) {
+      return false;
+    }
+    return true;
+  }
+
+  public async getUsersNonces(address: string): Promise<string[] | null> {
+    const userRecord = await this.db.send(
+      new QueryCommand({
+        TableName: UserDAO.TABLE_NAME,
+        IndexName: "GSI1",
+        KeyConditionExpression: "sk = :address",
+        ExpressionAttributeValues: {
+          ":address": address,
+        },
+      }),
+    );
+    if (!userRecord.Items) {
+      return null;
+    }
+    return userRecord.Items.map((item) => item.Nonce);
   }
 
   public async getUserWithRoles(
     userRolesDao: UserRolesDAO,
-    address: string
-  ): Promise<UserWithRolesModel | null> {
-    const user = await this.getUser(address);
-    if (!user) {
-      return null;
-    }
+    address: string,
+  ): Promise<UserWithRolesModel> {
     // Fetch all roles
     const roleIds = await userRolesDao.getAllRoleIds(address);
 
     return new UserWithRolesModel({
-      ...user,
+      address,
       roleIds,
     });
   }
@@ -85,29 +156,36 @@ export class UserDAO {
   public async allowedActionsForAddress(
     userRoles: UserRolesDAO,
     rolePermissionsDao: RolePermissionsDAO,
-    address: string
+    address: string,
   ) {
     const user = await this.getUserWithRoles(userRoles, address);
-    if (!user) {
-      return null;
-    }
     // Fetch permissions for all roles
     const permissions = await rolePermissionsDao.allowedActionsForRoleIds(
-      user.roleIds
+      user.roleIds,
     );
     return permissions;
   }
 
+  // weird function, maybe remove
+  /**
+   *
+   * @param userRoles
+   * @param rolePermissionsDao
+   * @param address
+   * @param possibilities
+   * @returns
+   * @deprecated
+   */
   public async canPerformAction(
     userRoles: UserRolesDAO,
     rolePermissionsDao: RolePermissionsDAO,
     address: string,
-    possibilities: [EActions, EResource][] | [EActions, EResource]
+    possibilities: [EActions, EResource][] | [EActions, EResource],
   ): Promise<[EActions, EResource] | null> {
     const permissions = await this.allowedActionsForAddress(
       userRoles,
       rolePermissionsDao,
-      address
+      address,
     );
     if (!permissions) {
       return null;

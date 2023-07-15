@@ -20,7 +20,7 @@ const logger = createLogger({
 });
 
 export class UserRolesDAO {
-  public static TABLE_NAME = process.env.TABLE_NAME_USER_ROLES || "RBAC";
+  public static TABLE_NAME = process.env.TABLE_NAME_RBAC || "RBAC";
   private db: DynamoDBDocumentClient;
 
   constructor(db: DynamoDBDocumentClient) {

@@ -1,4 +1,4 @@
-import { IRole } from "./roles";
+import { IRole } from "./roles.js";
 
 export interface IUserRoles {
   id: string;

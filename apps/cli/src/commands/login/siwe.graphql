@@ -1,0 +1,5 @@
+mutation SIWE($address: ID!, $jwe: String!) {
+  siwe(address: $address, jwe: $jwe) {
+    token
+  }
+}

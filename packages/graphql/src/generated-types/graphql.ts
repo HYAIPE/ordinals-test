@@ -3,6 +3,8 @@ import type { GraphQLResolveInfo } from 'graphql';
 import type { InscriptionTransactionModel } from '../modules/inscriptionTransaction/models.js';
 import type { InscriptionFundingModel } from '../modules/inscriptionFunding/models.js';
 import type { InscriptionTransactionContentModel } from '../modules/inscriptionRequest/models.js';
+import type { RoleModel } from '../modules/permissions/models.js';
+import type { Web3UserModel, Web3LoginUserModel } from '../modules/user/models.js';
 import type { Context } from '../context/index.js';
 export type Maybe<T> = T | null;
 export type InputMaybe<T> = Maybe<T>;
@@ -62,6 +64,10 @@ export type BitcoinScriptItem = {
   text?: Maybe<Scalars['String']['output']>;
 };
 
+export type BlockchainNetwork =
+  | 'BITCOIN'
+  | 'ETHEREUM';
+
 export type Collection = {
   __typename?: 'Collection';
   id: Scalars['ID']['output'];
@@ -88,6 +94,12 @@ export type InscriptionData = {
   textContent?: Maybe<Scalars['String']['output']>;
 };
 
+export type InscriptionDataInput = {
+  base64Content?: InputMaybe<Scalars['String']['input']>;
+  contentType: Scalars['String']['input'];
+  textContent?: InputMaybe<Scalars['String']['input']>;
+};
+
 export type InscriptionFunding = {
   __typename?: 'InscriptionFunding';
   fundingAddress: Scalars['String']['output'];
@@ -111,7 +123,7 @@ export type InscriptionRequest = {
   destinationAddress: Scalars['String']['input'];
   feeLevel?: InputMaybe<FeeLevel>;
   feePerByte?: InputMaybe<Scalars['Int']['input']>;
-  files: Array<InscriptionData>;
+  files: Array<InscriptionDataInput>;
   network: BitcoinNetwork;
 };
 
@@ -140,7 +152,11 @@ export type InscriptionTransactionContent = {
 export type Mutation = {
   __typename?: 'Mutation';
   axolotlFundingAddressRequest: AxolotlFunding;
+  nonceBitcoin: Nonce;
+  nonceEthereum: Nonce;
+  rbac: MutationRbac;
   requestFundingAddress: InscriptionFunding;
+  siwe: Web3LoginUser;
 };
 
 
@@ -149,14 +165,85 @@ export type MutationAxolotlFundingAddressRequestArgs = {
 };
 
 
+export type MutationNonceBitcoinArgs = {
+  address: Scalars['ID']['input'];
+};
+
+
+export type MutationNonceEthereumArgs = {
+  address: Scalars['ID']['input'];
+  chainId: Scalars['Int']['input'];
+};
+
+
 export type MutationRequestFundingAddressArgs = {
   request: InscriptionRequest;
 };
+
+
+export type MutationSiweArgs = {
+  address: Scalars['ID']['input'];
+  jwe: Scalars['String']['input'];
+};
+
+export type MutationRbac = {
+  __typename?: 'MutationRBAC';
+  createRole: Role;
+};
+
+
+export type MutationRbacCreateRoleArgs = {
+  name: Scalars['String']['input'];
+  permissions?: InputMaybe<Array<PermissionInput>>;
+};
+
+export type Nonce = {
+  __typename?: 'Nonce';
+  chainId?: Maybe<Scalars['Int']['output']>;
+  domain: Scalars['String']['output'];
+  expiration: Scalars['String']['output'];
+  issuedAt: Scalars['String']['output'];
+  messageToSign: Scalars['String']['output'];
+  nonce: Scalars['String']['output'];
+  pubKey: Scalars['String']['output'];
+  uri: Scalars['String']['output'];
+  version?: Maybe<Scalars['String']['output']>;
+};
+
+export type Permission = {
+  __typename?: 'Permission';
+  action: PermissionAction;
+  identifier?: Maybe<Scalars['String']['output']>;
+  resource: PermissionResource;
+};
+
+export type PermissionAction =
+  | 'ADMIN'
+  | 'CREATE'
+  | 'DELETE'
+  | 'GET'
+  | 'LIST'
+  | 'UPDATE'
+  | 'USE';
+
+export type PermissionInput = {
+  action: PermissionAction;
+  identifier?: InputMaybe<Scalars['String']['input']>;
+  resource: PermissionResource;
+};
+
+export type PermissionResource =
+  | 'ADMIN'
+  | 'AFFILIATE'
+  | 'ALL'
+  | 'PRESALE'
+  | 'USER';
 
 export type Query = {
   __typename?: 'Query';
   inscriptionFunding?: Maybe<InscriptionFunding>;
   inscriptionTransaction?: Maybe<InscriptionTransaction>;
+  userByAddress: Web3User;
 };
 
 
@@ -169,10 +256,64 @@ export type QueryInscriptionTransactionArgs = {
   id: Scalars['ID']['input'];
 };
 
+
+export type QueryUserByAddressArgs = {
+  address: Scalars['ID']['input'];
+};
+
+export type Role = {
+  __typename?: 'Role';
+  addPermissions: Role;
+  bindToUser: Web3User;
+  delete: Scalars['Boolean']['output'];
+  id: Scalars['ID']['output'];
+  name: Scalars['String']['output'];
+  permissions: Array<Permission>;
+  removePermissions: Role;
+  unbindFromUser: Web3User;
+  userCount: Scalars['Int']['output'];
+};
+
+
+export type RoleAddPermissionsArgs = {
+  permissions: Array<PermissionInput>;
+};
+
+
+export type RoleBindToUserArgs = {
+  userAddress: Scalars['String']['input'];
+};
+
+
+export type RoleRemovePermissionsArgs = {
+  permissions: Array<PermissionInput>;
+};
+
+
+export type RoleUnbindFromUserArgs = {
+  userAddress: Scalars['String']['input'];
+};
+
 export type S3Object = {
   __typename?: 'S3Object';
   bucket: Scalars['String']['output'];
   key: Scalars['String']['output'];
+};
+
+export type Web3LoginUser = {
+  __typename?: 'Web3LoginUser';
+  address: Scalars['ID']['output'];
+  token: Scalars['String']['output'];
+  user: Web3User;
+};
+
+export type Web3User = {
+  __typename?: 'Web3User';
+  address: Scalars['ID']['output'];
+  allowedActions: Array<Permission>;
+  nonce: Scalars['String']['output'];
+  roles: Array<Role>;
+  type: BlockchainNetwork;
 };
 
 
@@ -251,21 +392,32 @@ export type ResolversTypes = {
   AxolotlRequest: AxolotlRequest;
   BitcoinNetwork: BitcoinNetwork;
   BitcoinScriptItem: ResolverTypeWrapper<BitcoinScriptItem>;
+  BlockchainNetwork: BlockchainNetwork;
   Boolean: ResolverTypeWrapper<Scalars['Boolean']['output']>;
   Collection: ResolverTypeWrapper<Collection>;
   CollectionInput: CollectionInput;
   FeeLevel: FeeLevel;
   ID: ResolverTypeWrapper<Scalars['ID']['output']>;
   InscriptionData: ResolverTypeWrapper<InscriptionData>;
+  InscriptionDataInput: InscriptionDataInput;
   InscriptionFunding: ResolverTypeWrapper<InscriptionFundingModel>;
   InscriptionRequest: InscriptionRequest;
   InscriptionTransaction: ResolverTypeWrapper<InscriptionTransactionModel>;
   InscriptionTransactionContent: ResolverTypeWrapper<InscriptionTransactionContentModel>;
   Int: ResolverTypeWrapper<Scalars['Int']['output']>;
   Mutation: ResolverTypeWrapper<{}>;
+  MutationRBAC: ResolverTypeWrapper<Omit<MutationRbac, 'createRole'> & { createRole: ResolversTypes['Role'] }>;
+  Nonce: ResolverTypeWrapper<Nonce>;
+  Permission: ResolverTypeWrapper<Permission>;
+  PermissionAction: PermissionAction;
+  PermissionInput: PermissionInput;
+  PermissionResource: PermissionResource;
   Query: ResolverTypeWrapper<{}>;
+  Role: ResolverTypeWrapper<RoleModel>;
   S3Object: ResolverTypeWrapper<S3Object>;
   String: ResolverTypeWrapper<Scalars['String']['output']>;
+  Web3LoginUser: ResolverTypeWrapper<Web3LoginUserModel>;
+  Web3User: ResolverTypeWrapper<Web3UserModel>;
 };
 
 /** Mapping between all available schema types and the resolvers parents */
@@ -279,15 +431,23 @@ export type ResolversParentTypes = {
   CollectionInput: CollectionInput;
   ID: Scalars['ID']['output'];
   InscriptionData: InscriptionData;
+  InscriptionDataInput: InscriptionDataInput;
   InscriptionFunding: InscriptionFundingModel;
   InscriptionRequest: InscriptionRequest;
   InscriptionTransaction: InscriptionTransactionModel;
   InscriptionTransactionContent: InscriptionTransactionContentModel;
   Int: Scalars['Int']['output'];
   Mutation: {};
+  MutationRBAC: Omit<MutationRbac, 'createRole'> & { createRole: ResolversParentTypes['Role'] };
+  Nonce: Nonce;
+  Permission: Permission;
+  PermissionInput: PermissionInput;
   Query: {};
+  Role: RoleModel;
   S3Object: S3Object;
   String: Scalars['String']['output'];
+  Web3LoginUser: Web3LoginUserModel;
+  Web3User: Web3UserModel;
 };
 
 export type AxolotlFundingResolvers<ContextType = Context, ParentType extends ResolversParentTypes['AxolotlFunding'] = ResolversParentTypes['AxolotlFunding']> = {
@@ -369,17 +529,76 @@ export type InscriptionTransactionContentResolvers<ContextType = Context, Parent
 
 export type MutationResolvers<ContextType = Context, ParentType extends ResolversParentTypes['Mutation'] = ResolversParentTypes['Mutation']> = {
   axolotlFundingAddressRequest?: Resolver<ResolversTypes['AxolotlFunding'], ParentType, ContextType, RequireFields<MutationAxolotlFundingAddressRequestArgs, 'request'>>;
+  nonceBitcoin?: Resolver<ResolversTypes['Nonce'], ParentType, ContextType, RequireFields<MutationNonceBitcoinArgs, 'address'>>;
+  nonceEthereum?: Resolver<ResolversTypes['Nonce'], ParentType, ContextType, RequireFields<MutationNonceEthereumArgs, 'address' | 'chainId'>>;
+  rbac?: Resolver<ResolversTypes['MutationRBAC'], ParentType, ContextType>;
   requestFundingAddress?: Resolver<ResolversTypes['InscriptionFunding'], ParentType, ContextType, RequireFields<MutationRequestFundingAddressArgs, 'request'>>;
+  siwe?: Resolver<ResolversTypes['Web3LoginUser'], ParentType, ContextType, RequireFields<MutationSiweArgs, 'address' | 'jwe'>>;
+};
+
+export type MutationRbacResolvers<ContextType = Context, ParentType extends ResolversParentTypes['MutationRBAC'] = ResolversParentTypes['MutationRBAC']> = {
+  createRole?: Resolver<ResolversTypes['Role'], ParentType, ContextType, RequireFields<MutationRbacCreateRoleArgs, 'name'>>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+};
+
+export type NonceResolvers<ContextType = Context, ParentType extends ResolversParentTypes['Nonce'] = ResolversParentTypes['Nonce']> = {
+  chainId?: Resolver<Maybe<ResolversTypes['Int']>, ParentType, ContextType>;
+  domain?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  expiration?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  issuedAt?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  messageToSign?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  nonce?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  pubKey?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  uri?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  version?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+};
+
+export type PermissionResolvers<ContextType = Context, ParentType extends ResolversParentTypes['Permission'] = ResolversParentTypes['Permission']> = {
+  action?: Resolver<ResolversTypes['PermissionAction'], ParentType, ContextType>;
+  identifier?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  resource?: Resolver<ResolversTypes['PermissionResource'], ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 };
 
 export type QueryResolvers<ContextType = Context, ParentType extends ResolversParentTypes['Query'] = ResolversParentTypes['Query']> = {
   inscriptionFunding?: Resolver<Maybe<ResolversTypes['InscriptionFunding']>, ParentType, ContextType, RequireFields<QueryInscriptionFundingArgs, 'id'>>;
   inscriptionTransaction?: Resolver<Maybe<ResolversTypes['InscriptionTransaction']>, ParentType, ContextType, RequireFields<QueryInscriptionTransactionArgs, 'id'>>;
+  userByAddress?: Resolver<ResolversTypes['Web3User'], ParentType, ContextType, RequireFields<QueryUserByAddressArgs, 'address'>>;
+};
+
+export type RoleResolvers<ContextType = Context, ParentType extends ResolversParentTypes['Role'] = ResolversParentTypes['Role']> = {
+  addPermissions?: Resolver<ResolversTypes['Role'], ParentType, ContextType, RequireFields<RoleAddPermissionsArgs, 'permissions'>>;
+  bindToUser?: Resolver<ResolversTypes['Web3User'], ParentType, ContextType, RequireFields<RoleBindToUserArgs, 'userAddress'>>;
+  delete?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
+  id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
+  name?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  permissions?: Resolver<Array<ResolversTypes['Permission']>, ParentType, ContextType>;
+  removePermissions?: Resolver<ResolversTypes['Role'], ParentType, ContextType, RequireFields<RoleRemovePermissionsArgs, 'permissions'>>;
+  unbindFromUser?: Resolver<ResolversTypes['Web3User'], ParentType, ContextType, RequireFields<RoleUnbindFromUserArgs, 'userAddress'>>;
+  userCount?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 };
 
 export type S3ObjectResolvers<ContextType = Context, ParentType extends ResolversParentTypes['S3Object'] = ResolversParentTypes['S3Object']> = {
   bucket?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   key?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+};
+
+export type Web3LoginUserResolvers<ContextType = Context, ParentType extends ResolversParentTypes['Web3LoginUser'] = ResolversParentTypes['Web3LoginUser']> = {
+  address?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
+  token?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  user?: Resolver<ResolversTypes['Web3User'], ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+};
+
+export type Web3UserResolvers<ContextType = Context, ParentType extends ResolversParentTypes['Web3User'] = ResolversParentTypes['Web3User']> = {
+  address?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
+  allowedActions?: Resolver<Array<ResolversTypes['Permission']>, ParentType, ContextType>;
+  nonce?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  roles?: Resolver<Array<ResolversTypes['Role']>, ParentType, ContextType>;
+  type?: Resolver<ResolversTypes['BlockchainNetwork'], ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 };
 
@@ -393,7 +612,13 @@ export type Resolvers<ContextType = Context> = {
   InscriptionTransaction?: InscriptionTransactionResolvers<ContextType>;
   InscriptionTransactionContent?: InscriptionTransactionContentResolvers<ContextType>;
   Mutation?: MutationResolvers<ContextType>;
+  MutationRBAC?: MutationRbacResolvers<ContextType>;
+  Nonce?: NonceResolvers<ContextType>;
+  Permission?: PermissionResolvers<ContextType>;
   Query?: QueryResolvers<ContextType>;
+  Role?: RoleResolvers<ContextType>;
   S3Object?: S3ObjectResolvers<ContextType>;
+  Web3LoginUser?: Web3LoginUserResolvers<ContextType>;
+  Web3User?: Web3UserResolvers<ContextType>;
 };
 

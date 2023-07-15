@@ -8,10 +8,12 @@ export namespace BitcoinModule {
   
   interface DefinedEnumValues {
     BitcoinNetwork: 'MAINNET' | 'TESTNET' | 'REGTEST';
+    BlockchainNetwork: 'BITCOIN' | 'ETHEREUM';
   };
   
   export type BitcoinScriptItem = Pick<Types.BitcoinScriptItem, DefinedFields['BitcoinScriptItem']>;
   export type BitcoinNetwork = DefinedEnumValues['BitcoinNetwork'];
+  export type BlockchainNetwork = DefinedEnumValues['BlockchainNetwork'];
   
   export type BitcoinScriptItemResolvers = Pick<Types.BitcoinScriptItemResolvers, DefinedFields['BitcoinScriptItem'] | '__isTypeOf'>;
   

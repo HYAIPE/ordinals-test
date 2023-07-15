@@ -7,6 +7,7 @@ import {
   BatchGetCommand,
   DeleteCommand,
 } from "@aws-sdk/lib-dynamodb";
+import { v4 as uuidV4 } from "uuid";
 import { RolePermissionsDAO } from "./rolePermissions.js";
 import { IRole, RoleModel } from "../models/index.js";
 import { UserRolesDAO } from "./userRoles.js";
@@ -35,14 +36,17 @@ export class RolesDAO {
     this.db = db;
   }
 
-  public async create(role: Omit<IRole, "userCount">): Promise<RolesDAO> {
+  public async create(
+    role: Omit<IRole, "userCount" | "id"> & { id?: string }
+  ): Promise<RoleModel> {
+    const id = role.id ?? uuidV4();
     try {
       await this.db.send(
         new PutCommand({
           TableName: RolesDAO.TABLE_NAME,
           Item: {
-            pk: toPk(role.id),
-            RoleID: role.id,
+            pk: toPk(id),
+            RoleID: id,
             RoleName: role.name,
             UserCount: 0,
           },
@@ -60,7 +64,7 @@ export class RolesDAO {
       }
     }
 
-    return this;
+    return new RoleModel(id, role.name, 0);
   }
 
   public async get(roleId: string): Promise<IRole | null> {

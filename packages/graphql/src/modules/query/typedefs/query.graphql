@@ -1,4 +1,6 @@
 type Query {
   inscriptionTransaction(id: ID!): InscriptionTransaction
   inscriptionFunding(id: ID!): InscriptionFunding
+
+  userByAddress(address: ID!): Web3User!
 }

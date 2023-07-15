@@ -1,4 +1,4 @@
-import { createMatcher, and, or, Matcher, oneOf } from "./matchers";
+import { createMatcher, and, or, Matcher, oneOf } from "./matchers.js";
 import { EActions, EResource } from "./permissions.js";
 import { IRolePermission } from "./rolePermissions.js";
 

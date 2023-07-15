@@ -1,4 +1,16 @@
 type Mutation {
   requestFundingAddress(request: InscriptionRequest!): InscriptionFunding!
   axolotlFundingAddressRequest(request: AxolotlRequest!): AxolotlFunding!
+  rbac: MutationRBAC!
+  nonceEthereum(address: ID!, chainId: Int!): Nonce!
+  nonceBitcoin(address: ID!): Nonce!
+  siwe(
+    address: ID!
+    jwe: String!
+  ): Web3LoginUser!
+  # siwb(
+  #   address: ID!
+  #   jwe: String!
+  #   issuedAt: String!
+  # ): Web3LoginUser!
 }

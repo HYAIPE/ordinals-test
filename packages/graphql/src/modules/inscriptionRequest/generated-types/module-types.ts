@@ -12,6 +12,7 @@ export namespace InscriptionRequestModule {
   };
   
   interface DefinedInputFields {
+    InscriptionDataInput: 'textContent' | 'base64Content' | 'contentType';
     InscriptionRequest: 'files' | 'destinationAddress' | 'network' | 'feeLevel' | 'feePerByte';
   };
   
@@ -19,6 +20,7 @@ export namespace InscriptionRequestModule {
   export type BitcoinScriptItem = Types.BitcoinScriptItem;
   export type InscriptionData = Pick<Types.InscriptionData, DefinedFields['InscriptionData']>;
   export type FeeLevel = DefinedEnumValues['FeeLevel'];
+  export type InscriptionDataInput = Pick<Types.InscriptionDataInput, DefinedInputFields['InscriptionDataInput']>;
   export type InscriptionRequest = Pick<Types.InscriptionRequest, DefinedInputFields['InscriptionRequest']>;
   export type BitcoinNetwork = Types.BitcoinNetwork;
   

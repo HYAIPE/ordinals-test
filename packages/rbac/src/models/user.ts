@@ -1,15 +1,26 @@
-import { importSPKI, jwtVerify, KeyLike } from "jose";
+import { importSPKI, JWTPayload, jwtVerify, KeyLike } from "jose";
 import { generateRolesFromIds, namespacedClaim, TokenModel } from "./token.js";
+
+export interface INonceRequest {
+  address: string;
+  domain: string;
+  nonce: string;
+  uri: string;
+  expiresAt: string;
+  issuedAt: string;
+  version?: string;
+  chainId?: number;
+}
 
 export interface IUser {
   address: string;
-  nonce: string;
+  nonce?: string;
 }
 
 export interface IUserWithRoles {
   address: string;
-  nonce: string;
   roleIds: string[];
+  nonceClaim?: string;
 }
 
 export class UserTokenExpiredError extends Error {
@@ -50,12 +61,19 @@ export class UserTokenRolesMismatchError extends Error {
  * @returns {Promise<UserWithRolesModel>}
  * @throws UserTokenExpiredError | UserTokenNoAddressError | UserTokenNoNonceError | UserTokenIssuerMismatchError | UserTokenRolesMismatchError
  */
-export async function verifyJwtToken(
-  token: string,
-  roleIds?: string[],
-  nonce?: string
-): Promise<UserWithRolesModel> {
+export async function verifyJwtToken({
+  token,
+  roleIds,
+  nonce,
+  payload,
+}: {
+  token: string;
+  roleIds?: string[];
+  nonce?: string;
+  payload?: JWTPayload;
+}): Promise<UserWithRolesModel> {
   const result = await jwtVerify(token, await promisePublicKey, {
+    ...payload,
     ...generateRolesFromIds(roleIds),
     ...(typeof nonce === "string"
       ? {
@@ -98,14 +116,15 @@ export async function verifyJwtToken(
   }
   return new UserWithRolesModel({
     address,
-    nonce: nonceClaim,
+    nonce,
+    nonceClaim,
     roleIds: roleIdsFromToken,
   });
 }
 
 export class UserModel implements IUser {
   public readonly address: string;
-  public readonly nonce: string;
+  public readonly nonce?: string;
 
   constructor(obj: IUser) {
     this.address = obj.address;
@@ -150,20 +169,23 @@ export class UserModel implements IUser {
   }
 }
 
-export class UserWithRolesModel implements IUserWithRoles {
+export class UserWithRolesModel implements IUserWithRoles, IUser {
+  public readonly nonceClaim?: string;
   public roleIds: string[];
   public get address(): string {
     return this._user.address;
   }
-  public get nonce(): string {
-    return this._user.nonce;
-  }
 
   private _user: UserModel;
 
-  constructor(obj: IUserWithRoles) {
+  constructor(obj: IUserWithRoles & IUser) {
     this._user = UserModel.fromJson(obj);
     this.roleIds = obj.roleIds;
+    this.nonceClaim = obj.nonceClaim;
+  }
+
+  public get nonce(): string | undefined {
+    return this._user.nonce;
   }
 
   public hasRole(roleId: string): boolean {
@@ -181,7 +203,6 @@ export class UserWithRolesModel implements IUserWithRoles {
     return new UserWithRolesModel({
       address: json.address,
       roleIds: json.roleIds,
-      nonce: json.nonce,
     });
   }
 
@@ -189,7 +210,6 @@ export class UserWithRolesModel implements IUserWithRoles {
     return {
       address: this.address,
       roleIds: this.roleIds,
-      nonce: this.nonce,
     };
   }
 
@@ -203,11 +223,11 @@ export const promisePublicKey = new Promise<KeyLike>(
     if ((global as any).promisePrivateKeys) {
       await (global as any).promisePrivateKeys;
     }
-    if (!process.env.NEXT_PUBLIC_JWT_PUBLIC_KEY) {
+    if (!process.env.AUTH_MESSAGE_PUBLIC_KEY) {
       resolve("" as any);
     }
-    importSPKI(process.env.NEXT_PUBLIC_JWT_PUBLIC_KEY ?? "", "ECDH-ES+A128KW", {
+    importSPKI(process.env.AUTH_MESSAGE_PUBLIC_KEY ?? "", "ECDH-ES+A128KW", {
       extractable: true,
     }).then(resolve, reject);
-  }
+  },
 );

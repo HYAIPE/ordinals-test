@@ -2,7 +2,7 @@ import { promisePublicKey, verifyJwtToken } from "../models/user.js";
 import { getDb } from "@0xflick/ordinals-backend";
 import { v4 as createUuid } from "uuid";
 import { UserDAO } from "./user.js";
-import { createJwtToken, promisePrivateKey } from "./token.js";
+import { createJwtTokenSingleSubject, promisePrivateKey } from "./token.js";
 import { TokenModel } from "../models/token.js";
 import * as jose from "jose";
 import { EActions, EResource } from "../models/permissions.js";
@@ -79,13 +79,21 @@ describe("#Token DAO", () => {
       rolesDao,
     });
 
-    const token = await createJwtToken({
-      address: userId,
-      roleIds: [roleId],
+    const token = await createJwtTokenSingleSubject({
+      user: {
+        address: userId,
+        roleIds: [roleId],
+      },
       nonce: "0",
     });
     expect(token).toBeDefined();
-    expect(await verifyJwtToken(token, [roleId], "0")).toEqual(
+    expect(
+      await verifyJwtToken({
+        token,
+        nonce: "0",
+        roleIds: [roleId],
+      })
+    ).toEqual(
       expect.objectContaining({
         address: userId,
         roleIds: [roleId],

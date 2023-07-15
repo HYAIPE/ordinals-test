@@ -3,3 +3,8 @@ enum BitcoinNetwork {
   TESTNET
   REGTEST
 }
+
+enum BlockchainNetwork {
+  BITCOIN
+  ETHEREUM
+}

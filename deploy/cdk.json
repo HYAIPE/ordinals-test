@@ -1,0 +1,17 @@
+{
+  "app": "node --loader ts-node/esm src/app.ts",
+  "watch": {
+    "include": [
+      "src/**"
+    ],
+    "exclude": [
+      "README.md",
+      "cdk*.json",
+      "**/*.d.ts",
+      "**/*.js",
+      "tsconfig.json",
+      "package*.json",
+      "node_modules"
+    ]
+  }
+}

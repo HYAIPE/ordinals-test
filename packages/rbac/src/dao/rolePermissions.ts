@@ -16,6 +16,7 @@ import {
 } from "@0xflick/ordinals-backend";
 import type { EActions, EResource, IRolePermission } from "../models/index.js";
 import { RolePermissionModel } from "../models/index.js";
+import { TPermission } from "../index.js";
 
 export class RolePermissionsDAO {
   public static TABLE_NAME = process.env.TABLE_NAME_ROLE_PERMISSIONS || "RBAC";
@@ -67,6 +68,41 @@ export class RolePermissionsDAO {
           ResourceType: resource,
           CreatedAt: Date.now(),
           ...(identifier ? { Identifier: identifier } : {}),
+        },
+      })
+    );
+    return this;
+  }
+
+  public async batchBind({
+    roleId,
+    permissions,
+  }: {
+    roleId: string;
+    permissions: TPermission[];
+  }): Promise<RolePermissionsDAO> {
+    await this.db.send(
+      new BatchWriteCommand({
+        RequestItems: {
+          PutCommand: permissions.map((permission) => ({
+            PutRequest: {
+              Item: {
+                pk: RolePermissionsDAO.idFor({
+                  roleId,
+                  action: permission.action,
+                  resource: permission.resource,
+                  identifier: permission.identifier,
+                }),
+                PermissionRoleID: roleId,
+                ActionType: permission.action,
+                ResourceType: permission.resource,
+                CreatedAt: Date.now(),
+                ...(permission.identifier
+                  ? { Identifier: permission.identifier }
+                  : {}),
+              },
+            },
+          })),
         },
       })
     );
@@ -149,6 +185,34 @@ export class RolePermissionsDAO {
             resource,
             identifier,
           }),
+        },
+      })
+    );
+    return this;
+  }
+
+  public async batchUnlink({
+    roleId,
+    permissions,
+  }: {
+    roleId: string;
+    permissions: TPermission[];
+  }): Promise<RolePermissionsDAO> {
+    await this.db.send(
+      new BatchWriteCommand({
+        RequestItems: {
+          DeleteCommand: permissions.map((permission) => ({
+            DeleteRequest: {
+              Key: {
+                pk: RolePermissionsDAO.idFor({
+                  roleId,
+                  action: permission.action,
+                  resource: permission.resource,
+                  identifier: permission.identifier,
+                }),
+              },
+            },
+          })),
         },
       })
     );

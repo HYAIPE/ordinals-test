@@ -6,7 +6,7 @@ import { fileURLToPath } from "url";
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
 export * from "./context/index.js";
-export async function createGraphqlApplication() {
+export async function createGraphqlModules() {
   const [typeDefs, resolvers] = await Promise.all([
     loadFiles(join(__dirname, "./modules/**/typedefs/*.graphql")),
     loadFiles(join(__dirname, "./modules/**/resolvers.ts")),
@@ -20,8 +20,11 @@ export async function createGraphqlApplication() {
     resolvers,
   });
 
+  return [module];
+}
+export async function createGraphqlApplication() {
   const application = createApplication({
-    modules: [module],
+    modules: await createGraphqlModules(),
   });
 
   return application;

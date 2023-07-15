@@ -1,0 +1,24 @@
+mutation BitcoinNonce($address: ID!) {
+  nonceBitcoin(address: $address) {
+    nonce
+    messageToSign
+    domain
+    expiration
+    issuedAt
+    uri
+    pubKey
+  }
+}
+
+mutation EthereumNonce($address: ID!, $chainId: Int!) {
+  nonceEthereum(address: $address, chainId: $chainId) {
+    nonce
+    messageToSign
+    domain
+    expiration
+    issuedAt
+    uri
+    version
+    pubKey
+  }
+}

@@ -9,6 +9,8 @@ import { generatePrivateKey } from "./commands/generatePrivateKey.js";
 import { testMintOrdinals } from "./commands/testMintOrdinal.js";
 import { bulkMint } from "./commands/bulkMint.js";
 import { mintSingle } from "./commands/mintSingle.js";
+import { nonceBitcoin, nonceEthereum } from "./commands/login/nonce.js";
+import { siwe } from "./commands/login/siwe.js";
 const program = new Command();
 
 program
@@ -85,6 +87,43 @@ axolotlValley
   .option("-c, --count <count>", "number of tokens to generate", Number, 50)
   .action(async (out, { count }) => {
     await generateAssets(out, count);
+  });
+
+const apiCommand = program.command("api");
+apiCommand
+  .command("nonce <address>")
+  .description("Get a nonce")
+  .option("-u, --url <url>", "api url", "http://localhost:4000")
+  .option(
+    "-b, --blockchain <network>",
+    "Blockchain network (ethereum | bitcoin)",
+    (value) => {
+      if (value !== "ethereum" && value !== "bitcoin") {
+        throw new Error("Invalid blockchain network");
+      }
+      return value;
+    },
+    "bitcoin",
+  )
+  .option("-c, --chain-id <chain-id>", "Ethereum chain id", Number, 1)
+  .action(async (address, props) => {
+    const { blockchain, url, chainId } = props;
+    if (blockchain === "bitcoin") {
+      await nonceBitcoin({ address, url });
+    } else {
+      await nonceEthereum({ address, chainId, url });
+    }
+  });
+
+apiCommand
+  .command("siwe")
+  .option("-u, --url <url>", "api url", "http://localhost:4000")
+  .option("-c, --chain-id <chain-id>", "Ethereum chain id", Number, 1)
+  .action(async ({ url, chainId }) => {
+    await siwe({
+      chainId,
+      url,
+    });
   });
 
 program.parse(process.argv);

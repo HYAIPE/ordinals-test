@@ -5,6 +5,8 @@ import {
   CompactDecryptResult,
   SignJWT,
   compactDecrypt,
+  JWTPayload,
+  JWTVerifyResult,
 } from "jose";
 import {
   generateRolesFromIds,
@@ -15,20 +17,29 @@ import {
 import { sessionExpiration } from "@0xflick/ordinals-backend";
 
 export async function decryptJweToken(
-  jwe: string
+  jwe: string,
 ): Promise<CompactDecryptResult> {
   const key = await jwkKey;
   const decrypted = await compactDecrypt(jwe, key);
   return decrypted;
 }
 
-export async function createJwtToken(user: IUserWithRoles): Promise<string> {
+export async function createJwtTokenSingleSubject({
+  user,
+  nonce,
+  payload,
+}: {
+  user: IUserWithRoles;
+  nonce: string;
+  payload?: JWTPayload;
+}): Promise<string> {
   // Create a JWS signed with the private key
   const key = await jwkKey;
 
   const jws = await new SignJWT({
+    ...payload,
+    [namespacedClaim("nonce")]: nonce,
     ...generateRolesFromIds(user.roleIds),
-    [namespacedClaim("nonce")]: user.nonce,
   })
     .setProtectedHeader({
       alg: "ES512",
@@ -41,6 +52,39 @@ export async function createJwtToken(user: IUserWithRoles): Promise<string> {
   return jws;
 }
 
+export async function upgradeJwtTokenNewAddress({
+  addressesToAdd,
+  jwt,
+}: {
+  jwt: JWTVerifyResult;
+  addressesToAdd: { network: "bitcoin" | "ethereum"; address: string }[];
+}) {
+  const privKey = await jwkKey;
+
+  // links between linked accounts take the form:
+  // namespacedClaim(network): address[]
+
+  const newPayload = {
+    ...jwt.payload,
+    ...addressesToAdd.reduce((acc, { network, address }) => {
+      const claim = namespacedClaim(network);
+      const existing: string[] = (jwt.payload[claim] as any) ?? [];
+      return {
+        ...acc,
+        [claim]: [...existing, address],
+      };
+    }, {}),
+  };
+
+  const newJws = await new SignJWT(newPayload)
+    .setProtectedHeader({
+      alg: "ES512",
+    })
+    .sign(privKey);
+
+  return newJws;
+}
+
 export const promisePrivateKey = new Promise<KeyLike>(
   async (resolve, reject) => {
     if ((global as any).promisePrivateKeys) {
@@ -49,17 +93,20 @@ export const promisePrivateKey = new Promise<KeyLike>(
     process.env.JWT_PRIVATE_KEY &&
       importPKCS8(process.env.JWT_PRIVATE_KEY, "ECDH-ES+A128KW").then(
         resolve,
-        reject
+        reject,
       );
-  }
+  },
 );
 
 export const jwkKey = new Promise<KeyLike>(async (resolve, reject) => {
   if ((global as any).promisePrivateKeys) {
     await (global as any).promisePrivateKeys;
   }
-  process.env.JWK &&
-    importJWK(JSON.parse(process.env.JWK), "ECDH-ES+A128KW").then((k: any) => {
-      resolve(k);
-    }, reject);
+  process.env.AUTH_MESSAGE_JWK &&
+    importJWK(JSON.parse(process.env.AUTH_MESSAGE_JWK), "ECDH-ES+A128KW").then(
+      (k: any) => {
+        resolve(k);
+      },
+      reject,
+    );
 });

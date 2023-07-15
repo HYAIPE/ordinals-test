@@ -1,0 +1,46 @@
+enum PermissionAction {
+  CREATE
+  UPDATE
+  DELETE
+  LIST
+  GET
+  USE
+  ADMIN
+}
+
+enum PermissionResource {
+  ALL
+  USER
+  ADMIN
+  PRESALE
+  AFFILIATE
+}
+
+type Permission {
+  action: PermissionAction!
+  resource: PermissionResource!
+  identifier: String
+}
+
+input PermissionInput {
+  action: PermissionAction!
+  resource: PermissionResource!
+  identifier: String
+}
+
+type Role {
+  id: ID!
+  name: String!
+  userCount: Int!
+  permissions: [Permission!]!
+
+  bindToUser(userAddress: String!): Web3User!
+  unbindFromUser(userAddress: String!): Web3User!
+  addPermissions(permissions: [PermissionInput!]!): Role!
+  removePermissions(permissions: [PermissionInput!]!): Role!
+  delete: Boolean!
+}
+
+type MutationRBAC {
+  createRole(name: String!, permissions: [PermissionInput!]): Role!
+}

@@ -18,6 +18,9 @@ const config: CodegenConfig = {
             "../modules/inscriptionFunding/models.js#InscriptionFundingModel",
           InscriptionTransactionContent:
             "../modules/inscriptionRequest/models.js#InscriptionTransactionContentModel",
+          Role: "../modules/permissions/models.js#RoleModel",
+          Web3User: "../modules/user/models.js#Web3UserModel",
+          Web3LoginUser: "../modules/user/models.js#Web3LoginUserModel",
         },
       },
       presetConfig: {
