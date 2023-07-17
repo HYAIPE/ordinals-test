@@ -18,7 +18,7 @@ export function createContext(): RawContext {
   return {
     ...config,
     ...aws,
-    ...createDbContext(),
+    ...createDbContext(config),
     ...createStorageContext({
       ...config,
       ...aws,

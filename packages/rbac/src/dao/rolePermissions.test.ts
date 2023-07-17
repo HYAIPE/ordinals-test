@@ -1,8 +1,11 @@
 import { getDb } from "@0xflick/ordinals-backend";
 import { v4 as createUuid } from "uuid";
 import { RolePermissionsDAO } from "./rolePermissions.js";
-import { IRolePermission } from "../models/rolePermissions.js";
-import { EActions, EResource } from "../models/permissions.js";
+import {
+  EActions,
+  EResource,
+  IRolePermission,
+} from "@0xflick/ordinals-rbac-models";
 
 describe("#RolePermissions DAO", () => {
   it("can create a role permission", async () => {

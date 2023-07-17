@@ -13,8 +13,7 @@ import {
   namespacedClaim,
   TokenModel,
   IUserWithRoles,
-} from "../models/index.js";
-import { sessionExpiration } from "@0xflick/ordinals-backend";
+} from "@0xflick/ordinals-rbac-models";
 
 export async function decryptJweToken(
   jwe: string,
@@ -47,7 +46,7 @@ export async function createJwtTokenSingleSubject({
     .setSubject(user.address)
     .setIssuedAt()
     .setIssuer(TokenModel.JWT_CLAIM_ISSUER)
-    .setExpirationTime(Date.now() + 1000 * sessionExpiration)
+    .setExpirationTime(Date.now() / 1000 + 60 * 60 * 24 * 7)
     .sign(key);
   return jws;
 }

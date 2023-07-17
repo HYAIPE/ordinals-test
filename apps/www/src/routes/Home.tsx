@@ -6,12 +6,10 @@ import Grid2 from "@mui/material/Unstable_Grid2";
 import Card from "@mui/material/Card";
 import CardContent from "@mui/material/CardContent";
 import Typography from "@mui/material/Typography";
-import Box from "@mui/material/Box";
 import CardActions from "@mui/material/CardActions";
 import { Connect } from "@/features/xverse/Connect";
 import { useXverse } from "@/features/xverse/Context";
 import { AsyncStatus } from "@/features/xverse/ducks";
-import { Test } from "@/features/inscription/Test";
 
 const TestConnectCard = () => {
   const {
@@ -33,11 +31,7 @@ const TestConnectCard = () => {
         </Typography>
       </CardContent>
       <CardActions>
-        {connectionStatus !== AsyncStatus.FULFILLED ? (
-          <Connect />
-        ) : (
-          <Test address={ordinalsAddress} onFundingAddress={() => {}} />
-        )}
+        <Connect />
       </CardActions>
     </Card>
   );
@@ -47,7 +41,7 @@ export default function Home() {
   return (
     <DefaultProvider
       network={{
-        type: "Mainnet",
+        type: "Testnet",
       }}
     >
       <Toolbar title="Home" />

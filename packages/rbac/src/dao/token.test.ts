@@ -1,11 +1,15 @@
-import { promisePublicKey, verifyJwtToken } from "../models/user.js";
 import { getDb } from "@0xflick/ordinals-backend";
 import { v4 as createUuid } from "uuid";
 import { UserDAO } from "./user.js";
 import { createJwtTokenSingleSubject, promisePrivateKey } from "./token.js";
-import { TokenModel } from "../models/token.js";
+import {
+  TokenModel,
+  promisePublicKey,
+  EActions,
+  EResource,
+  verifyJwtToken,
+} from "@0xflick/ordinals-rbac-models";
 import * as jose from "jose";
-import { EActions, EResource } from "../models/permissions.js";
 import { RolePermissionsDAO } from "./rolePermissions.js";
 import { RolesDAO } from "./roles.js";
 import { UserRolesDAO } from "./userRoles.js";
@@ -14,8 +18,8 @@ describe("#Token DAO", () => {
   it("can exchange JWE", async () => {
     const ge = new jose.CompactEncrypt(
       new TextEncoder().encode(
-        "It's dangerous to go alone! Take this. Do do do dooooooo"
-      )
+        "It's dangerous to go alone! Take this. Do do do dooooooo",
+      ),
     );
     const pubKey = await promisePublicKey;
     const privKey = await promisePrivateKey;
@@ -71,6 +75,11 @@ describe("#Token DAO", () => {
 
     await dao.create({
       address: userId,
+      domain: "example.com",
+      expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 24 * 365).toISOString(),
+      nonce: "0",
+      issuedAt: new Date().toISOString(),
+      uri: "https://example.com",
     });
     const userRolesDao = new UserRolesDAO(db as any);
     await userRolesDao.bind({
@@ -92,13 +101,13 @@ describe("#Token DAO", () => {
         token,
         nonce: "0",
         roleIds: [roleId],
-      })
+      }),
     ).toEqual(
       expect.objectContaining({
         address: userId,
         roleIds: [roleId],
         nonce: "0",
-      })
+      }),
     );
   });
 });

@@ -10,8 +10,9 @@ import {
   IUser,
   UserWithRolesModel,
   INonceRequest,
-} from "../models/index.js";
-import { EActions, EResource } from "../models/permissions.js";
+  EActions,
+  EResource,
+} from "@0xflick/ordinals-rbac-models";
 import { RolePermissionsDAO } from "./rolePermissions.js";
 import { UserRolesDAO } from "./userRoles.js";
 

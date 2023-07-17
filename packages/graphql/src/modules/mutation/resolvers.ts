@@ -7,8 +7,8 @@ import {
 import {
   decryptJweToken,
   createJwtTokenSingleSubject,
-  promisePublicKey,
 } from "@0xflick/ordinals-rbac";
+import { Address, Signer } from "@0xflick/tapscript";
 import { verifyMessage } from "ethers";
 import { MutationModule } from "./generated-types/module-types.js";
 import { toBitcoinNetworkName } from "../bitcoin/transforms.js";
@@ -257,6 +257,58 @@ export const resolvers: MutationModule.Resolvers = {
       if (recoveredAddress !== address) {
         throw new Error("Invalid signature");
       }
+      const token = await createJwtTokenSingleSubject({
+        user: {
+          address,
+          roleIds: [] as string[],
+        },
+        nonce,
+      });
+      return new Web3LoginUserModel({
+        address,
+        token,
+      });
+    },
+    siwb: async (
+      _,
+      { address, jwe },
+      { authMessageDomain, authMessageJwtClaimIssuer, userDao },
+    ) => {
+      const { protectedHeader, plaintext } = await decryptJweToken(jwe);
+      const signature = Buffer.from(plaintext).toString("utf8");
+      const nonce = protectedHeader.kid!;
+      const userNonceRequest = await userDao.get(address, nonce);
+      if (!userNonceRequest) {
+        throw new Error("Invalid nonce");
+      }
+      const { domain, expiresAt, issuedAt, uri, version, chainId } =
+        userNonceRequest;
+
+      if (domain !== authMessageDomain) {
+        throw new Error("Invalid domain");
+      }
+      if (uri !== authMessageJwtClaimIssuer) {
+        throw new Error("Invalid uri");
+      }
+      if (expiresAt < new Date().toISOString()) {
+        throw new Error("Expired nonce");
+      }
+
+      const messageToSign = authMessageBitcoin({
+        address,
+        domain,
+        expirationTime: expiresAt,
+        issuedAt,
+        uri,
+        nonce,
+        network: addressToBitcoinNetwork(address),
+      });
+      Signer.taproot.verify(
+        signature,
+        Buffer.from(messageToSign).toString("hex"),
+        Address.decode(address).data,
+        true,
+      );
       const token = await createJwtTokenSingleSubject({
         user: {
           address,

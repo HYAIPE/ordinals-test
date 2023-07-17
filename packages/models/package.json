@@ -1,14 +1,22 @@
 {
   "name": "@0xflick/ordinals-models",
   "version": "1.0.0",
-  "main": "src/index.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
   "type": "module",
   "license": "MIT",
+  "scripts": {
+    "build": "tsc --build"
+  },
   "devDependencies": {
     "typescript": "^5.1.3"
   },
   "dependencies": {
     "@0xflick/graphql-modules": "2.1.3-0xflick.1",
-    "@0xflick/tapscript": "^1.2.11-0xflick.1"
+    "@0xflick/tapscript": "^2.0.1"
   }
 }

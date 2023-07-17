@@ -4,13 +4,14 @@
     "module": "ES2022",
     "target": "ES2022",
     "composite": true /* Enable the use of the ES2015 module loader. */,
-    "rootDir": "./src" /* Specify the root folder within your source files. */,
     "outDir": "dist" /* Specify an output folder for all emitted files. */,
     "paths": {
       "@0xflick/inscriptions": ["../../packages/inscriptions/src/index"],
-      "@0xflick/ordinals-axolotl-valley": ["../../ordinals/axolotl-valley/src/index"],
+      "@0xflick/ordinals-axolotl-valley": [
+        "../../ordinals/axolotl-valley/src/index"
+      ],
       "@0xflick/ordinals-rbac": ["../../packages/rbac/src/index"],
-      "@0xflick/ordinals-models": ["../../packages/models/src/index"],
+      "@0xflick/ordinals-models": ["../../packages/models/src/index"]
     },
     "incremental": true,
     "noErrorTruncation": true,
@@ -23,16 +24,19 @@
     "moduleResolution": "node"
     // "strictPropertyInitialization": false
   },
-  "include": ["**/*.ts"],
+  "include": ["**/*.ts", "./codegen.ts"],
   "exclude": ["**/node_modules", "**/.*/", "dist", "build"],
   "references": [
     {
       "path": "../../packages/inscriptions"
-    }, {
+    },
+    {
       "path": "../../ordinals/axolotl-valley"
-    }, {
+    },
+    {
       "path": "../../packages/rbac"
-    }, {
+    },
+    {
       "path": "../../packages/models"
     }
   ]

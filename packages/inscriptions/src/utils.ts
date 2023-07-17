@@ -7,17 +7,6 @@ export function generatePrivKey() {
   return bytesToHex(secp.utils.randomPrivateKey());
 }
 
-export function encodeBase64(file: File) {
-  return new Promise(function (resolve, reject) {
-    let imgReader = new FileReader();
-    imgReader.onloadend = function () {
-      resolve(imgReader.result?.toString());
-    };
-    imgReader.onerror = reject;
-    imgReader.readAsDataURL(file);
-  });
-}
-
 export function base64ToHex(str: string) {
   const raw = atob(str);
   let result = "";
@@ -37,14 +26,14 @@ export function buf2hex(buffer: ArrayBuffer) {
 
 export function hexToBytes(hex: string) {
   return Uint8Array.from(
-    hex.match(/.{1,2}/g)!.map((byte) => parseInt(byte, 16))
+    hex.match(/.{1,2}/g)!.map((byte) => parseInt(byte, 16)),
   );
 }
 
 export function bytesToHex(bytes: Uint8Array) {
   return bytes.reduce(
     (str, byte) => str + byte.toString(16).padStart(2, "0"),
-    ""
+    "",
   );
 }
 
@@ -94,7 +83,7 @@ export function satsToBitcoin(sats: bigint) {
 }
 
 export function scriptDataToSerializedScript(
-  scriptData: (string | Uint8Array)[]
+  scriptData: (string | Uint8Array)[],
 ): BitcoinScriptData[] {
   return scriptData.map((data) => {
     if (typeof data === "string") {
@@ -105,7 +94,7 @@ export function scriptDataToSerializedScript(
 }
 
 export function serializedScriptToScriptData(
-  serializedScript: BitcoinScriptData[]
+  serializedScript: BitcoinScriptData[],
 ): (string | Uint8Array)[] {
   return serializedScript.map((data) => {
     if (typeof data === "string") {
@@ -135,40 +124,17 @@ export function hexString(buffer: ArrayBuffer) {
   return "0x" + hexCodes.join("");
 }
 
-export async function fileToArrayBuffer(file: File) {
-  return new Promise<string | ArrayBuffer | null>(function (resolve, reject) {
-    const reader = new FileReader();
-    const readFile = function () {
-      const buffer = reader.result;
-      resolve(buffer);
-    };
-
-    reader.addEventListener("load", readFile);
-    reader.addEventListener("error", reject);
-    reader.readAsArrayBuffer(file);
-  });
-}
-
 export async function bufferToSha256(bufferOrString: string | ArrayBuffer) {
   return crypto.subtle.digest(
     "SHA-256",
     typeof bufferOrString === "string"
       ? Buffer.from(bufferOrString)
-      : arrayBufferToBuffer(bufferOrString)
+      : arrayBufferToBuffer(bufferOrString),
   );
 }
 
-export async function fileToSha256Hex(file: File) {
-  const buffer = await fileToArrayBuffer(file);
-  if (!buffer) {
-    throw new Error("Could not read file");
-  }
-  const hash = await bufferToSha256(buffer);
-  return hexString(hash);
-}
-
 export function networkNamesToNetworkEnum(
-  network: BitcoinNetworkNames
+  network: BitcoinNetworkNames,
 ): Network {
   switch (network) {
     case "mainnet":
@@ -183,7 +149,7 @@ export function networkNamesToNetworkEnum(
 }
 
 export function networkNamesToTapScriptName(
-  network: BitcoinNetworkNames
+  network: BitcoinNetworkNames,
 ): Networks {
   switch (network) {
     case "mainnet":
@@ -195,7 +161,7 @@ export function networkNamesToTapScriptName(
 
 export async function validateAddress(
   address: string,
-  network: BitcoinNetworkNames
+  network: BitcoinNetworkNames,
 ) {
   return validate(address, networkNamesToNetworkEnum(network));
 }

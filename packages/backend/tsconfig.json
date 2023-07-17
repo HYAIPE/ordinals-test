@@ -7,6 +7,7 @@
     "outDir": "dist",
     "paths": {
       "@0xflick/ordinals-models": ["../../packages/models/src/index"],
+      "@0xflick/ordinals-rbac": ["../../packages/rbac/src/index"],
       "@0xflick/inscriptions": ["../../packages/inscriptions/src/index"]
     },
     "noErrorTruncation": true,
@@ -21,6 +22,9 @@
   "references": [
     {
       "path": "../../packages/models"
+    },
+    {
+      "path": "../../packages/rbac"
     },
     {
       "path": "../../packages/inscriptions"

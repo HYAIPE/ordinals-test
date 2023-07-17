@@ -13,10 +13,14 @@ import {
   paginate,
   IPaginatedResult,
   IPaginationOptions,
-} from "@0xflick/ordinals-backend";
-import type { EActions, EResource, IRolePermission } from "../models/index.js";
-import { RolePermissionModel } from "../models/index.js";
-import { TPermission } from "../index.js";
+} from "@0xflick/ordinals-models";
+import {
+  EActions,
+  EResource,
+  IRolePermission,
+  RolePermissionModel,
+  TPermission,
+} from "@0xflick/ordinals-rbac-models";
 
 export class RolePermissionsDAO {
   public static TABLE_NAME = process.env.TABLE_NAME_ROLE_PERMISSIONS || "RBAC";
@@ -69,7 +73,7 @@ export class RolePermissionsDAO {
           CreatedAt: Date.now(),
           ...(identifier ? { Identifier: identifier } : {}),
         },
-      })
+      }),
     );
     return this;
   }
@@ -104,7 +108,7 @@ export class RolePermissionsDAO {
             },
           })),
         },
-      })
+      }),
     );
     return this;
   }
@@ -131,7 +135,7 @@ export class RolePermissionsDAO {
             identifier,
           }),
         },
-      })
+      }),
     );
     if (!role.Item) {
       return null;
@@ -160,7 +164,7 @@ export class RolePermissionsDAO {
             },
           })),
         },
-      })
+      }),
     );
   }
 
@@ -186,7 +190,7 @@ export class RolePermissionsDAO {
             identifier,
           }),
         },
-      })
+      }),
     );
     return this;
   }
@@ -214,7 +218,7 @@ export class RolePermissionsDAO {
             },
           })),
         },
-      })
+      }),
     );
     return this;
   }
@@ -235,7 +239,7 @@ export class RolePermissionsDAO {
 
   public async getPermissionsPaginated(
     roleId: string,
-    options?: IPaginationOptions
+    options?: IPaginationOptions,
   ): Promise<IPaginatedResult<RolePermissionModel>> {
     const pagination = decodeCursor(options?.cursor);
     const permissions = await this.db.send(
@@ -258,7 +262,7 @@ export class RolePermissionsDAO {
               Limit: options.limit,
             }
           : {}),
-      })
+      }),
     );
 
     const lastEvaluatedKey = permissions.LastEvaluatedKey;
@@ -274,7 +278,7 @@ export class RolePermissionsDAO {
             action: role.ActionType,
             resource: role.ResourceType,
             identifier: role.Identifier,
-          })
+          }),
         ) ?? [],
       cursor: encodeCursor({
         page,
@@ -297,7 +301,7 @@ export class RolePermissionsDAO {
           ":action": action,
           ":resource": resource,
         },
-      })
+      }),
     );
     return (
       roles.Items?.map((role) =>
@@ -306,16 +310,16 @@ export class RolePermissionsDAO {
           action: role.ActionType,
           resource: role.ResourceType,
           identifier: role.Identifier,
-        })
+        }),
       ) ?? []
     );
   }
 
   public async allowedActionsForRoleIds(
-    roleIds: string[]
+    roleIds: string[],
   ): Promise<Omit<IRolePermission, "roleId">[]> {
     const permissions = await Promise.all(
-      roleIds.map((roleId) => this.getAllPermissions(roleId))
+      roleIds.map((roleId) => this.getAllPermissions(roleId)),
     );
     const permissionsMap = new Map<string, Omit<IRolePermission, "roleId">>();
     permissions.forEach((permission) => {
@@ -328,7 +332,7 @@ export class RolePermissionsDAO {
         action,
         resource,
         identifier,
-      })
+      }),
     );
   }
 }

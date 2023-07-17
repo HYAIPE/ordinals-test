@@ -1,4 +1,3 @@
-import { UserModel } from "@0xflick/ordinals-rbac";
 import { PermissionsModule } from "./generated-types/module-types.js";
 import { graphqlPermissionToModel } from "./transforms.js";
 import { Web3UserModel } from "../user/models.js";
@@ -9,7 +8,7 @@ export const resolvers: PermissionsModule.Resolvers = {
     createRole: async (
       _,
       { name, permissions },
-      { rolePermissionsDao, rolesDao }
+      { rolePermissionsDao, rolesDao },
     ) => {
       const role = await rolesDao.create({
         name,
@@ -42,7 +41,7 @@ export const resolvers: PermissionsModule.Resolvers = {
     removePermissions: async (
       role,
       { permissions },
-      { rolePermissionsDao }
+      { rolePermissionsDao },
     ) => {
       await rolePermissionsDao.batchUnlink({
         roleId: role.id,
@@ -53,7 +52,7 @@ export const resolvers: PermissionsModule.Resolvers = {
     unbindFromUser: async (
       { id },
       { userAddress },
-      { userRolesDao, rolesDao }
+      { userRolesDao, rolesDao },
     ) => {
       await userRolesDao.unlink({
         roleId: id,
@@ -65,7 +64,7 @@ export const resolvers: PermissionsModule.Resolvers = {
     delete: async (
       { id },
       _,
-      { rolesDao, userRolesDao, rolePermissionsDao }
+      { rolesDao, userRolesDao, rolePermissionsDao },
     ) => {
       await rolesDao.deleteRole(userRolesDao, rolePermissionsDao, id);
       return true;

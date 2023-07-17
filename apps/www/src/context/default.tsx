@@ -1,5 +1,6 @@
 import { FC, PropsWithChildren } from "react";
 import CssBaseline from "@mui/material/CssBaseline";
+import { Provider as ApolloProvider } from "@/graphql/Provider";
 import { ThemeProvider } from "@mui/material/styles";
 import { Provider as XverseProvider } from "../features/xverse/Context";
 import theme from "@/theme";
@@ -14,9 +15,11 @@ export const DefaultProvider: FC<
     type: "Mainnet",
   };
   return (
-    <ThemeProvider theme={theme}>
-      <CssBaseline />
-      <XverseProvider network={network}>{children}</XverseProvider>
-    </ThemeProvider>
+    <ApolloProvider>
+      <ThemeProvider theme={theme}>
+        <CssBaseline />
+        <XverseProvider network={network}>{children}</XverseProvider>
+      </ThemeProvider>
+    </ApolloProvider>
   );
 };

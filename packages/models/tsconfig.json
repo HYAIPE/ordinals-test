@@ -5,8 +5,8 @@
     "lib": ["dom", "dom.iterable", "esnext"],
     "module": "ES2022",
     "outDir": "./dist",
+    "rootDir": "./src",
     "composite": true,
-    "jsx": "preserve",
     "paths": {
       "@0xflick/inscriptions": ["../../packages/inscriptions/src/index"]
     },

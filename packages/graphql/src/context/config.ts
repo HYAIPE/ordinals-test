@@ -5,6 +5,7 @@ import {
   mainnetMempoolUrl,
   regtestMempoolUrl,
   testnetMempoolUrl,
+  tableNames,
 } from "@0xflick/ordinals-backend";
 import { lazySingleton } from "@0xflick/ordinals-models";
 
@@ -57,8 +58,8 @@ export interface IConfigContext {
   authMessageDomain: string;
   authMessageExpirationTimeSeconds: number;
   authMessageJwtClaimIssuer: string;
+  tableNames: Record<string, string>;
 }
-
 export function createConfigContext(): IConfigContext {
   return {
     get awsEndpoint() {
@@ -96,6 +97,9 @@ export function createConfigContext(): IConfigContext {
     },
     get authMessageJwtClaimIssuer() {
       return authMessageJwtClaimIssuer.get();
+    },
+    get tableNames() {
+      return tableNames.get();
     },
   };
 }

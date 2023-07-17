@@ -1,11 +1,17 @@
 {
   "name": "@0xflick/ordinals-rbac",
   "version": "1.0.0",
-  "main": "src/index.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
   "type": "module",
   "license": "MIT",
   "scripts": {
-    "test": "yarn node --experimental-vm-modules $(yarn bin jest)"
+    "test": "yarn node --experimental-vm-modules $(yarn bin jest)",
+    "build": "tsc --build"
   },
   "devDependencies": {
     "jest": "^29.6.0",

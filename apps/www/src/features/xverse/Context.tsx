@@ -93,7 +93,40 @@ function useXverseContext({ network }: { network: BitcoinNetwork }) {
     },
     [actions, network]
   );
-  return { state, connect };
+
+  const sign = useCallback(
+    async (messageToSign: string) => {
+      try {
+        dispatch(actionCreators.signatureRequestInit());
+        const response = await new Promise((resolve, reject) =>
+          signMessage({
+            payload: {
+              address: state.ordinalsAddress!,
+              network,
+              message: messageToSign,
+            },
+            onFinish(response) {
+              dispatch(
+                actionCreators.signatureRequestFulfilled({
+                  signature: response,
+                })
+              );
+              resolve(response);
+            },
+            onCancel() {
+              dispatch(
+                actionCreators.signatureRequestRejected("User canceled")
+              );
+              reject(new Error("User canceled"));
+            },
+          })
+        );
+        return response;
+      } catch (error: unknown) {}
+    },
+    [network, state.ordinalsAddress]
+  );
+  return { state, connect, sign };
 }
 
 type TContext = ReturnType<typeof useXverseContext>;

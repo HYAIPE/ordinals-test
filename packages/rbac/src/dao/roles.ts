@@ -9,20 +9,15 @@ import {
 } from "@aws-sdk/lib-dynamodb";
 import { v4 as uuidV4 } from "uuid";
 import { RolePermissionsDAO } from "./rolePermissions.js";
-import { IRole, RoleModel } from "../models/index.js";
+import { IRole, RoleModel } from "@0xflick/ordinals-rbac-models";
 import { UserRolesDAO } from "./userRoles.js";
 import {
-  createLogger,
   decodeCursor,
   encodeCursor,
   paginate,
   IPaginatedResult,
   IPaginationOptions,
-} from "@0xflick/ordinals-backend";
-
-const logger = createLogger({
-  name: "db/roles",
-});
+} from "@0xflick/ordinals-models";
 
 function toPk(id: string) {
   return `ROLE#${id}`;
@@ -37,7 +32,7 @@ export class RolesDAO {
   }
 
   public async create(
-    role: Omit<IRole, "userCount" | "id"> & { id?: string }
+    role: Omit<IRole, "userCount" | "id"> & { id?: string },
   ): Promise<RoleModel> {
     const id = role.id ?? uuidV4();
     try {
@@ -51,12 +46,12 @@ export class RolesDAO {
             UserCount: 0,
           },
           ConditionExpression: "attribute_not_exists(ID)",
-        })
+        }),
       );
     } catch (e) {
       // Check if this error is a known DynamoDB error
       if (e instanceof Error && e.name === "ConditionalCheckFailedException") {
-        logger.warn("RolesDao: Duplicate entry on create", role);
+        console.warn("RolesDao: Duplicate entry on create", role);
         // Duplicate entry, whatever. continue but don't update any counters
       } else {
         // Something else went wrong, rethrow
@@ -74,7 +69,7 @@ export class RolesDAO {
         Key: {
           pk: toPk(roleId),
         },
-      })
+      }),
     );
     if (!role.Item) {
       return null;
@@ -98,7 +93,7 @@ export class RolesDAO {
         ExpressionAttributeValues: {
           ":inc": count,
         },
-      })
+      }),
     );
     return this;
   }
@@ -115,14 +110,14 @@ export class RolesDAO {
         ExpressionAttributeValues: {
           ":inc": count,
         },
-      })
+      }),
     );
     return this;
   }
 
   public async addPermissions(
     roleId: string,
-    permissionsIds: string[]
+    permissionsIds: string[],
   ): Promise<RolesDAO> {
     await this.db.send(
       new UpdateCommand({
@@ -135,7 +130,7 @@ export class RolesDAO {
         ExpressionAttributeValues: {
           ":permissionsIds": permissionsIds,
         },
-      })
+      }),
     );
     return this;
   }
@@ -143,7 +138,7 @@ export class RolesDAO {
   public async deleteRole(
     rbacDao: UserRolesDAO,
     rolePermissionsDao: RolePermissionsDAO,
-    roleId: string
+    roleId: string,
   ): Promise<RolesDAO> {
     await Promise.all([
       this.db.send(
@@ -152,7 +147,7 @@ export class RolesDAO {
           Key: {
             pk: toPk(roleId),
           },
-        })
+        }),
       ),
       rbacDao.batchUnlinkByRoleId(roleId),
       rolePermissionsDao.batchUnlinkByRoleId(roleId),
@@ -169,7 +164,7 @@ export class RolesDAO {
             ConsistentRead: true,
           },
         },
-      })
+      }),
     );
     return (
       roles.Responses?.[RolesDAO.TABLE_NAME].map((role) => ({
@@ -189,7 +184,7 @@ export class RolesDAO {
         ExpressionAttributeValues: {
           ":name": name,
         },
-      })
+      }),
     );
     return (
       result.Items?.map((item) => ({
@@ -205,7 +200,7 @@ export class RolesDAO {
   }
 
   public async listAllPaginated(
-    options?: IPaginationOptions
+    options?: IPaginationOptions,
   ): Promise<IPaginatedResult<RoleModel>> {
     const pagination = decodeCursor(options?.cursor);
     const result = await this.db.send(
@@ -221,7 +216,7 @@ export class RolesDAO {
               Limit: options.limit,
             }
           : {}),
-      })
+      }),
     );
 
     const lastEvaluatedKey = result.LastEvaluatedKey;
@@ -233,7 +228,7 @@ export class RolesDAO {
       items:
         result.Items?.map(
           (item) =>
-            new RoleModel(item.RoleID, item.RoleName, item.UserCount ?? 0)
+            new RoleModel(item.RoleID, item.RoleName, item.UserCount ?? 0),
         ) ?? [],
       cursor,
       page,

@@ -4,4 +4,3 @@ export * from "./dao/index.js";
 export * from "./s3/index.js";
 export * from "./bitcoin/index.js";
 export * from "./events/index.js";
-export * from "./types.js";

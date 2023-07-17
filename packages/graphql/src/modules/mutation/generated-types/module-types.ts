@@ -3,7 +3,7 @@ import type * as Types from "../../../generated-types/graphql.js";
 import type * as gm from "@0xflick/graphql-modules";
 export namespace MutationModule {
   interface DefinedFields {
-    Mutation: 'requestFundingAddress' | 'axolotlFundingAddressRequest' | 'rbac' | 'nonceEthereum' | 'nonceBitcoin' | 'siwe';
+    Mutation: 'requestFundingAddress' | 'axolotlFundingAddressRequest' | 'rbac' | 'nonceEthereum' | 'nonceBitcoin' | 'siwe' | 'siwb';
   };
   
   export type Mutation = Pick<Types.Mutation, DefinedFields['Mutation']>;
@@ -33,6 +33,7 @@ export namespace MutationModule {
       nonceEthereum?: gm.Middleware[];
       nonceBitcoin?: gm.Middleware[];
       siwe?: gm.Middleware[];
+      siwb?: gm.Middleware[];
     };
   };
 }

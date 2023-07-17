@@ -156,6 +156,7 @@ export type Mutation = {
   nonceEthereum: Nonce;
   rbac: MutationRbac;
   requestFundingAddress: InscriptionFunding;
+  siwb: Web3LoginUser;
   siwe: Web3LoginUser;
 };
 
@@ -178,6 +179,12 @@ export type MutationNonceEthereumArgs = {
 
 export type MutationRequestFundingAddressArgs = {
   request: InscriptionRequest;
+};
+
+
+export type MutationSiwbArgs = {
+  address: Scalars['ID']['input'];
+  jwe: Scalars['String']['input'];
 };
 
 
@@ -533,6 +540,7 @@ export type MutationResolvers<ContextType = Context, ParentType extends Resolver
   nonceEthereum?: Resolver<ResolversTypes['Nonce'], ParentType, ContextType, RequireFields<MutationNonceEthereumArgs, 'address' | 'chainId'>>;
   rbac?: Resolver<ResolversTypes['MutationRBAC'], ParentType, ContextType>;
   requestFundingAddress?: Resolver<ResolversTypes['InscriptionFunding'], ParentType, ContextType, RequireFields<MutationRequestFundingAddressArgs, 'request'>>;
+  siwb?: Resolver<ResolversTypes['Web3LoginUser'], ParentType, ContextType, RequireFields<MutationSiwbArgs, 'address' | 'jwe'>>;
   siwe?: Resolver<ResolversTypes['Web3LoginUser'], ParentType, ContextType, RequireFields<MutationSiweArgs, 'address' | 'jwe'>>;
 };
 

@@ -14,3 +14,4 @@ const typeDefs = await Promise.all(typeDefFiles.map(async (file) => {
 }));
 
 await fs.promises.writeFile("../../apps/cli/schema.graphql", typeDefs.join("\n"), "utf8");
+await fs.promises.writeFile("../../apps/www/schema.graphql", typeDefs.join("\n"), "utf8");

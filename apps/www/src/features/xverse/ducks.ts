@@ -14,6 +14,8 @@ export interface XverseState {
   ordinalsPublicKey?: string;
   errorMessage?: string;
   connectionStatus: AsyncStatus;
+  signatureStatus?: AsyncStatus;
+  signature?: string;
 }
 export const initialState: XverseState = {
   connectionStatus: AsyncStatus.IDLE,
@@ -48,6 +50,23 @@ const connectRejected = createAction(
     },
   })
 );
+const signatureRequestInit = createAction("xverse/signatureRequest");
+const signatureRequestFulfilled = createAction(
+  "xverse/signatureRequest/fulfilled",
+  ({ signature }: { signature: string }) => ({
+    payload: {
+      signature,
+    },
+  })
+);
+const signatureRequestRejected = createAction(
+  "xverse/signatureRequest/rejected",
+  (errorMessage: string) => ({
+    payload: {
+      errorMessage,
+    },
+  })
+);
 
 export const xverseReducer = createReducer<XverseState>(
   initialState,
@@ -70,6 +89,17 @@ export const xverseReducer = createReducer<XverseState>(
       state.ordinalsAddress = undefined;
       state.ordinalsPublicKey = undefined;
     });
+    builder.addCase(signatureRequestInit, (state) => {
+      state.signatureStatus = AsyncStatus.PENDING;
+    });
+    builder.addCase(signatureRequestFulfilled, (state, action) => {
+      state.signatureStatus = AsyncStatus.FULFILLED;
+      state.signature = action.payload.signature;
+    });
+    builder.addCase(signatureRequestRejected, (state, action) => {
+      state.signatureStatus = AsyncStatus.REJECTED;
+      state.errorMessage = action.payload.errorMessage;
+    });
   }
 );
 
@@ -77,4 +107,7 @@ export const actionCreators = {
   connectInit,
   connectFulfilled,
   connectRejected,
+  signatureRequestInit,
+  signatureRequestFulfilled,
+  signatureRequestRejected,
 };

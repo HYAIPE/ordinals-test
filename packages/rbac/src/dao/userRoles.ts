@@ -6,18 +6,13 @@ import {
   BatchWriteCommand,
 } from "@aws-sdk/lib-dynamodb";
 import {
-  createLogger,
   decodeCursor,
   encodeCursor,
   paginate,
   IPaginatedResult,
   IPaginationOptions,
-} from "@0xflick/ordinals-backend";
+} from "@0xflick/ordinals-models";
 import { RolesDAO } from "./roles.js";
-
-const logger = createLogger({
-  name: "db/userRoles",
-});
 
 export class UserRolesDAO {
   public static TABLE_NAME = process.env.TABLE_NAME_RBAC || "RBAC";
@@ -52,12 +47,12 @@ export class UserRolesDAO {
             CreatedAt: Date.now(),
           },
           ConditionExpression: "attribute_not_exists(pk)",
-        })
+        }),
       );
     } catch (e: unknown) {
       // Check if this error is a known DynamoDB error
       if (e instanceof Error && e.name === "ConditionalCheckFailedException") {
-        logger.warn("UserRolesDAO.bind: Duplicate entry", {
+        console.warn("UserRolesDAO.bind: Duplicate entry", {
           address,
           roleId,
         });
@@ -92,12 +87,12 @@ export class UserRolesDAO {
             pk: UserRolesDAO.idFor(address, roleId),
           },
           ConditionExpression: "attribute_exists(pk)",
-        })
+        }),
       );
     } catch (e) {
       // Check if this error is a known DynamoDB error
       if (e instanceof Error && e.name === "ConditionalCheckFailedException") {
-        logger.warn("UserRolesDAO.bind: Already deleted", {
+        console.warn("UserRolesDAO.bind: Already deleted", {
           address,
           roleId,
         });
@@ -135,7 +130,7 @@ export class UserRolesDAO {
                 ExclusiveStartKey: pagination.lastEvaluatedKey,
               }
             : {}),
-        })
+        }),
       );
       const lastEvaluatedKey = result.LastEvaluatedKey;
       const page = pagination ? pagination.page + 1 : 1;
@@ -167,10 +162,10 @@ export class UserRolesDAO {
                     pk: UserRolesDAO.idFor(address, userRoleId),
                   },
                 },
-              })
+              }),
             ),
           },
-        })
+        }),
       );
     }
 
@@ -179,7 +174,7 @@ export class UserRolesDAO {
 
   public async getRoleIdsPaginated(
     address: string,
-    options?: IPaginationOptions
+    options?: IPaginationOptions,
   ): Promise<IPaginatedResult<string>> {
     const pagination = decodeCursor(options?.cursor);
     const result = await this.db.send(
@@ -202,7 +197,7 @@ export class UserRolesDAO {
               Limit: options.limit,
             }
           : {}),
-      })
+      }),
     );
     const lastEvaluatedKey = result.LastEvaluatedKey;
     const page = pagination ? pagination.page + 1 : 1;
@@ -232,7 +227,7 @@ export class UserRolesDAO {
 
   public async getAddressesPaginated(
     roleId: string,
-    options?: IPaginationOptions
+    options?: IPaginationOptions,
   ): Promise<IPaginatedResult<string>> {
     const pagination = decodeCursor(options?.cursor);
     const result = await this.db.send(
@@ -255,7 +250,7 @@ export class UserRolesDAO {
               Limit: options.limit,
             }
           : {}),
-      })
+      }),
     );
     const lastEvaluatedKey = result.LastEvaluatedKey;
     const page = pagination ? pagination.page + 1 : 1;
@@ -273,7 +268,7 @@ export class UserRolesDAO {
 
   public getAddresses(roleId: string) {
     return paginate<string>((options) =>
-      this.getAddressesPaginated(roleId, options)
+      this.getAddressesPaginated(roleId, options),
     );
   }
 

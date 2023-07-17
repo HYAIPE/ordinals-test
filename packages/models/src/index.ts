@@ -6,3 +6,5 @@ export * from "./collection.js";
 export * from "./addressInscription.js";
 export * from "./ordinals/index.js";
 export * from "./token.js";
+export * from "./helpers.js";
+export * from "./types.js";

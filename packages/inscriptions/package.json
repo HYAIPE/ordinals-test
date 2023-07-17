@@ -1,17 +1,27 @@
 {
   "name": "@0xflick/inscriptions",
   "version": "1.0.0",
-  "main": "src/index.ts",
   "license": "MIT",
   "type": "module",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "scripts": {
+    "build": "tsc --build"
+  },
   "dependencies": {
     "@0xflick/crypto-utils": "^1.10.3-0xflick.0",
-    "@0xflick/tapscript": "^1.2.11-0xflick.1",
+    "@0xflick/tapscript": "^2.0.1",
     "@noble/secp256k1": "^2.0.0",
     "bitcoin-address-validation": "^2.2.1",
+    "cross-fetch": "^4.0.0",
     "qrcode": "^1.5.3"
   },
   "devDependencies": {
+    "@types/node": "^20.4.2",
     "@types/qrcode": "^1.5.0",
     "typescript": "^5.1.3"
   }

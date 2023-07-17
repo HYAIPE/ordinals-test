@@ -32,15 +32,6 @@ export type TFundingCollectionDb<T extends Record<string, any>> = {
   totalCount: number;
 } & T;
 
-export type TFundingItemReturner<
-  ItemInputType extends Record<string, any>,
-  ItemReturnType = Record<string, any>
-> = (item: IAddressInscriptionModel<ItemInputType>) => Promise<ItemReturnType>;
-export type TFundingCollectionReturner<
-  ItemInputType extends Record<string, any>,
-  ItemReturnType = Record<string, any>
-> = (item: TCollectionModel<ItemInputType>) => Promise<ItemReturnType>;
-
 export class FundingDao<
   ItemMeta extends Record<string, any> = {},
   CollectionMeta extends Record<string, any> = {}

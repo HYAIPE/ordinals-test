@@ -2,11 +2,11 @@ import {
   IPaginationCursor,
   IPaginatedResult,
   IPaginationOptions,
-} from "../types.js";
+} from "./types.js";
 import { deserializeSessionCookie } from "./cookie.js";
 
 export function getAuthorizationToken(
-  headers: Record<string, string | undefined>
+  headers: Record<string, string | undefined>,
 ): string | undefined {
   // First check cookie
   const session = deserializeSessionCookie(headers.cookie);
@@ -46,7 +46,7 @@ export function decodeCursor(cursor?: string): IPaginationCursor | null {
 
 export async function* paginate<Response>(
   fetcher: (options: IPaginationOptions) => Promise<IPaginatedResult<Response>>,
-  options?: IPaginationOptions
+  options?: IPaginationOptions,
 ): AsyncGenerator<Awaited<Response>, void, unknown> {
   let cursor = options?.cursor ?? null;
   let size = options?.limit;
@@ -91,7 +91,7 @@ export function paginationOptions({
 }
 
 export function toPaginationResponse<T = unknown>(
-  paginatedResponse: IPaginatedResult<T>
+  paginatedResponse: IPaginatedResult<T>,
 ) {
   return {
     items: paginatedResponse.items,

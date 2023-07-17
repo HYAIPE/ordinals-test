@@ -1,3 +1,5 @@
+import fetch from "cross-fetch";
+
 export async function getData(url: RequestInfo) {
   const response = await fetch(url);
   if (!response.ok) {
@@ -12,7 +14,7 @@ export async function postData(
   url: RequestInfo,
   json: string,
   content_type = "",
-  apikey = ""
+  apikey = "",
 ) {
   const headers: HeadersInit = {};
 
@@ -45,7 +47,7 @@ export async function sleep(ms: number) {
 export async function retryWithBackOff<T>(
   fn: () => Promise<T>,
   maxRetries: number,
-  backOff: number
+  backOff: number,
 ) {
   let retries = 0;
   while (true) {

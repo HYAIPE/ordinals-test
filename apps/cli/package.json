@@ -5,7 +5,6 @@
   "license": "MIT",
   "type": "module",
   "scripts": {
-    "build": "tsc",
     "cli": "node --loader ts-node/esm src/index.ts",
     "schema:types": "yarn graphql-codegen --config codegen.ts"
   },
