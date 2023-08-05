@@ -133,7 +133,9 @@ export async function generateFundingAddress({
     extension: init_leaf,
   });
   test_redeemtx.vin[0].witness = [test_sig.hex, init_script, init_cblock];
-  const isValid = Signer.taproot.verify(test_redeemtx, 0, { pubkey });
+  const isValid = Signer.taproot.verifyTx(test_redeemtx, 0, {
+    pubkey,
+  });
 
   if (!isValid) {
     throw new InvalidKeyError(
@@ -288,7 +290,9 @@ export async function generateRefundTransaction({
   });
   refundTx.vin[0].witness = [sig.hex, refundScript, refundCBlock];
   // console.log(inspect(refundTx, false, 10, true));
-  const isValid = Signer.taproot.verify(refundTx, 0, { pubkey: pubKey });
+  const isValid = Signer.taproot.verifyTx(refundTx, 0, {
+    pubkey: pubKey,
+  });
   if (!isValid) {
     throw new Error("Invalid signature");
   }

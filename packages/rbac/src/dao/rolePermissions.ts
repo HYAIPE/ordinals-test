@@ -88,7 +88,7 @@ export class RolePermissionsDAO {
     await this.db.send(
       new BatchWriteCommand({
         RequestItems: {
-          PutCommand: permissions.map((permission) => ({
+          [RolePermissionsDAO.TABLE_NAME]: permissions.map((permission) => ({
             PutRequest: {
               Item: {
                 pk: RolePermissionsDAO.idFor({
@@ -153,6 +153,9 @@ export class RolePermissionsDAO {
     for await (const entity of this.getPermissions(roleId)) {
       entitiesToDelete.push(RolePermissionsDAO.idFor(entity));
     }
+    if (entitiesToDelete.length === 0) {
+      return;
+    }
     await this.db.send(
       new BatchWriteCommand({
         RequestItems: {
@@ -205,7 +208,7 @@ export class RolePermissionsDAO {
     await this.db.send(
       new BatchWriteCommand({
         RequestItems: {
-          DeleteCommand: permissions.map((permission) => ({
+          [RolePermissionsDAO.TABLE_NAME]: permissions.map((permission) => ({
             DeleteRequest: {
               Key: {
                 pk: RolePermissionsDAO.idFor({

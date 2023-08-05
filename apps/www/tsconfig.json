@@ -25,6 +25,9 @@
     "paths": {
       "@/*": [
         "./src/*"
+      ],
+      "@0xflick/ordinals-rbac-models": [
+        "../../packages/rbac-models/src/index"
       ]
     },
     "incremental": true
@@ -38,5 +41,9 @@
   "exclude": [
     "node_modules"
   ],
-  "references": []
+  "references": [
+    {
+      "path": "../../packages/rbac-models"
+    }
+  ]
 }

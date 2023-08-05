@@ -7,6 +7,8 @@ export interface IProps {}
 export class DynamoDB extends Construct {
   public readonly rbacTable: dynamodb.Table;
   public readonly userNonceTable: dynamodb.Table;
+  public readonly fundingTable: dynamodb.Table;
+  public readonly claimsTable: dynamodb.Table;
 
   constructor(scope: Construct, id: string, props: IProps) {
     super(scope, id);
@@ -112,6 +114,94 @@ export class DynamoDB extends Construct {
     new cdk.CfnOutput(this, "UserNonceTableName", {
       exportName: "UserNonceTableName",
       value: userNonceTable.tableName,
+    });
+
+    const fundingTable = new dynamodb.Table(this, "Funding", {
+      partitionKey: {
+        name: "pk",
+        type: dynamodb.AttributeType.STRING,
+      },
+      sortKey: {
+        name: "sk",
+        type: dynamodb.AttributeType.STRING,
+      },
+      tableClass: dynamodb.TableClass.STANDARD,
+      billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
+    });
+
+    fundingTable.addGlobalSecondaryIndex({
+      indexName: "GSI1",
+      partitionKey: {
+        name: "sk",
+        type: dynamodb.AttributeType.STRING,
+      },
+      projectionType: dynamodb.ProjectionType.ALL,
+    });
+
+    fundingTable.addGlobalSecondaryIndex({
+      indexName: "collectionByName",
+      partitionKey: {
+        name: "collectionName",
+        type: dynamodb.AttributeType.STRING,
+      },
+      projectionType: dynamodb.ProjectionType.INCLUDE,
+      nonKeyAttributes: ["collectionID", "maxSupply", "currentSupply"],
+    });
+    this.fundingTable = fundingTable;
+    new cdk.CfnOutput(this, "FundingTableName", {
+      exportName: "FundingTableName",
+      value: fundingTable.tableName,
+    });
+
+    const claimsTable = new dynamodb.Table(this, "Claims", {
+      partitionKey: {
+        name: "pk",
+        type: dynamodb.AttributeType.STRING,
+      },
+      sortKey: {
+        name: "sk",
+        type: dynamodb.AttributeType.STRING,
+      },
+      tableClass: dynamodb.TableClass.STANDARD,
+      billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
+    });
+
+    // Not used for now
+    // claimsTable.addGlobalSecondaryIndex({
+    //   indexName: "GSI1",
+    //   partitionKey: {
+    //     name: "sk",
+    //     type: dynamodb.AttributeType.STRING,
+    //   },
+    //   projectionType: dynamodb.ProjectionType.ALL,
+    // });
+
+    claimsTable.addGlobalSecondaryIndex({
+      indexName: "ClaimsByAddress",
+      partitionKey: {
+        name: "ClaimedAddress",
+        type: dynamodb.AttributeType.STRING,
+      },
+      sortKey: {
+        name: "sk",
+        type: dynamodb.AttributeType.STRING,
+      },
+      projectionType: dynamodb.ProjectionType.ALL,
+    });
+
+    claimsTable.addGlobalSecondaryIndex({
+      indexName: "ObservedBlockHeight-index",
+      partitionKey: {
+        name: "ObservedBlockHeight",
+        type: dynamodb.AttributeType.NUMBER,
+      },
+      projectionType: dynamodb.ProjectionType.ALL,
+    });
+
+    this.claimsTable = claimsTable;
+    new cdk.CfnOutput(this, "ClaimsTableName", {
+      exportName: "ClaimsTableName",
+      value: claimsTable.tableName,
     });
   }
 }

@@ -35,6 +35,7 @@ export const Connect = () => {
   const {
     connect,
     sign,
+    address,
     state: {
       connectionStatus,
       errorMessage,
@@ -55,39 +56,38 @@ export const Connect = () => {
     }
   }, [connectionStatus, fetchNonce, ordinalsAddress]);
 
-  useEffect(() => {
-    if (messageToSign) {
-      sign(messageToSign);
-    }
-  }, [messageToSign, sign]);
+  // useEffect(() => {
+  //   if (messageToSign) {
+  //     sign({ messageToSign });
+  //   }
+  // }, [messageToSign, sign]);
 
-  useEffect(() => {
-    if (
-      signatureStatus === AsyncStatus.FULFILLED &&
-      signature &&
-      nonce &&
-      pubKey &&
-      ordinalsAddress
-    ) {
-      Promise.resolve().then(async () => {
-        const jweRequest = await createJweRequest({
-          nonce,
-          signature,
-          pubKeyStr: pubKey,
-        });
-        fetchToken({
-          variables: {
-            address: ordinalsAddress,
-            jwe: jweRequest,
-          },
-        });
-      });
-    }
-  }, [fetchToken, nonce, ordinalsAddress, pubKey, signature, signatureStatus]);
+  // useEffect(() => {
+  //   if (
+  //     signatureStatus === AsyncStatus.FULFILLED &&
+  //     signature &&
+  //     nonce &&
+  //     pubKey &&
+  //     ordinalsAddress
+  //   ) {
+  //     Promise.resolve().then(async () => {
+  //       const jweRequest = await createJweRequest({
+  //         nonce,
+  //         signature,
+  //         pubKeyStr: pubKey,
+  //       });
+  //       fetchToken({
+  //         variables: {
+  //           address: ordinalsAddress,
+  //           jwe: jweRequest,
+  //         },
+  //       });
+  //     });
+  //   }
+  // }, [fetchToken, nonce, ordinalsAddress, pubKey, signature, signatureStatus]);
 
   const onClick = useCallback(async () => {
     connect({
-      purposes: [AddressPurposes.ORDINALS],
       message: "Connect to Xverse",
     });
   }, [connect]);

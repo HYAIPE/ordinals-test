@@ -13,15 +13,21 @@ type Nonce {
 type Web3User {
   address: ID!
   type: BlockchainNetwork!
-  nonce: String!
   roles: [Role!]!
   allowedActions: [Permission!]!
+
+  token: String
 }
 
 type Web3LoginUser {
   address: ID!
   user: Web3User!
   token: String!
+}
+
+type Mutation {
+  nonceEthereum(address: ID!, chainId: Int!): Nonce!
+  nonceBitcoin(address: ID!): Nonce!
 }
 
 type Query {
@@ -45,8 +51,10 @@ enum PermissionResource {
   ALL
   USER
   ADMIN
+  ROLE
   PRESALE
   AFFILIATE
+  COLLECTION
 }
 
 type Permission {
@@ -74,18 +82,14 @@ type Role {
   delete: Boolean!
 }
 
-type MutationRBAC {
-  createRole(name: String!, permissions: [PermissionInput!]): Role!
+type Query {
+  role(id: ID!): Role
+  roles: [Role!]!
 }
 
 type Mutation {
-  requestFundingAddress(request: InscriptionRequest!): InscriptionFunding!
-  axolotlFundingAddressRequest(request: AxolotlRequest!): AxolotlFunding!
-  rbac: MutationRBAC!
-  nonceEthereum(address: ID!, chainId: Int!): Nonce!
-  nonceBitcoin(address: ID!): Nonce!
-  siwe(address: ID!, jwe: String!): Web3LoginUser!
-  siwb(address: ID!, jwe: String!): Web3LoginUser!
+  createRole(name: String!, permissions: [PermissionInput!]): Role!
+  role(id: ID!): Role!
 }
 
 type InscriptionTransaction {
@@ -155,16 +159,39 @@ type InscriptionFunding {
   inscriptionContent(tapKey: String!): InscriptionData!
 }
 
+type KeyValue {
+  key: String!
+  value: String!
+}
+input KeyValueInput {
+  key: String!
+  value: String!
+}
+
 type Collection {
   id: ID!
   name: String!
+  totalCount: Int!
   maxSupply: Int!
-  totalSupply: Int!
+
+  metadata: [KeyValue!]!
+  updateMetadata(metadata: [KeyValueInput!]!): Collection!
 }
 
 input CollectionInput {
   name: String!
   maxSupply: Int!
+}
+
+type Mutation {
+  createCollection(input: CollectionInput!): Collection!
+  deleteCollection(id: ID!): Boolean!
+  collection(id: ID!): Collection!
+}
+
+type Query {
+  collections: [Collection!]!
+  collection(id: ID!): Collection!
 }
 
 enum BitcoinNetwork {
@@ -190,6 +217,7 @@ input AxolotlRequest {
   network: BitcoinNetwork!
   feeLevel: FeeLevel
   feePerByte: Int
+  collectionId: ID!
 }
 
 type AxolotlFunding {
@@ -210,4 +238,29 @@ type AxolotlFundingPage {
   totalCount: Int!
   page: Int!
   cursor: String
+}
+
+type Mutation {
+  requestFundingAddress(request: InscriptionRequest!): InscriptionFunding!
+  axolotlFundingAddressRequest(request: AxolotlRequest!): AxolotlFunding!
+}
+
+type Mutation {
+  siwe(address: ID!, jwe: String!): Web3LoginUser!
+  siwb(address: ID!, jwe: String!): Web3LoginUser!
+  signOutEthereum: Boolean!
+  signOutBitcoin: Boolean!
+}
+
+type Query {
+  self: Web3User
+}
+
+type AppInfo {
+  name: String!
+  pubKey: String!
+}
+
+type Query {
+  appInfo: AppInfo!
 }

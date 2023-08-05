@@ -11,7 +11,8 @@
         "../../ordinals/axolotl-valley/src/index"
       ],
       "@0xflick/ordinals-rbac": ["../../packages/rbac/src/index"],
-      "@0xflick/ordinals-models": ["../../packages/models/src/index"]
+      "@0xflick/ordinals-models": ["../../packages/models/src/index"],
+      "@0xflick/ordinals-rbac-models": ["../../packages/rbac-models/src/index"]
     },
     "incremental": true,
     "noErrorTruncation": true,
@@ -38,6 +39,9 @@
     },
     {
       "path": "../../packages/models"
+    },
+    {
+      "path": "../../packages/rbac-models"
     }
   ]
 }

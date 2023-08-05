@@ -5,6 +5,7 @@
     "lib": ["esnext"],
     "module": "ES2022",
     "outDir": "./dist",
+    "baseUrl": "./src",
     "composite": true,
     "jsx": "preserve",
     "plugins": [],
@@ -12,7 +13,8 @@
       "@0xflick/inscriptions": ["../../packages/inscriptions/src/index"],
       "@0xflick/ordinals-backend": ["../../packages/backend/src/index"],
       "@0xflick/ordinals-models": ["../../packages/models/src/index"],
-      "@0xflick/ordinals-rbac": ["../../packages/rbac/src/index"]
+      "@0xflick/ordinals-rbac": ["../../packages/rbac/src/index"],
+      "@0xflick/ordinals-rbac-models": ["../../packages/rbac-models/src/index"]
     }
   },
   "include": ["src/**/*.ts"],
@@ -29,6 +31,9 @@
     },
     {
       "path": "../../packages/rbac"
+    },
+    {
+      "path": "../../packages/rbac-models"
     }
   ]
 }

@@ -1,7 +1,5 @@
 import {
   TInscriptionDoc,
-  IOrdinalIncrementingRevealModel,
-  ID_AddressInscription,
   BitcoinNetworkNames,
   ID_Collection,
   InscriptionContent,
@@ -40,8 +38,7 @@ export type TAxolotlCollectionConfig = Record<
   IAxolotlCollectionConfigNetwork | undefined
 >;
 
-export interface IAxolotlCollectionIncrementalRevealMeta
-  extends IOrdinalIncrementingRevealModel {
+export interface IAxolotlCollectionIncrementalRevealMeta {
   config?: string;
 }
 
@@ -51,9 +48,6 @@ export type TAxolotlFundingDao = IFundingDao<
 >;
 
 export class AxolotlModel implements IAxolotlMeta {
-  // just needs to be unique
-  public static ID = "277fcc72-ea5c-4c55-b273-e623db668949" as ID_Collection;
-
   public static NAME = "Axolotl";
 
   public static MAX_SUPPLY = 10000;
@@ -78,6 +72,10 @@ export class AxolotlModel implements IAxolotlMeta {
     this.inscriptionTransaction = inscriptionTransaction;
     this.inscriptionDocument = inscriptionDocument;
     this.addressInscription = addressInscription;
+  }
+
+  public get id() {
+    return this.addressInscription.id;
   }
 
   public get tokenId() {
@@ -164,6 +162,7 @@ export class AxolotlModel implements IAxolotlMeta {
   }
 
   public static async create({
+    collectionId,
     incrementingRevealDao,
     fundingDocDao,
     destinationAddress,
@@ -174,6 +173,7 @@ export class AxolotlModel implements IAxolotlMeta {
     feeLevel,
     tip,
   }: {
+    collectionId: ID_Collection;
     incrementingRevealDao: TAxolotlFundingDao;
     fundingDocDao: IFundingDocDao;
     destinationAddress: string;
@@ -184,9 +184,7 @@ export class AxolotlModel implements IAxolotlMeta {
     inscriptionBucket: string;
     tip: number;
   }) {
-    const collection = await incrementingRevealDao.getCollection(
-      AxolotlModel.ID
-    );
+    const collection = await incrementingRevealDao.getCollection(collectionId);
     const { config: configStr } = collection.meta ?? {};
     const config: TAxolotlCollectionConfig =
       typeof configStr === "undefined"
@@ -207,7 +205,7 @@ export class AxolotlModel implements IAxolotlMeta {
     const revealedAt = tipHeight + revealBlockDelta;
 
     const tokenId = await incrementingRevealDao.incrementCollectionTotalCount(
-      AxolotlModel.ID
+      collectionId,
     );
     const htmlContent = await AxolotlModel.promiseMinifiedHtml({
       genesis: false,
@@ -248,6 +246,7 @@ export class AxolotlModel implements IAxolotlMeta {
     });
 
     const addressModel = new AddressInscriptionModel<IAxolotlMeta>({
+      collectionId,
       address: fundingAddress,
       network,
       contentIds: writableInscriptions.map((inscription) => inscription.tapkey),
@@ -282,11 +281,21 @@ export class AxolotlModel implements IAxolotlMeta {
     await Promise.all([
       fundingDocDao.updateOrSaveInscriptionTransaction(doc),
       incrementingRevealDao.createFunding(addressModel),
-      ...files.map((f) => fundingDocDao.saveInscriptionContent(f)),
+      ...writableInscriptions.map((f) =>
+        fundingDocDao.saveInscriptionContent({
+          id: {
+            fundingAddress,
+            id: addressModel.id,
+            tapKey: f.tapkey,
+          },
+          content: f.file!.content,
+          mimetype: f.file!.mimetype,
+        }),
+      ),
     ]);
 
     const inscriptionTransactionModel = new InscriptionTransactionModel(
-      inscriptionFundingModel
+      inscriptionFundingModel,
     );
 
     return new AxolotlModel({

@@ -9,21 +9,24 @@ import {
 
 export interface IFundingDao<
   ItemMeta extends Record<string, any> = {},
-  CollectionMeta extends Record<string, any> = {}
+  CollectionMeta extends Record<string, any> = {},
 > {
   createFunding(item: IAddressInscriptionModel<ItemMeta>): Promise<void>;
   getFunding(id: string): Promise<IAddressInscriptionModel<ItemMeta>>;
   deleteFunding(id: string): Promise<void>;
   createCollection(item: TCollectionModel<CollectionMeta>): Promise<void>;
   getCollection(id: ID_Collection): Promise<TCollectionModel<CollectionMeta>>;
+  getCollectionByName(
+    name: string,
+  ): Promise<TCollectionModel<CollectionMeta>[]>;
+  getAllCollections(): Promise<TCollectionModel<CollectionMeta>[]>;
   deleteCollection(id: ID_Collection): Promise<void>;
   incrementCollectionTotalCount(id: ID_Collection): Promise<number>;
   updateMaxSupply(id: ID_Collection, maxSupply: number): Promise<void>;
   updateCollectionMeta(
     id: ID_Collection,
     meta: CollectionMeta,
-    incrementTotalCount?: boolean
-  ): Promise<Partial<TCollectionModel<CollectionMeta>>>;
+  ): Promise<TCollectionModel<CollectionMeta>>;
 }
 
 export interface IFundingDocDao {

@@ -1,0 +1,3 @@
+type Query {
+  self: Web3User
+}

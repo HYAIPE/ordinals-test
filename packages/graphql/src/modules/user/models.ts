@@ -1,11 +1,11 @@
 import { UserRolesDAO, UserWithRolesModel } from "@0xflick/ordinals-rbac";
-import { Web3LoginUser, Web3User } from "../../generated-types/graphql.js";
-
 export class Web3UserModel {
   public readonly address: string;
+  public readonly token?: string;
 
-  constructor(address: string) {
+  constructor(address: string, token?: string) {
     this.address = address;
+    this.token = token;
   }
 
   private _promiseUserRoles: Promise<UserWithRolesModel> | null = null;
@@ -40,5 +40,4 @@ export class Web3LoginUserModel {
     this.token = token;
     this.user = new Web3UserModel(address);
   }
-
 }

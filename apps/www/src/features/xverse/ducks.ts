@@ -1,4 +1,10 @@
 import { createAction, createReducer } from "@reduxjs/toolkit";
+import { AddressPurposes, BitcoinNetwork } from "sats-connect";
+
+export interface INetworkTarget {
+  network: BitcoinNetwork["type"];
+  purpose: AddressPurposes;
+}
 
 export enum AsyncStatus {
   IDLE = "idle",
@@ -16,9 +22,15 @@ export interface XverseState {
   connectionStatus: AsyncStatus;
   signatureStatus?: AsyncStatus;
   signature?: string;
+  currentTarget: INetworkTarget;
+  currentAddress?: string;
 }
 export const initialState: XverseState = {
   connectionStatus: AsyncStatus.IDLE,
+  currentTarget: {
+    network: "Testnet",
+    purpose: AddressPurposes.ORDINALS,
+  },
 };
 const connectInit = createAction("xverse/connect");
 const connectFulfilled = createAction(
@@ -67,6 +79,15 @@ const signatureRequestRejected = createAction(
     },
   })
 );
+const switchTarget = createAction(
+  "xverse/switchTarget",
+  ({ network, purpose }: INetworkTarget) => ({
+    payload: {
+      network,
+      purpose,
+    },
+  })
+);
 
 export const xverseReducer = createReducer<XverseState>(
   initialState,
@@ -100,6 +121,9 @@ export const xverseReducer = createReducer<XverseState>(
       state.signatureStatus = AsyncStatus.REJECTED;
       state.errorMessage = action.payload.errorMessage;
     });
+    builder.addCase(switchTarget, (state, action) => {
+      state.currentTarget = action.payload;
+    });
   }
 );
 
@@ -110,4 +134,5 @@ export const actionCreators = {
   signatureRequestInit,
   signatureRequestFulfilled,
   signatureRequestRejected,
+  switchTarget,
 };

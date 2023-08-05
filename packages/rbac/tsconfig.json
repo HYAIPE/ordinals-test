@@ -21,7 +21,7 @@
       "path": "../../packages/models"
     },
     {
-      "path": "../../packages/rbac-models"
+      "path": "../../packages/rbac-models/tsconfig.json"
     }
   ]
 }

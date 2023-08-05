@@ -1,0 +1,34 @@
+type KeyValue {
+  key: String!
+  value: String!
+}
+input KeyValueInput {
+  key: String!
+  value: String!
+}
+
+type Collection {
+  id: ID!
+  name: String!
+  totalCount: Int!
+  maxSupply: Int!
+
+  metadata: [KeyValue!]!
+  updateMetadata(metadata: [KeyValueInput!]!): Collection!
+}
+
+input CollectionInput {
+  name: String!
+  maxSupply: Int!
+}
+
+type Mutation {
+  createCollection(input: CollectionInput!): Collection!
+  deleteCollection(id: ID!): Boolean!
+  collection(id: ID!): Collection!
+}
+
+type Query {
+  collections: [Collection!]!
+  collection(id: ID!): Collection!
+}

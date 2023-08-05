@@ -1,7 +1,7 @@
 import { lazySingleton } from "@0xflick/ordinals-models";
 
 export const awsEndpoint = lazySingleton(() => {
-  return process.env.AWS_ENDPOINT;
+  return process.env.AWS_ENDPOINT_URL;
 });
 
 export const awsRegion = lazySingleton(() => {

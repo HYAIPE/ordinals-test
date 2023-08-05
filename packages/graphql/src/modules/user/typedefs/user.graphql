@@ -13,13 +13,19 @@ type Nonce {
 type Web3User {
   address: ID!
   type: BlockchainNetwork!
-  nonce: String!
   roles: [Role!]!
   allowedActions: [Permission!]!
+
+  token: String
 }
 
 type Web3LoginUser {
   address: ID!
   user: Web3User!
   token: String!
+}
+
+type Mutation {
+  nonceEthereum(address: ID!, chainId: Int!): Nonce!
+  nonceBitcoin(address: ID!): Nonce!
 }

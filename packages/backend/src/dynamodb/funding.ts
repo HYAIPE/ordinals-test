@@ -6,6 +6,11 @@ import {
   TCollectionModel,
   toBitcoinNetworkName,
   ID_Collection,
+  IPaginationOptions,
+  IPaginatedResult,
+  decodeCursor,
+  encodeCursor,
+  paginate,
 } from "@0xflick/ordinals-models";
 import { IFundingDao } from "../dao/funding.js";
 import {
@@ -13,6 +18,8 @@ import {
   GetCommand,
   PutCommand,
   UpdateCommand,
+  QueryCommand,
+  ScanCommand,
 } from "@aws-sdk/lib-dynamodb";
 
 export type TFundingDb<T extends Record<string, any>> = {
@@ -32,9 +39,16 @@ export type TFundingCollectionDb<T extends Record<string, any>> = {
   totalCount: number;
 } & T;
 
+function excludePrimaryKeys<T extends Record<string, any>>(
+  input: T,
+): Record<string, any> {
+  const { pk, sk, ...rest } = input;
+  return rest;
+}
+
 export class FundingDao<
   ItemMeta extends Record<string, any> = {},
-  CollectionMeta extends Record<string, any> = {}
+  CollectionMeta extends Record<string, any> = {},
 > implements IFundingDao<ItemMeta, CollectionMeta>
 {
   public static TABLE_NAME = "Funding";
@@ -52,7 +66,7 @@ export class FundingDao<
         TableName: FundingDao.TABLE_NAME,
         Item: db,
         ReturnValues: "NONE",
-      })
+      }),
     );
   }
 
@@ -61,9 +75,10 @@ export class FundingDao<
       new GetCommand({
         TableName: FundingDao.TABLE_NAME,
         Key: {
-          pk: `FUNDING#${id}`,
+          pk: id,
+          sk: "funding",
         },
-      })
+      }),
     );
     return this.fromFundingDb(db.Item as TFundingDb<ItemMeta>);
   }
@@ -73,9 +88,10 @@ export class FundingDao<
       new DeleteCommand({
         TableName: FundingDao.TABLE_NAME,
         Key: {
-          pk: `FUNDING#${id}`,
+          pk: id,
+          sk: "funding",
         },
-      })
+      }),
     );
   }
 
@@ -86,7 +102,7 @@ export class FundingDao<
         TableName: FundingDao.TABLE_NAME,
         Item: db,
         ReturnValues: "NONE",
-      })
+      }),
     );
   }
 
@@ -95,12 +111,32 @@ export class FundingDao<
       new GetCommand({
         TableName: FundingDao.TABLE_NAME,
         Key: {
-          pk: `COLLECTION#${id}`,
+          pk: id,
+          sk: "collection",
         },
-      })
+      }),
     );
     return this.fromCollectionDb(
-      db.Item as TFundingCollectionDb<CollectionMeta>
+      db.Item as TFundingCollectionDb<CollectionMeta>,
+    );
+  }
+
+  public async getCollectionByName(name: string) {
+    const db = await this.client.send(
+      new QueryCommand({
+        TableName: FundingDao.TABLE_NAME,
+        IndexName: "collectionByName",
+        KeyConditionExpression: "collectionName = :collectionName",
+        ExpressionAttributeValues: {
+          ":collectionName": name,
+        },
+      }),
+    );
+    if (db.Items == null) {
+      return [];
+    }
+    return db.Items.map((item) =>
+      this.fromCollectionDb(item as TFundingCollectionDb<CollectionMeta>),
     );
   }
 
@@ -109,20 +145,22 @@ export class FundingDao<
       new DeleteCommand({
         TableName: FundingDao.TABLE_NAME,
         Key: {
-          pk: `COLLECTION#${id}`,
+          pk: id,
+          sk: "collection",
         },
-      })
+      }),
     );
   }
 
   public async incrementCollectionTotalCount(
-    id: ID_Collection
+    id: ID_Collection,
   ): Promise<number> {
     const response = await this.client.send(
       new UpdateCommand({
         TableName: FundingDao.TABLE_NAME,
         Key: {
-          pk: `COLLECTION#${id}`,
+          pk: id,
+          sk: "collection",
         },
         ConditionExpression: "attribute_exists(pk)",
         UpdateExpression: "ADD totalCount :one",
@@ -130,7 +168,7 @@ export class FundingDao<
           ":one": 1,
         },
         ReturnValues: "ALL_NEW",
-      })
+      }),
     );
     if (!response.Attributes) {
       throw new Error("Collection not found");
@@ -140,28 +178,79 @@ export class FundingDao<
 
   public async updateMaxSupply(
     id: ID_Collection,
-    maxSupply: number
+    maxSupply: number,
   ): Promise<void> {
     await this.client.send(
       new UpdateCommand({
         TableName: FundingDao.TABLE_NAME,
         Key: {
-          pk: `COLLECTION#${id}`,
+          pk: id,
+          sk: "collection",
         },
         ConditionExpression: "attribute_exists(pk)",
         UpdateExpression: "SET maxSupply = :maxSupply",
         ExpressionAttributeValues: {
           ":maxSupply": maxSupply,
         },
-      })
+      }),
     );
   }
 
-  async updateCollectionMeta(
-    id: ID_Collection,
-    meta: CollectionMeta,
-    incrementCollectionTotalCount?: boolean
-  ) {
+  async getAllCollections(): Promise<TCollectionModel<CollectionMeta>[]> {
+    const models: TCollectionModel<CollectionMeta>[] = [];
+    for await (const model of this.getAllCollectionIterator()) {
+      models.push(model);
+    }
+    return models;
+  }
+
+  public getAllCollectionIterator() {
+    return paginate((options) => this.getAllCollectionPaginated(options));
+  }
+
+  private async getAllCollectionPaginated(
+    options?: IPaginationOptions,
+  ): Promise<IPaginatedResult<TCollectionModel<CollectionMeta>>> {
+    const pagination = decodeCursor(options?.cursor);
+    const result = await this.client.send(
+      new ScanCommand({
+        TableName: FundingDao.TABLE_NAME,
+        IndexName: "GSI1",
+        ...(pagination
+          ? {
+              ExclusiveStartKey: pagination.lastEvaluatedKey,
+            }
+          : {}),
+        ...(options?.limit
+          ? {
+              Limit: options.limit,
+            }
+          : {}),
+        FilterExpression: "sk = :sk",
+        ExpressionAttributeValues: {
+          ":sk": "collection",
+        },
+      }),
+    );
+
+    const lastEvaluatedKey = result.LastEvaluatedKey;
+    const page = pagination ? pagination.page + 1 : 1;
+    const size = result.Items?.length ?? 0;
+    const count = (pagination ? pagination.count : 0) + size;
+    const cursor = encodeCursor({ lastEvaluatedKey, page, count });
+    return {
+      items:
+        result.Items?.map((item) =>
+          this.fromCollectionDb(item as TFundingCollectionDb<CollectionMeta>),
+        ) ?? [],
+      cursor,
+      page,
+      count,
+      size,
+    };
+  }
+
+  async updateCollectionMeta(id: ID_Collection, meta: CollectionMeta) {
     let updateExpression = Object.keys(meta).reduce((acc, key) => {
       return `${acc} SET #${key} = :${key}`;
     }, "");
@@ -170,38 +259,33 @@ export class FundingDao<
         ...acc,
         [`:${key}`]: meta[key],
       }),
-      {} as Record<string, any>
+      {} as Record<string, any>,
     );
     const expressionAttributeNames = Object.keys(meta).reduce(
       (acc, key) => ({
         ...acc,
         [`#${key}`]: key,
       }),
-      {} as Record<string, string>
+      {} as Record<string, string>,
     );
-    if (incrementCollectionTotalCount) {
-      updateExpression += " ADD #totalCount :one";
-      expressionAttributeValues[":one"] = 1;
-      expressionAttributeNames["#totalCount"] = "totalCount";
-    }
     const response = await this.client.send(
       new UpdateCommand({
         TableName: FundingDao.TABLE_NAME,
         Key: {
-          pk: `COLLECTION#${id}`,
+          pk: id,
+          sk: "collection",
         },
-        ConditionExpression: "attribute_exists(pk)",
         UpdateExpression: updateExpression,
         ExpressionAttributeValues: expressionAttributeValues,
         ExpressionAttributeNames: expressionAttributeNames,
         ReturnValues: "ALL_NEW",
-      })
+      }),
     );
     if (!response.Attributes) {
       throw new Error("Collection not found");
     }
     return this.fromCollectionDb(
-      response.Attributes as TFundingCollectionDb<CollectionMeta>
+      response.Attributes as TFundingCollectionDb<CollectionMeta>,
     );
   }
 
@@ -214,7 +298,8 @@ export class FundingDao<
     meta,
   }: IAddressInscriptionModel<T>): TFundingDb<T> {
     return {
-      pk: `FUNDING#${id}`,
+      pk: id,
+      sk: "funding",
       id,
       address,
       collectionId,
@@ -232,7 +317,8 @@ export class FundingDao<
     meta,
   }: TCollectionModel<T>): TFundingCollectionDb<T> {
     return {
-      pk: `COLLECTION#${id}`,
+      pk: id,
+      sk: "collection",
       collectionId: id,
       collectionName: name,
       maxSupply,
@@ -253,7 +339,7 @@ export class FundingDao<
       maxSupply: maxSupply,
       name: collectionName,
       totalCount: totalCount,
-      meta: meta as T,
+      meta: excludePrimaryKeys(meta) as T,
     };
   }
 
@@ -271,7 +357,7 @@ export class FundingDao<
       id: toAddressInscriptionId(id),
       network: toBitcoinNetworkName(network),
       ...(collectionId ? { collectionId: toCollectionId(collectionId) } : {}),
-      meta: meta as T,
+      meta: excludePrimaryKeys(meta) as T,
     };
   }
 }

@@ -1,18 +1,14 @@
 input AxolotlRequest {
-  destinationAddress: String!
-  request: String
-  proof: String
+  claimingAddress: String!
   network: BitcoinNetwork!
   feeLevel: FeeLevel
   feePerByte: Int
+  collectionId: ID!
 }
 
 type AxolotlFunding {
   id: ID!
   inscriptionFunding: InscriptionFunding
-
-  request: String
-  proof: String
 
   tokenId: Int!
   createdAt: String!
@@ -25,4 +21,9 @@ type AxolotlFundingPage {
   totalCount: Int!
   page: Int!
   cursor: String
+}
+
+type Mutation {
+  requestFundingAddress(request: InscriptionRequest!): InscriptionFunding!
+  axolotlFundingAddressRequest(request: AxolotlRequest!): [AxolotlFunding!]!
 }

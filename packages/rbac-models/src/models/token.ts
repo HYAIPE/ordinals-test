@@ -2,21 +2,28 @@ import { CompactEncrypt, decodeJwt, importSPKI } from "jose";
 import { IRole } from "./roles.js";
 import { promisePublicKey, UserWithRolesModel } from "./user.js";
 
-export function generateRoles(roles: IRole[]) {
-  return generateRolesFromIds(roles.map((role) => role.id));
+export function generateRoles(roles: IRole[], issuer: string) {
+  return generateRolesFromIds({
+    roles: roles.map((role) => role.id),
+    issuer,
+  });
 }
 
-export function namespacedClaim(claim: string) {
-  return `${
-    TokenModel.JWT_CLAIM_ISSUER ? `${TokenModel.JWT_CLAIM_ISSUER}/` : ""
-  }${claim}`;
+export function namespacedClaim(claim: string, issuer: string) {
+  return `${issuer}/${claim}`;
 }
 
-export function generateRolesFromIds(roles?: string[]) {
+export function generateRolesFromIds({
+  roles,
+  issuer,
+}: {
+  roles?: string[];
+  issuer: string;
+}) {
   return roles?.length
     ? roles.reduce(
         (memo, role) => {
-          memo[namespacedClaim(`role/${role}`)] = true;
+          memo[namespacedClaim(`role/${role}`, issuer)] = true;
           return memo;
         },
         {} as Record<string, boolean>,
@@ -24,18 +31,22 @@ export function generateRolesFromIds(roles?: string[]) {
     : {};
 }
 
-export function decodeJwtToken(token: string): null | UserWithRolesModel {
+export function decodeJwtToken(
+  token: string,
+  issuer: string,
+): UserWithRolesModel {
   const result = decodeJwt(token);
-  if (result.iss !== TokenModel.JWT_CLAIM_ISSUER) {
-    return null;
+  if (result.iss !== issuer) {
+    throw new Error("Issuer mismatch");
   }
-  const roleNamespace = namespacedClaim("role/");
+  const roleNamespace = namespacedClaim("role/", issuer);
   const roleIds = Object.entries(result)
     .filter(([k, v]) => v && k.includes(roleNamespace))
     .map(([k]) => k.replace(roleNamespace, ""));
-  return UserWithRolesModel.fromJson({
-    address: result.sub,
+  return new UserWithRolesModel({
+    address: result.sub!,
     roleIds,
+    decodedToken: result,
   });
 }
 

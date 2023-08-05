@@ -2,14 +2,15 @@
   "extends": "@0xflick/tsconfig/tsconfig.base.json",
   "compilerOptions": {
     "target": "ES2022",
-    "lib": ["dom", "es2022"],
+    "lib": ["dom", "dom.iterable", "esnext"],
     "module": "ES2022",
     "outDir": "./dist",
     "rootDir": "./src",
     "composite": true,
+    "paths": {},
     "plugins": []
   },
-  "include": ["./src/**/*.ts"],
-  "exclude": ["./node_modules", "./dist"],
+  "include": ["src/**/*.ts"],
+  "exclude": ["./node_modules"],
   "references": []
 }

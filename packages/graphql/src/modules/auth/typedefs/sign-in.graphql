@@ -1,0 +1,6 @@
+type Mutation {
+  siwe(address: ID!, jwe: String!): Web3LoginUser!
+  siwb(address: ID!, jwe: String!): Web3LoginUser!
+  signOutEthereum: Boolean!
+  signOutBitcoin: Boolean!
+}

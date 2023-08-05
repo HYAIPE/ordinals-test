@@ -24,7 +24,7 @@ export function createBitcoinContext(config: IConfigContext): IBitcoinContext {
     createMempoolBitcoinClient({ network }) {
       const url = new URL(urlForNetworkName(network));
       const protocol = url.protocol.slice(0, -1);
-      if (["http", "https"].includes(protocol)) {
+      if (!["http", "https"].includes(protocol)) {
         throw new Error(`Unsupported protocol: ${protocol}`);
       }
       return createMempoolClient({

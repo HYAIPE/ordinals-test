@@ -1,12 +1,10 @@
 import { ID_Collection } from "@0xflick/ordinals-models";
-import { IIncrementingRevealDao } from "../dao/ordinals/incrementingReveal.js";
 import { IFundingDao } from "../dao/funding.js";
 
 export class IncrementingRevealDao<
   ItemMeta extends Record<string, any> = {},
   CollectionMeta extends Record<string, any> = {}
-> implements IIncrementingRevealDao
-{
+> {
   private fundingDao: IFundingDao<ItemMeta, CollectionMeta>;
   public collectionId: ID_Collection;
 

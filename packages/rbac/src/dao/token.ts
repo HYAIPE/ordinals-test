@@ -11,7 +11,6 @@ import {
 import {
   generateRolesFromIds,
   namespacedClaim,
-  TokenModel,
   IUserWithRoles,
 } from "@0xflick/ordinals-rbac-models";
 
@@ -27,26 +26,31 @@ export async function createJwtTokenSingleSubject({
   user,
   nonce,
   payload,
+  issuer,
 }: {
   user: IUserWithRoles;
   nonce: string;
   payload?: JWTPayload;
+  issuer: string;
 }): Promise<string> {
   // Create a JWS signed with the private key
   const key = await jwkKey;
 
   const jws = await new SignJWT({
     ...payload,
-    [namespacedClaim("nonce")]: nonce,
-    ...generateRolesFromIds(user.roleIds),
+    [namespacedClaim("nonce", issuer)]: nonce,
+    ...generateRolesFromIds({
+      roles: user.roleIds,
+      issuer,
+    }),
   })
     .setProtectedHeader({
       alg: "ES512",
     })
     .setSubject(user.address)
     .setIssuedAt()
-    .setIssuer(TokenModel.JWT_CLAIM_ISSUER)
-    .setExpirationTime(Date.now() / 1000 + 60 * 60 * 24 * 7)
+    .setIssuer(issuer)
+    .setExpirationTime(Date.now() / 1000 + 60 * 60 * 24 * 3) // 3 days
     .sign(key);
   return jws;
 }
@@ -54,9 +58,11 @@ export async function createJwtTokenSingleSubject({
 export async function upgradeJwtTokenNewAddress({
   addressesToAdd,
   jwt,
+  issuer,
 }: {
   jwt: JWTVerifyResult;
   addressesToAdd: { network: "bitcoin" | "ethereum"; address: string }[];
+  issuer: string;
 }) {
   const privKey = await jwkKey;
 
@@ -66,7 +72,7 @@ export async function upgradeJwtTokenNewAddress({
   const newPayload = {
     ...jwt.payload,
     ...addressesToAdd.reduce((acc, { network, address }) => {
-      const claim = namespacedClaim(network);
+      const claim = namespacedClaim(network, issuer);
       const existing: string[] = (jwt.payload[claim] as any) ?? [];
       return {
         ...acc,

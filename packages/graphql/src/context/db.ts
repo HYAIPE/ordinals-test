@@ -2,6 +2,8 @@ import {
   createDynamoDbFundingDao,
   IFundingDao,
   getDb,
+  createDynamoDbClaimsDao,
+  ClaimsDao,
 } from "@0xflick/ordinals-backend";
 import {
   RolePermissionsDAO,
@@ -25,6 +27,7 @@ export interface DbContext {
   rolesDao: RolesDAO;
   rolePermissionsDao: RolePermissionsDAO;
   userDao: UserDAO;
+  claimsDao: ClaimsDao;
 }
 
 export function createDbContext(config: IConfigContext) {
@@ -51,6 +54,10 @@ export function createDbContext(config: IConfigContext) {
     }),
     userDao: createDynamoDbUserDao({
       userNonceTableName: config.tableNames.userNonce,
+      db,
+    }),
+    claimsDao: createDynamoDbClaimsDao({
+      claimsTableName: config.tableNames.claims,
       db,
     }),
   };

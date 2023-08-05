@@ -3,12 +3,13 @@ import type * as Types from "../../../generated-types/graphql.js";
 import type * as gm from "@0xflick/graphql-modules";
 export namespace AxolotlModule {
   interface DefinedFields {
-    AxolotlFunding: 'id' | 'inscriptionFunding' | 'request' | 'proof' | 'tokenId' | 'createdAt' | 'originAddress' | 'chameleon';
+    AxolotlFunding: 'id' | 'inscriptionFunding' | 'tokenId' | 'createdAt' | 'originAddress' | 'chameleon';
     AxolotlFundingPage: 'items' | 'totalCount' | 'page' | 'cursor';
+    Mutation: 'requestFundingAddress' | 'axolotlFundingAddressRequest';
   };
   
   interface DefinedInputFields {
-    AxolotlRequest: 'destinationAddress' | 'request' | 'proof' | 'network' | 'feeLevel' | 'feePerByte';
+    AxolotlRequest: 'claimingAddress' | 'network' | 'feeLevel' | 'feePerByte' | 'collectionId';
   };
   
   export type AxolotlRequest = Pick<Types.AxolotlRequest, DefinedInputFields['AxolotlRequest']>;
@@ -17,13 +18,17 @@ export namespace AxolotlModule {
   export type AxolotlFunding = Pick<Types.AxolotlFunding, DefinedFields['AxolotlFunding']>;
   export type InscriptionFunding = Types.InscriptionFunding;
   export type AxolotlFundingPage = Pick<Types.AxolotlFundingPage, DefinedFields['AxolotlFundingPage']>;
+  export type Mutation = Pick<Types.Mutation, DefinedFields['Mutation']>;
+  export type InscriptionRequest = Types.InscriptionRequest;
   
   export type AxolotlFundingResolvers = Pick<Types.AxolotlFundingResolvers, DefinedFields['AxolotlFunding'] | '__isTypeOf'>;
   export type AxolotlFundingPageResolvers = Pick<Types.AxolotlFundingPageResolvers, DefinedFields['AxolotlFundingPage'] | '__isTypeOf'>;
+  export type MutationResolvers = Pick<Types.MutationResolvers, DefinedFields['Mutation']>;
   
   export interface Resolvers {
     AxolotlFunding?: AxolotlFundingResolvers;
     AxolotlFundingPage?: AxolotlFundingPageResolvers;
+    Mutation?: MutationResolvers;
   };
   
   export interface MiddlewareMap {
@@ -34,8 +39,6 @@ export namespace AxolotlModule {
       '*'?: gm.Middleware[];
       id?: gm.Middleware[];
       inscriptionFunding?: gm.Middleware[];
-      request?: gm.Middleware[];
-      proof?: gm.Middleware[];
       tokenId?: gm.Middleware[];
       createdAt?: gm.Middleware[];
       originAddress?: gm.Middleware[];
@@ -47,6 +50,11 @@ export namespace AxolotlModule {
       totalCount?: gm.Middleware[];
       page?: gm.Middleware[];
       cursor?: gm.Middleware[];
+    };
+    Mutation?: {
+      '*'?: gm.Middleware[];
+      requestFundingAddress?: gm.Middleware[];
+      axolotlFundingAddressRequest?: gm.Middleware[];
     };
   };
 }

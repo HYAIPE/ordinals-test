@@ -5,12 +5,13 @@ export namespace PermissionsModule {
   interface DefinedFields {
     Permission: 'action' | 'resource' | 'identifier';
     Role: 'id' | 'name' | 'userCount' | 'permissions' | 'bindToUser' | 'unbindFromUser' | 'addPermissions' | 'removePermissions' | 'delete';
-    MutationRBAC: 'createRole';
+    Query: 'role' | 'roles';
+    Mutation: 'createRole' | 'role';
   };
   
   interface DefinedEnumValues {
     PermissionAction: 'CREATE' | 'UPDATE' | 'DELETE' | 'LIST' | 'GET' | 'USE' | 'ADMIN';
-    PermissionResource: 'ALL' | 'USER' | 'ADMIN' | 'PRESALE' | 'AFFILIATE';
+    PermissionResource: 'ALL' | 'USER' | 'ADMIN' | 'ROLE' | 'PRESALE' | 'AFFILIATE' | 'COLLECTION';
   };
   
   interface DefinedInputFields {
@@ -23,16 +24,19 @@ export namespace PermissionsModule {
   export type PermissionInput = Pick<Types.PermissionInput, DefinedInputFields['PermissionInput']>;
   export type Role = Pick<Types.Role, DefinedFields['Role']>;
   export type Web3User = Types.Web3User;
-  export type MutationRBAC = Pick<Types.MutationRbac, DefinedFields['MutationRBAC']>;
+  export type Query = Pick<Types.Query, DefinedFields['Query']>;
+  export type Mutation = Pick<Types.Mutation, DefinedFields['Mutation']>;
   
   export type PermissionResolvers = Pick<Types.PermissionResolvers, DefinedFields['Permission'] | '__isTypeOf'>;
   export type RoleResolvers = Pick<Types.RoleResolvers, DefinedFields['Role'] | '__isTypeOf'>;
-  export type MutationRBACResolvers = Pick<Types.MutationRbacResolvers, DefinedFields['MutationRBAC'] | '__isTypeOf'>;
+  export type QueryResolvers = Pick<Types.QueryResolvers, DefinedFields['Query']>;
+  export type MutationResolvers = Pick<Types.MutationResolvers, DefinedFields['Mutation']>;
   
   export interface Resolvers {
     Permission?: PermissionResolvers;
     Role?: RoleResolvers;
-    MutationRBAC?: MutationRBACResolvers;
+    Query?: QueryResolvers;
+    Mutation?: MutationResolvers;
   };
   
   export interface MiddlewareMap {
@@ -57,9 +61,15 @@ export namespace PermissionsModule {
       removePermissions?: gm.Middleware[];
       delete?: gm.Middleware[];
     };
-    MutationRBAC?: {
+    Query?: {
+      '*'?: gm.Middleware[];
+      role?: gm.Middleware[];
+      roles?: gm.Middleware[];
+    };
+    Mutation?: {
       '*'?: gm.Middleware[];
       createRole?: gm.Middleware[];
+      role?: gm.Middleware[];
     };
   };
 }

@@ -21,6 +21,7 @@ const config: CodegenConfig = {
           Role: "../modules/permissions/models.js#RoleModel",
           Web3User: "../modules/user/models.js#Web3UserModel",
           Web3LoginUser: "../modules/user/models.js#Web3LoginUserModel",
+          Collection: "../modules/collections/models.js#CollectionModel",
         },
       },
       presetConfig: {

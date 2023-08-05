@@ -14,6 +14,12 @@ export type Scalars = {
   Float: { input: number; output: number; }
 };
 
+export type AppInfo = {
+  __typename?: 'AppInfo';
+  name: Scalars['String']['output'];
+  pubKey: Scalars['String']['output'];
+};
+
 export type AxolotlFunding = {
   __typename?: 'AxolotlFunding';
   chameleon: Scalars['Boolean']['output'];
@@ -65,7 +71,7 @@ export type Collection = {
   id: Scalars['ID']['output'];
   maxSupply: Scalars['Int']['output'];
   name: Scalars['String']['output'];
-  totalSupply: Scalars['Int']['output'];
+  totalCount: Scalars['Int']['output'];
 };
 
 export type CollectionInput = {
@@ -145,10 +151,14 @@ export type InscriptionTransactionContent = {
 export type Mutation = {
   __typename?: 'Mutation';
   axolotlFundingAddressRequest: AxolotlFunding;
+  createCollection: Collection;
+  deleteCollection: Scalars['Boolean']['output'];
   nonceBitcoin: Nonce;
   nonceEthereum: Nonce;
   rbac: MutationRbac;
   requestFundingAddress: InscriptionFunding;
+  signOutBitcoin: Scalars['Boolean']['output'];
+  signOutEthereum: Scalars['Boolean']['output'];
   siwb: Web3LoginUser;
   siwe: Web3LoginUser;
 };
@@ -156,6 +166,16 @@ export type Mutation = {
 
 export type MutationAxolotlFundingAddressRequestArgs = {
   request: AxolotlRequest;
+};
+
+
+export type MutationCreateCollectionArgs = {
+  input: CollectionInput;
+};
+
+
+export type MutationDeleteCollectionArgs = {
+  id: Scalars['ID']['input'];
 };
 
 
@@ -243,8 +263,10 @@ export enum PermissionResource {
 
 export type Query = {
   __typename?: 'Query';
+  appInfo: AppInfo;
   inscriptionFunding?: Maybe<InscriptionFunding>;
   inscriptionTransaction?: Maybe<InscriptionTransaction>;
+  self?: Maybe<Web3User>;
   userByAddress: Web3User;
 };
 
@@ -315,5 +337,6 @@ export type Web3User = {
   allowedActions: Array<Permission>;
   nonce: Scalars['String']['output'];
   roles: Array<Role>;
+  token?: Maybe<Scalars['String']['output']>;
   type: BlockchainNetwork;
 };

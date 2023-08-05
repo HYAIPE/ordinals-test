@@ -12,8 +12,10 @@ enum PermissionResource {
   ALL
   USER
   ADMIN
+  ROLE
   PRESALE
   AFFILIATE
+  COLLECTION
 }
 
 type Permission {
@@ -41,6 +43,12 @@ type Role {
   delete: Boolean!
 }
 
-type MutationRBAC {
+type Query {
+  role(id: ID!): Role
+  roles: [Role!]!
+}
+
+type Mutation {
   createRole(name: String!, permissions: [PermissionInput!]): Role!
+  role(id: ID!): Role!
 }

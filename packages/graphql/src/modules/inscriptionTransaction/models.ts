@@ -27,7 +27,7 @@ export class InscriptionTransactionModel implements InscriptionTransaction {
 
   public get inscriptions(): InscriptionTransactionContentModel[] {
     return this.inscriptionFunding.inscriptions.map(
-      (inscription) => new InscriptionTransactionContentModel(inscription)
+      (inscription) => new InscriptionTransactionContentModel(inscription),
     );
   }
 
@@ -41,5 +41,13 @@ export class InscriptionTransactionModel implements InscriptionTransaction {
 
   public get privateKey() {
     return this.inscriptionFunding.privateKey;
+  }
+
+  public get qrValue() {
+    return this.inscriptionFunding.qrValue;
+  }
+
+  public get qrSrc() {
+    return this.inscriptionFunding.getQrSrc({});
   }
 }

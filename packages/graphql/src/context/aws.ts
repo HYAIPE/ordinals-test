@@ -6,10 +6,18 @@ export interface IAwsContext {
   s3Client: S3Client;
 }
 
-export function createAwsContext(config: IConfigContext): IAwsContext {
+export function createAwsContext({
+  awsEndpoint: endpoint,
+  awsRegion: region,
+}: IConfigContext): IAwsContext {
   const s3Client = createS3Client({
-    endpoint: config.awsEndpoint,
-    region: config.awsRegion,
+    endpoint,
+    region,
+    ...(endpoint
+      ? {
+          forcePathStyle: true,
+        }
+      : {}),
   });
   return {
     s3Client,

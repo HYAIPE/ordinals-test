@@ -65,6 +65,10 @@ export function graphqlPermissionResourceToModel(
       return EResource.PRESALE;
     case "AFFILIATE":
       return EResource.AFFILIATE;
+    case "ROLE":
+      return EResource.ROLE;
+    case "COLLECTION":
+      return EResource.COLLECTION;
     default:
       throw new Error(`Unknown permission resource: ${resource}`);
   }
@@ -77,13 +81,17 @@ export function modelPermissionResourceToGraphql(
     case EResource.ALL:
       return "ALL";
     case EResource.USER:
-      return "USER"
+      return "USER";
     case EResource.ADMIN:
       return "ADMIN";
     case EResource.PRESALE:
       return "PRESALE";
     case EResource.AFFILIATE:
       return "AFFILIATE";
+    case EResource.ROLE:
+      return "ROLE";
+    case EResource.COLLECTION:
+      return "COLLECTION";
     default:
       throw new Error(`Unknown permission resource: ${resource}`);
   }
@@ -101,6 +109,6 @@ export function graphqlPermissionToModel(permission: Permission): TPermission {
   return {
     action: graphqlPermissionActionToModel(permission.action),
     resource: graphqlPermissionResourceToModel(permission.resource),
-    ...permission.identifier ? { identifier: permission.identifier } : {},
+    ...(permission.identifier ? { identifier: permission.identifier } : {}),
   };
 }

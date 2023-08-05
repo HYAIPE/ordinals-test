@@ -6,23 +6,34 @@ import {
   useContext,
   useMemo,
   useReducer,
+  useState,
 } from "react";
 import {
   getAddress,
-  signTransaction,
   signMessage,
   BitcoinNetwork,
   GetAddressPayload,
+  AddressPurposes,
+  SignMessagePayload,
 } from "sats-connect";
 import {
   actionCreators,
+  AsyncStatus,
   initialState,
   xverseReducer,
-  XverseState,
 } from "./ducks";
 
-function useXverseContext({ network }: { network: BitcoinNetwork }) {
-  const [state, dispatch] = useReducer(xverseReducer, initialState);
+function useXverseContext(opts: {
+  network: BitcoinNetwork["type"];
+  purpose: AddressPurposes;
+}) {
+  const [state, dispatch] = useReducer(xverseReducer, {
+    ...initialState,
+    currentTarget: {
+      network: opts.network,
+      purpose: opts.purpose,
+    },
+  });
   const actions = useMemo(
     () => ({
       connectInit: () => dispatch(actionCreators.connectInit()),
@@ -50,16 +61,29 @@ function useXverseContext({ network }: { network: BitcoinNetwork }) {
     }),
     []
   );
+  const isConnected = state.connectionStatus === AsyncStatus.FULFILLED;
+  const isConnecting = state.connectionStatus === AsyncStatus.PENDING;
+  const network = state.currentTarget?.network;
+  const purpose = state.currentTarget?.purpose;
+  const address =
+    purpose === AddressPurposes.ORDINALS
+      ? state.ordinalsAddress
+      : state.paymentAddress;
 
   const connect = useCallback(
-    async (request: Omit<GetAddressPayload, "network">) => {
+    async (opts: Omit<GetAddressPayload, "network" | "purposes">) => {
       actions.connectInit();
       try {
-        await getAddress({
-          payload: {
-            network,
-            ...request,
+        const getAddressPayload: GetAddressPayload = {
+          network: {
+            type: network,
           },
+          purposes: [AddressPurposes.ORDINALS, AddressPurposes.PAYMENT],
+          ...opts,
+        };
+        console.log("getAddressPayload", getAddressPayload);
+        await getAddress({
+          payload: getAddressPayload,
           onFinish(response) {
             let paymentAddress = "";
             let paymentPublicKey = "";
@@ -95,16 +119,43 @@ function useXverseContext({ network }: { network: BitcoinNetwork }) {
   );
 
   const sign = useCallback(
-    async (messageToSign: string) => {
+    async ({
+      messageToSign,
+      network,
+      address: addressToSign,
+    }: {
+      messageToSign: string;
+      network?: BitcoinNetwork;
+      address?: string;
+    }) => {
+      const initialNetwork = state.currentTarget?.network;
+      const initialPurpose = state.currentTarget?.purpose;
       try {
+        if (!initialNetwork && !network) {
+          throw new Error("Network is required");
+        }
+        if (!initialPurpose && !address) {
+          throw new Error("Address is required");
+        }
+        const signMessagePayload = {
+          address: addressToSign ?? address,
+          message: messageToSign,
+          ...(initialNetwork ? { network: initialNetwork } : {}),
+          ...(network ? { network } : {}),
+          ...(initialPurpose
+            ? {
+                address:
+                  initialPurpose === AddressPurposes.ORDINALS
+                    ? state.ordinalsAddress
+                    : state.paymentAddress,
+              }
+            : {}),
+          ...(address ? { address } : {}),
+        } as SignMessagePayload;
         dispatch(actionCreators.signatureRequestInit());
         const response = await new Promise((resolve, reject) =>
           signMessage({
-            payload: {
-              address: state.ordinalsAddress!,
-              network,
-              message: messageToSign,
-            },
+            payload: signMessagePayload,
             onFinish(response) {
               dispatch(
                 actionCreators.signatureRequestFulfilled({
@@ -122,11 +173,45 @@ function useXverseContext({ network }: { network: BitcoinNetwork }) {
           })
         );
         return response;
-      } catch (error: unknown) {}
+      } catch (error: unknown) {
+        if (error instanceof Error) {
+          dispatch(actionCreators.signatureRequestRejected(error.message));
+        }
+      }
     },
-    [network, state.ordinalsAddress]
+    [
+      address,
+      state.currentTarget?.network,
+      state.currentTarget?.purpose,
+      state.ordinalsAddress,
+      state.paymentAddress,
+    ]
   );
-  return { state, connect, sign };
+
+  const networkSelect = useCallback(
+    ({
+      network,
+      purpose,
+    }: {
+      network: BitcoinNetwork["type"];
+      purpose: AddressPurposes;
+    }) => {
+      dispatch(actionCreators.switchTarget({ network, purpose }));
+    },
+    []
+  );
+
+  return {
+    state,
+    connect,
+    sign,
+    network,
+    purpose,
+    networkSelect,
+    isConnected,
+    isConnecting,
+    address,
+  };
 }
 
 type TContext = ReturnType<typeof useXverseContext>;
@@ -134,11 +219,13 @@ const XverseProvider = createContext<TContext | null>(null);
 
 export const Provider: FC<
   PropsWithChildren<{
-    network: BitcoinNetwork;
+    network: BitcoinNetwork["type"];
+    purpose: AddressPurposes;
   }>
-> = ({ children, network }) => {
+> = ({ children, network, purpose }) => {
   const context = useXverseContext({
     network,
+    purpose,
   });
   return (
     <XverseProvider.Provider value={context}>

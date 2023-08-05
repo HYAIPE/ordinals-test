@@ -6,6 +6,7 @@
   "type": "module",
   "scripts": {
     "cli": "node --loader ts-node/esm src/index.ts",
+    "start:dev": "ts-node-dev -r dotenv/config -- src/index.ts | bunyan",
     "schema:types": "yarn graphql-codegen --config codegen.ts"
   },
   "devDependencies": {

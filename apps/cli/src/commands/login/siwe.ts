@@ -2,12 +2,13 @@ import { BrowserProvider, verifyMessage } from "ethers";
 import ethProvider from "eth-provider";
 import { GraphQLClient } from "graphql-request";
 import { getSdk } from "../../graphql.generated.js";
-import { createJweRequest } from "@0xflick/ordinals-rbac";
+import { createJweRequest } from "@0xflick/ordinals-rbac-models";
 
 export async function siwe({ chainId, url }: { chainId: number; url: string }) {
   const client = new GraphQLClient(url);
   const sdk = getSdk(client);
-  const provider = new BrowserProvider(ethProvider("frame"), chainId);
+  const frame = ethProvider("frame");
+  const provider = new BrowserProvider(frame, chainId);
   const signer = await provider.getSigner();
   const address = await signer.getAddress();
   console.log(`Address: ${address}`);
@@ -29,5 +30,5 @@ export async function siwe({ chainId, url }: { chainId: number; url: string }) {
     jwe,
   });
   console.log(`Token: ${token}`);
-  provider.destroy();
+  frame.close();
 }

@@ -216,6 +216,7 @@ export class RolesDAO {
               Limit: options.limit,
             }
           : {}),
+        FilterExpression: "attribute_exists(RoleID)",
       }),
     );
 

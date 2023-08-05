@@ -1,12 +1,7 @@
 {
   "name": "@0xflick/ordinals-rbac",
   "version": "1.0.0",
-  "exports": {
-    ".": {
-      "import": "./dist/index.js",
-      "types": "./dist/index.d.ts"
-    }
-  },
+  "main": "src/index.ts",
   "type": "module",
   "license": "MIT",
   "scripts": {

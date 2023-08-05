@@ -1,7 +1,5 @@
 "use client";
 import { DefaultProvider } from "@/context/default";
-import { Toolbar } from "@/components/Toolbar";
-import Container from "@mui/material/Container";
 import Grid2 from "@mui/material/Unstable_Grid2";
 import Card from "@mui/material/Card";
 import CardContent from "@mui/material/CardContent";
@@ -10,6 +8,8 @@ import CardActions from "@mui/material/CardActions";
 import { Connect } from "@/features/xverse/Connect";
 import { useXverse } from "@/features/xverse/Context";
 import { AsyncStatus } from "@/features/xverse/ducks";
+import { SwitchableNetwork } from "@/layouts/SwitchableNetwork";
+import { AddressPurposes } from "sats-connect";
 
 const TestConnectCard = () => {
   const {
@@ -39,23 +39,18 @@ const TestConnectCard = () => {
 
 export default function Home() {
   return (
-    <DefaultProvider
-      network={{
-        type: "Testnet",
-      }}
-    >
-      <Toolbar title="Home" />
-      <Container
-        sx={{
-          mt: 8,
-        }}
+    <DefaultProvider>
+      <SwitchableNetwork
+        title="home"
+        initialBitcoinNetwork="Testnet"
+        initialBitcoinPurpose={AddressPurposes.ORDINALS}
       >
         <Grid2 container spacing={2}>
           <Grid2 xs={12} sm={6} md={4}>
             <TestConnectCard />
           </Grid2>
         </Grid2>
-      </Container>
+      </SwitchableNetwork>
     </DefaultProvider>
   );
 }

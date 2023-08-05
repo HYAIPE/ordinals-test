@@ -16,7 +16,7 @@ export class RoleModel {
     roleDao: RolesDAO,
     rolePermissionsDao: RolePermissionsDAO,
     roleId: string,
-    role: IRole | null = null
+    role: IRole | null = null,
   ) {
     this.roleId = roleId;
     this.roleDao = roleDao;
@@ -26,7 +26,7 @@ export class RoleModel {
 
   private _promiseLoaded: Promise<unknown> | null = null;
   private async prime() {
-    if (this._promiseLoaded !== null) {
+    if (this._promiseLoaded === null) {
       this._promiseLoaded = Promise.all([
         Promise.resolve().then(async () => {
           if (this.role === null) {
@@ -42,7 +42,7 @@ export class RoleModel {
       ]);
       await this._promiseLoaded;
     }
-    return this._promiseLoaded;
+    return await this._promiseLoaded;
   }
 
   get id() {
