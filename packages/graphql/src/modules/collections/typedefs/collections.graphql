@@ -20,6 +20,7 @@ type Collection {
 input CollectionInput {
   name: String!
   maxSupply: Int!
+  meta: String
 }
 
 type Mutation {

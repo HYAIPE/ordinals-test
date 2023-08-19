@@ -5,19 +5,75 @@ import {
   InscriptionId,
   TCollectionModel,
   ID_Collection,
+  TFundingStatus,
+  IPaginatedResult,
+  IPaginationOptions,
 } from "@0xflick/ordinals-models";
+
+export const DISALLOWED_META_KEYS = [
+  "id",
+  "address",
+  "network",
+  "contentIds",
+  "name",
+  "collectionId",
+  "maxSupply",
+  "totalCount",
+  "collectionName",
+  "fundingLastChecked",
+  "status",
+];
 
 export interface IFundingDao<
   ItemMeta extends Record<string, any> = {},
-  CollectionMeta extends Record<string, any> = {},
+  CollectionMeta extends Record<string, any> = {}
 > {
+  getAllFundingsByStatus(opts: {
+    id: ID_Collection;
+    status: TFundingStatus;
+  }): Promise<
+    { address: string; id: string; lastChecked: Date; timesChecked: number }[]
+  >;
+  listAllFundingsByStatus(opts: {
+    id: ID_Collection;
+    status: TFundingStatus;
+  }): AsyncGenerator<{
+    address: string;
+    id: string;
+    lastChecked?: Date;
+    timesChecked: number;
+  }>;
+  listAllFundingByStatusPaginated(
+    opts: {
+      id: ID_Collection;
+      status: TFundingStatus;
+    } & IPaginationOptions
+  ): Promise<
+    IPaginatedResult<{
+      address: string;
+      id: string;
+      lastChecked?: Date;
+      timesChecked: number;
+    }>
+  >;
   createFunding(item: IAddressInscriptionModel<ItemMeta>): Promise<void>;
+  updateFundingLastChecked(opt: {
+    id: string;
+    lastChecked: Date;
+  }): Promise<void>;
+  addressFunded(item: {
+    id: string;
+    fundingTxid: string;
+    fundingVout: number;
+  }): Promise<void>;
+  genesisFunded(item: { id: string; genesisTxid: string }): Promise<void>;
+  revealFunded(item: { id: string; revealTxid: string }): Promise<void>;
   getFunding(id: string): Promise<IAddressInscriptionModel<ItemMeta>>;
   deleteFunding(id: string): Promise<void>;
   createCollection(item: TCollectionModel<CollectionMeta>): Promise<void>;
   getCollection(id: ID_Collection): Promise<TCollectionModel<CollectionMeta>>;
   getCollectionByName(
-    name: string,
+    name: string
   ): Promise<TCollectionModel<CollectionMeta>[]>;
   getAllCollections(): Promise<TCollectionModel<CollectionMeta>[]>;
   deleteCollection(id: ID_Collection): Promise<void>;
@@ -25,7 +81,7 @@ export interface IFundingDao<
   updateMaxSupply(id: ID_Collection, maxSupply: number): Promise<void>;
   updateCollectionMeta(
     id: ID_Collection,
-    meta: CollectionMeta,
+    meta: CollectionMeta
   ): Promise<TCollectionModel<CollectionMeta>>;
 }
 

@@ -4,7 +4,6 @@ import {
   ID_Collection,
   InscriptionContent,
   AddressInscriptionModel,
-  IInscriptionDocFundingWait,
 } from "@0xflick/ordinals-models";
 import { InscriptionFundingModel } from "../inscriptionFunding/models.js";
 import { InscriptionTransactionModel } from "../inscriptionTransaction/models.js";
@@ -233,7 +232,6 @@ export class AxolotlModel implements IAxolotlMeta {
       overhead,
       padding,
       secKey,
-      status,
       totalFee,
       writableInscriptions,
       files,
@@ -250,13 +248,15 @@ export class AxolotlModel implements IAxolotlMeta {
       address: fundingAddress,
       network,
       contentIds: writableInscriptions.map((inscription) => inscription.tapkey),
+      status: "funding",
+      timesChecked: 0,
       meta: {
         chameleon: false,
         revealedAt,
         tokenId,
       },
     });
-    const doc: IInscriptionDocFundingWait = {
+    const doc: TInscriptionDoc = {
       id: addressModel.id,
       fundingAddress,
       fundingAmountBtc,
@@ -268,7 +268,6 @@ export class AxolotlModel implements IAxolotlMeta {
       overhead,
       padding,
       secKey,
-      status,
       totalFee,
       writableInscriptions,
       tip,

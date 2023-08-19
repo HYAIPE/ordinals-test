@@ -1,5 +1,12 @@
-import { IObservedClaim } from "@0xflick/ordinals-models";
-import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
+import {
+  IObservedClaim,
+  IPaginatedResult,
+  IPaginationOptions,
+  decodeCursor,
+  encodeCursor,
+  paginate,
+} from "@0xflick/ordinals-models";
+import { DynamoDBClient, ScanCommand } from "@aws-sdk/client-dynamodb";
 import {
   BatchGetCommand,
   BatchWriteCommand,
@@ -128,6 +135,41 @@ export class ClaimsDao {
     blockHeightBegin: number;
     blockHeightEnd: number;
   }) {
+    const claims: IObservedClaim[] = [];
+    for await (const item of this.listClaimedEventsForBlockHeight({
+      blockHeightBegin,
+      blockHeightEnd,
+    })) {
+      claims.push(item);
+    }
+  }
+
+  public listClaimedEventsForBlockHeight({
+    blockHeightBegin,
+    blockHeightEnd,
+  }: {
+    blockHeightBegin: number;
+    blockHeightEnd: number;
+  }) {
+    return paginate((options) =>
+      this.listClaimedEventsForBlockHeightPaginated({
+        blockHeightBegin,
+        blockHeightEnd,
+        ...options,
+      })
+    );
+  }
+
+  public async listClaimedEventsForBlockHeightPaginated({
+    blockHeightBegin,
+    blockHeightEnd,
+    cursor,
+    limit,
+  }: {
+    blockHeightBegin: number;
+    blockHeightEnd: number;
+  } & IPaginationOptions): Promise<IPaginatedResult<IObservedClaim>> {
+    const pagination = decodeCursor(cursor);
     const response = await this.client.send(
       new QueryCommand({
         TableName: ClaimsDao.TABLE_NAME,
@@ -137,9 +179,30 @@ export class ClaimsDao {
           ":begin": blockHeightBegin,
           ":end": blockHeightEnd,
         },
+        ...(pagination && {
+          ExclusiveStartKey: pagination.lastEvaluatedKey,
+        }),
+        ...(limit && {
+          Limit: limit,
+        }),
       })
     );
-    return response.Items?.map((m) => toModel(m as IDBObservedClaim)) ?? [];
+    const lastEvaluatedKey = response.LastEvaluatedKey;
+    const page = pagination ? pagination.page + 1 : 1;
+    const size = response.Items?.length ?? 0;
+    const count = (pagination ? pagination.count : 0) + size;
+
+    return {
+      items: response.Items?.map((m) => toModel(m as IDBObservedClaim)) ?? [],
+      cursor: encodeCursor({
+        page,
+        lastEvaluatedKey,
+        count,
+      }),
+      page,
+      count,
+      size,
+    };
   }
 
   public async getLastObservedBlockHeight({
@@ -298,7 +361,49 @@ export class ClaimsDao {
     contractAddress: `0x${string}`;
     chainId: number;
   }) {
-    const results = await this.client.send(
+    const claims: IObservedClaim[] = [];
+    for await (const claim of this.listAllClaims({
+      address,
+      contractAddress,
+      chainId,
+    })) {
+      claims.push(claim);
+    }
+    return claims;
+  }
+
+  listAllClaims({
+    address,
+    contractAddress,
+    chainId,
+  }: {
+    address: `0x${string}`;
+    contractAddress: `0x${string}`;
+    chainId: number;
+  }) {
+    return paginate((options) =>
+      this.listAllClaimsPaginated({
+        ...options,
+        address,
+        contractAddress,
+        chainId,
+      })
+    );
+  }
+
+  async listAllClaimsPaginated({
+    address,
+    contractAddress,
+    chainId,
+    limit,
+    cursor,
+  }: {
+    address: `0x${string}`;
+    contractAddress: `0x${string}`;
+    chainId: number;
+  } & IPaginationOptions): Promise<IPaginatedResult<IObservedClaim>> {
+    const pagination = decodeCursor(cursor);
+    const result = await this.client.send(
       new QueryCommand({
         TableName: ClaimsDao.TABLE_NAME,
         IndexName: "ClaimsByAddress",
@@ -307,9 +412,26 @@ export class ClaimsDao {
           ":address": address,
           ":sk": toSk({ contractAddress, chainId }),
         },
+        ...(pagination && { ExclusiveStartKey: pagination.lastEvaluatedKey }),
+        ...(limit && { Limit: limit }),
       })
     );
-    return results.Items?.map((m) => toModel(m as IDBObservedClaim)) ?? [];
+    const lastEvaluatedKey = result.LastEvaluatedKey;
+    const page = pagination ? pagination.page + 1 : 1;
+    const size = result.Items?.length ?? 0;
+    const count = (pagination ? pagination.count : 0) + size;
+
+    return {
+      items: result.Items?.map((m) => toModel(m as IDBObservedClaim)) ?? [],
+      cursor: encodeCursor({
+        lastEvaluatedKey,
+        page,
+        count,
+      }),
+      page,
+      count,
+      size,
+    };
   }
 
   async batchUpdateFundingIds({

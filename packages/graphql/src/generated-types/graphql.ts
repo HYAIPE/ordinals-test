@@ -89,6 +89,7 @@ export type CollectionUpdateMetadataArgs = {
 
 export type CollectionInput = {
   maxSupply: Scalars['Int']['input'];
+  meta?: InputMaybe<Scalars['String']['input']>;
   name: Scalars['String']['input'];
 };
 

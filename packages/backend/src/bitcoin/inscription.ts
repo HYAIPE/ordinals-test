@@ -8,7 +8,7 @@ import {
 import {
   hashInscriptions,
   toAddressInscriptionId,
-  IInscriptionDocFundingWait,
+  TInscriptionDoc,
 } from "@0xflick/ordinals-models";
 
 export async function createInscriptionTransaction({
@@ -23,7 +23,7 @@ export async function createInscriptionTransaction({
   feeRate: number;
   tip: number;
   inscriptions: InscriptionContent[];
-}): Promise<IInscriptionDocFundingWait & { files: InscriptionFile[] }> {
+}): Promise<TInscriptionDoc & { files: InscriptionFile[] }> {
   const privKey = generatePrivKey();
   const {
     amount,
@@ -65,7 +65,6 @@ export async function createInscriptionTransaction({
     padding,
     secKey: privKey,
     totalFee,
-    status: "funding-wait",
     writableInscriptions: inscriptionsToWrite,
     tip,
   };

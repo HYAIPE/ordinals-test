@@ -7,12 +7,25 @@ export function toAddressInscriptionId(id: string): ID_AddressInscription {
   return id as ID_AddressInscription;
 }
 
+export type TFundingStatus =
+  | "funding"
+  | "funded"
+  | "genesis"
+  | "reveal";
+
 export interface IAddressInscriptionModel<T = Record<string, any>> {
   address: string;
   network: BitcoinNetworkNames;
   id: ID_AddressInscription;
   collectionId?: ID_Collection;
   contentIds: string[];
+  fundingTxid?: string;
+  fundingVout?: number;
+  revealTxid?: string;
+  genesisTxid?: string;
+  status: TFundingStatus;
+  lastChecked?: Date;
+  timesChecked: number;
   meta: T;
 }
 
@@ -36,6 +49,13 @@ export class AddressInscriptionModel<T extends Record<string, any> = {}>
   public network: BitcoinNetworkNames;
   public collectionId?: ID_Collection;
   public contentIds: string[];
+  public fundingTxid?: string;
+  public fundingVout?: number;
+  public revealTxid?: string;
+  public genesisTxid?: string;
+  public status: TFundingStatus;
+  public lastChecked?: Date;
+  public timesChecked: number;
   public meta: T;
 
   constructor(item: Omit<IAddressInscriptionModel<T>, "id"> & { id?: string }) {
@@ -46,6 +66,13 @@ export class AddressInscriptionModel<T extends Record<string, any> = {}>
       this._id = toAddressInscriptionId(item.id);
     }
     this.collectionId = item.collectionId;
+    this.fundingTxid = item.fundingTxid;
+    this.fundingVout = item.fundingVout;
+    this.revealTxid = item.revealTxid;
+    this.genesisTxid = item.genesisTxid;
+    this.status = item.status;
+    this.lastChecked = item.lastChecked;
+    this.timesChecked = item.timesChecked;
     this.meta = item.meta;
   }
 

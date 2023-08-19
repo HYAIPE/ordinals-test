@@ -13,7 +13,7 @@ import {
   AddressInscriptionModel,
   BitcoinNetworkNames,
   ID_Collection,
-  IInscriptionDocFundingWait,
+  TInscriptionDoc,
   InscriptionContent,
 } from "@0xflick/ordinals-models";
 import { AxolotlModel } from "../axolotl/models.js";
@@ -66,7 +66,6 @@ async function createTranscriptionFunding({
     overhead,
     padding,
     secKey,
-    status,
     totalFee,
     writableInscriptions,
     files,
@@ -82,9 +81,11 @@ async function createTranscriptionFunding({
     address: fundingAddress,
     network,
     contentIds: writableInscriptions.map((inscription) => inscription.tapkey),
+    status: "funding",
+    timesChecked: 0,
     meta: {},
   });
-  const doc: IInscriptionDocFundingWait = {
+  const doc: TInscriptionDoc = {
     id: addressModel.id,
     fundingAddress,
     fundingAmountBtc,
@@ -96,7 +97,6 @@ async function createTranscriptionFunding({
     overhead,
     padding,
     secKey,
-    status,
     totalFee,
     writableInscriptions,
     tip,

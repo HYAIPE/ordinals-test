@@ -10,6 +10,7 @@ import {
   defaultAdminStrategyAll,
   isActionOnResource,
 } from "@0xflick/ordinals-rbac-models";
+import { DISALLOWED_META_KEYS } from "@0xflick/ordinals-backend";
 
 const canPerformCreateCollection = defaultAdminStrategyAll(
   EResource.COLLECTION,
@@ -36,7 +37,7 @@ export const resolvers: CollectionsModule.Resolvers = {
   Mutation: {
     createCollection: async (
       _parent,
-      { input: { name, maxSupply } },
+      { input: { name, maxSupply, meta } },
       context,
       info,
     ) => {
@@ -48,12 +49,39 @@ export const resolvers: CollectionsModule.Resolvers = {
       if (collections.length > 0) {
         throw new CollectionError("COLLECTION_ALREADY_EXISTS", name);
       }
+      let metadata: Record<string, unknown> = {};
+      try {
+        if (meta) {
+          metadata = JSON.parse(meta);
+        }
+      } catch (e) {
+        throw new CollectionError(
+          "INVALID_METADATA",
+          "Unable to parse metadata",
+        );
+      }
+
+      for (const key of Object.keys(metadata)) {
+        // disallow reservered names for metadata
+        if (DISALLOWED_META_KEYS.includes(key)) {
+          throw new CollectionError("INVALID_METADATA", `Reserved key: ${key}`);
+        }
+        // only strings are allowed for metadata
+        if (typeof metadata[key] !== "string") {
+          throw new CollectionError(
+            "INVALID_METADATA",
+            `key: ${key} is not a string`,
+          );
+        }
+      }
+
       const id = uuid();
       const model = {
         id: toCollectionId(id),
         name,
         totalCount: 0,
         maxSupply,
+        meta: metadata,
       };
       await fundingDao.createCollection(model);
       return new CollectionModel(model);

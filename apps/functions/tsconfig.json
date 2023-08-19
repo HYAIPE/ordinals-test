@@ -1,0 +1,36 @@
+{
+  "extends": "@0xflick/tsconfig/tsconfig.base.json",
+  "compilerOptions": {
+    "module": "ES2022",
+    "target": "ES2022",
+    "composite": true /* Enable the use of the ES2015 module loader. */,
+    "rootDir": "./src" /* Specify the root folder within your source files. */,
+    "outDir": "dist" /* Specify an output folder for all emitted files. */,
+    "paths": {
+      "@0xflick/ordinals-models": ["../../packages/models/src/index"],
+      "@0xflick/ordinals-models/*": ["../../packages/models/src/*"],
+      "@0xflick/ordinals-backend": ["../../packages/backend/src/index"],
+      "@0xflick/ordinals-backend/*": ["../../packages/backend/src/*"]
+    },
+    "incremental": true,
+    "noErrorTruncation": true,
+    "noImplicitAny": true,
+    "noImplicitThis": true,
+    "alwaysStrict": true,
+    "strictBindCallApply": true,
+    "strictFunctionTypes": true,
+    "strictNullChecks": false
+    // "strictPropertyInitialization": false
+  },
+  "files": ["src/electrum/electrum.d.ts"],
+  "include": ["src/**/*.ts"],
+  "exclude": ["**/node_modules", "**/.*/", "dist", "build"],
+  "references": [
+    {
+      "path": "../../packages/models"
+    },
+    {
+      "path": "../../packages/backend"
+    }
+  ]
+}

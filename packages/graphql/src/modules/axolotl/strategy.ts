@@ -1,7 +1,4 @@
-import {
-  ID_AddressInscription,
-  IInscriptionDocFundingWait,
-} from "@0xflick/ordinals-models";
+import { ID_AddressInscription } from "@0xflick/ordinals-models";
 import { Context } from "../../context/index.js";
 import { readIAllowance } from "@0xflick/ordinals-backend";
 

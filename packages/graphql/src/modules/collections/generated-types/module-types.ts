@@ -11,7 +11,7 @@ export namespace CollectionsModule {
   
   interface DefinedInputFields {
     KeyValueInput: 'key' | 'value';
-    CollectionInput: 'name' | 'maxSupply';
+    CollectionInput: 'name' | 'maxSupply' | 'meta';
   };
   
   export type KeyValue = Pick<Types.KeyValue, DefinedFields['KeyValue']>;
