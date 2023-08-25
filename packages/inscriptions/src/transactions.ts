@@ -381,8 +381,6 @@ export interface RevealTransactionRequest {
   secKey: cryptoUtils.SecretKey;
 }
 
-export interface RevealTransactionResponse {}
-
 export async function generateRevealTransaction({
   address,
   inscription,
@@ -390,7 +388,7 @@ export async function generateRevealTransaction({
   txid,
   amount,
   secKey,
-}: RevealTransactionRequest) {
+}: RevealTransactionRequest): Promise<string> {
   const redeemtx = Tx.create({
     vin: [
       {

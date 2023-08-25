@@ -29,6 +29,8 @@ export async function siwe({ chainId, url }: { chainId: number; url: string }) {
     address,
     jwe,
   });
-  console.log(`Token: ${token}`);
+  
   frame.close();
+
+  return token;
 }

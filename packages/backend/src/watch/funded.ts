@@ -11,13 +11,14 @@ import {
   startWith,
   timer,
 } from "rxjs";
+import { SecretKey } from "@0xflick/crypto-utils";
 import Queue from "p-queue";
-import { IFundingDao } from "../dao/funding.js";
+import { IFundingDao, IFundingDocDao } from "../dao/funding.js";
 import { MempoolClient, createLogger } from "../index.js";
 import { ID_Collection } from "@0xflick/ordinals-models";
-import { bitcoinToSats } from "@0xflick/inscriptions";
+import { generateGenesisTransaction } from "@0xflick/inscriptions";
 
-const logger = createLogger({ name: "watch/funding" });
+const logger = createLogger({ name: "watch/funded" });
 // Queue to process fundings
 const processingQueue = new Queue({ concurrency: 5 });
 
@@ -65,28 +66,22 @@ function customBackoff(retries: number) {
  * Not currently expiring fundings, but we could do that in the future.
  *
  */
-export function watchForFundings({
+export function watchForFunded({
   collectionId,
   fundingDao,
+  fundingDocDao,
   mempoolBitcoinClient,
 }: {
   collectionId: ID_Collection;
   fundingDao: IFundingDao;
+  fundingDocDao: IFundingDocDao;
   mempoolBitcoinClient: MempoolClient["bitcoin"];
 }) {
-  logger.info(`Watching for fundings for collection ${collectionId}`);
-  const enqueueFunding = (funding: {
-    address: string;
-    id: string;
-    fundingAmountSat: number;
-  }) => {
-    return processingQueue.add(() => checkFunding(funding));
+  logger.info(`Watching for funded outputs for collection ${collectionId}`);
+  const enqueueGenesisFunded = (funding: { address: string; id: string }) => {
+    return processingQueue.add(() => checkFunded(funding));
   };
-  const checkFunding = async (funding: {
-    address: string;
-    id: string;
-    fundingAmountSat: number;
-  }) => {
+  const checkFunded = async (funding: { address: string; id: string }) => {
     const { address } = funding;
     const { txid, vout, amount } = await fetchFunding({
       address,
@@ -96,7 +91,7 @@ export function watchForFundings({
       ...funding,
       txid,
       vout,
-      fundedAmount: amount,
+      amount,
     };
   };
 
@@ -104,63 +99,61 @@ export function watchForFundings({
   const stop$ = new Subject();
 
   // 1. Periodically check for new fundings and add new fundings to the queue
-  const pollForFundings$ = interval(60000 /* e.g., every 60 seconds */).pipe(
+  const pollForFunded$ = interval(60000 /* e.g., every 60 seconds */).pipe(
     startWith(0),
     takeUntil(stop$),
-    tap(() => logger.info(`Polling for new fundings`)),
+    tap(() =>
+      logger.info(`Polling for new funded inscriptions to fund genesis`)
+    ),
     switchMap(() =>
       from(
         fundingDao.listAllFundingsByStatus({
           id: collectionId,
-          fundingStatus: "funding",
+          fundingStatus: "funded",
         })
       )
     ),
-    tap((funding) => {
+    tap((funded) => {
       logger.info(
-        `Starting to watch funding ${funding.id} for address ${funding.address} `
+        `Starting to watch funded ${funded.id} for address ${funded.address} `
       );
     }),
-    switchMap((funding) =>
-      from([funding]).pipe(
+    switchMap((funded) =>
+      from([funded]).pipe(
         tap((funding) => logger.info(`Enqueuing funding ${funding.id}`)),
-        mergeMap((funding) => {
-          return from(enqueueFunding(funding)).pipe(
+        mergeMap((funded) => {
+          return from(enqueueGenesisFunded(funded)).pipe(
             catchError((error) => {
               if (error instanceof NoVoutFound) {
-                logger.info(`No vout found for ${funding.address}`);
+                logger.info(
+                  `No payment found for ${funded.address} so submitting payment on behalf of ${funded.id}}`
+                );
                 const now = new Date();
                 return from(
-                  fundingDao
-                    .updateFundingLastChecked({
-                      id: funding.id,
-                      lastChecked: now,
-                    })
-                    .catch((error) => {
+                  Promise.resolve().then(async () => {
+                    try {
+                      fundingDao.updateFundingLastChecked({
+                        id: funded.id,
+                        lastChecked: now,
+                      });
+                    } catch (error) {
                       logger.error(
                         error,
                         "Error updating funding last checked"
                       );
                       throw error;
-                    })
-                    .then(() => {
-                      logger.info(
-                        `Updated last checked for ${funding.address}`
-                      );
-                      throw error;
-                    })
+                    }
+                    logger.info(`Updated last checked for ${funded.id}`);
+                    throw error;
+                  })
                 );
               }
-              logger.error(
-                error,
-                "Error checking funding for",
-                funding.address
-              );
+              logger.error(error, "Error checking funding for", funded.address);
               throw error;
             }),
             retry({
               delay(error, retryCount) {
-                return timer(customBackoff(retryCount + funding.timesChecked));
+                return timer(customBackoff(retryCount + funded.timesChecked));
               },
             })
           );
@@ -171,33 +164,51 @@ export function watchForFundings({
 
   // When $fundings is complete and we have a vout value, we can update the funding with the new txid and vout
   // This assumes the checkFundings observable emits individual funding results.
-  pollForFundings$.subscribe(async (funding) => {
-    if (!funding) {
+  pollForFunded$.subscribe(async (funded) => {
+    if (!funded) {
       logger.error("No funding found!");
       return;
     }
     try {
-      logger.info(
-        `Funding ${funding.id} for ${funding.address} found!  Paid ${funding.fundedAmount} for a request of: ${funding.fundingAmountSat}`
-      );
-      if (funding.fundedAmount < funding.fundingAmountSat) {
-        logger.warn(
-          `Funding ${funding.id} for ${funding.address} is underfunded`
-        );
-      } else {
-        await fundingDao.addressFunded({
-          fundingTxid: funding.txid,
-          fundingVout: funding.vout,
-          id: funding.id,
-        });
-        await fundingDao.updateFundingLastChecked({
-          id: funding.id,
-          lastChecked: new Date(),
-          resetTimesChecked: true,
-        });
+      const [fundedDb, doc] = await Promise.all([
+        fundingDao.getFunding(funded.id),
+        fundingDocDao.getInscriptionTransaction({
+          id: funded.id,
+          fundingAddress: funded.address,
+        }),
+      ]);
+      if (!fundedDb.fundingTxid || !fundedDb.fundingVout) {
+        throw new Error(`No funding txid or vout found for ${funded.id}`);
       }
+
+      await generateGenesisTransaction({
+        amount: fundedDb.fundingAmountSat,
+        initCBlock: doc.initCBlock,
+        initLeaf: doc.initLeaf,
+        initScript: doc.initScript,
+        initTapKey: doc.initTapKey,
+        inscriptions: doc.writableInscriptions,
+        padding: doc.padding,
+        secKey: new SecretKey(Buffer.from(doc.secKey, "hex")),
+        txid: fundedDb.fundingTxid,
+        vout: fundedDb.fundingVout,
+        tip: doc.tip,
+        // add tip here
+        // tippingAddress
+      });
+
+      logger.info(`Genesis funding ${funded.id} is funded!`);
+      await fundingDao.genesisFunded({
+        genesisTxid: funded.txid,
+        id: funded.id,
+      });
+      await fundingDao.updateFundingLastChecked({
+        id: funded.id,
+        lastChecked: new Date(),
+        resetTimesChecked: true,
+      });
     } catch (error) {
-      logger.error(error, "Error updating address funded for", funding.address);
+      logger.error(error, "Error updating address funded for", funded.address);
     }
   });
 

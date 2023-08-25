@@ -116,7 +116,7 @@ export class DynamoDB extends Construct {
       value: userNonceTable.tableName,
     });
 
-    const fundingTable = new dynamodb.Table(this, "Funding", {
+    const fundingTable = new dynamodb.Table(this, "Funding-4", {
       partitionKey: {
         name: "pk",
         type: dynamodb.AttributeType.STRING,
@@ -154,11 +154,11 @@ export class DynamoDB extends Construct {
         type: dynamodb.AttributeType.STRING,
       },
       sortKey: {
-        name: "status",
+        name: "fundingStatus",
         type: dynamodb.AttributeType.STRING,
       },
       projectionType: dynamodb.ProjectionType.INCLUDE,
-      nonKeyAttributes: ["address", "id"],
+      nonKeyAttributes: ["address", "id", "fundingAmountSat"],
     });
     this.fundingTable = fundingTable;
     new cdk.CfnOutput(this, "FundingTableName", {

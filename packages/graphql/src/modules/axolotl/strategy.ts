@@ -80,6 +80,7 @@ export async function contractAllowanceStrategy<
   if (claimables.length === 0) {
     return [];
   }
+
   // Update the claimables with the fundingIds
   await claimsDao.batchUpdateFundingIds({
     observedClaimsWithFundingIds: claimables.map((claimable, docIndex) => ({

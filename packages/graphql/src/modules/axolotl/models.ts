@@ -18,6 +18,7 @@ import { minify } from "html-minifier-terser";
 import { MempoolModel } from "../bitcoin/models.js";
 import { estimateFeesWithMempool } from "../bitcoin/fees.js";
 import { FeeLevel, InputMaybe } from "../../generated-types/graphql.js";
+import { bitcoinToSats } from "@0xflick/inscriptions";
 
 const { compile } = handlebars;
 
@@ -248,8 +249,10 @@ export class AxolotlModel implements IAxolotlMeta {
       address: fundingAddress,
       network,
       contentIds: writableInscriptions.map((inscription) => inscription.tapkey),
-      status: "funding",
+      fundingStatus: "funding",
       timesChecked: 0,
+      fundingAmountBtc,
+      fundingAmountSat: Number(bitcoinToSats(fundingAmountBtc)),
       meta: {
         chameleon: false,
         revealedAt,

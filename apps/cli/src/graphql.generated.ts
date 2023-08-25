@@ -17,6 +17,12 @@ export type Scalars = {
   Float: { input: number; output: number; }
 };
 
+export type AppInfo = {
+  __typename?: 'AppInfo';
+  name: Scalars['String']['output'];
+  pubKey: Scalars['String']['output'];
+};
+
 export type AxolotlFunding = {
   __typename?: 'AxolotlFunding';
   chameleon: Scalars['Boolean']['output'];
@@ -24,8 +30,6 @@ export type AxolotlFunding = {
   id: Scalars['ID']['output'];
   inscriptionFunding?: Maybe<InscriptionFunding>;
   originAddress: Scalars['String']['output'];
-  proof?: Maybe<Scalars['String']['output']>;
-  request?: Maybe<Scalars['String']['output']>;
   tokenId: Scalars['Int']['output'];
 };
 
@@ -38,12 +42,11 @@ export type AxolotlFundingPage = {
 };
 
 export type AxolotlRequest = {
-  destinationAddress: Scalars['String']['input'];
+  claimingAddress: Scalars['String']['input'];
+  collectionId: Scalars['ID']['input'];
   feeLevel?: InputMaybe<FeeLevel>;
   feePerByte?: InputMaybe<Scalars['Int']['input']>;
   network: BitcoinNetwork;
-  proof?: InputMaybe<Scalars['String']['input']>;
-  request?: InputMaybe<Scalars['String']['input']>;
 };
 
 export enum BitcoinNetwork {
@@ -67,12 +70,20 @@ export type Collection = {
   __typename?: 'Collection';
   id: Scalars['ID']['output'];
   maxSupply: Scalars['Int']['output'];
+  metadata: Array<KeyValue>;
   name: Scalars['String']['output'];
-  totalSupply: Scalars['Int']['output'];
+  totalCount: Scalars['Int']['output'];
+  updateMetadata: Collection;
+};
+
+
+export type CollectionUpdateMetadataArgs = {
+  metadata: Array<KeyValueInput>;
 };
 
 export type CollectionInput = {
   maxSupply: Scalars['Int']['input'];
+  meta?: InputMaybe<Scalars['String']['input']>;
   name: Scalars['String']['input'];
 };
 
@@ -145,19 +156,58 @@ export type InscriptionTransactionContent = {
   txsize: Scalars['Int']['output'];
 };
 
+export type KeyValue = {
+  __typename?: 'KeyValue';
+  key: Scalars['String']['output'];
+  value: Scalars['String']['output'];
+};
+
+export type KeyValueInput = {
+  key: Scalars['String']['input'];
+  value: Scalars['String']['input'];
+};
+
 export type Mutation = {
   __typename?: 'Mutation';
-  axolotlFundingAddressRequest: AxolotlFunding;
+  axolotlFundingAddressRequest: Array<AxolotlFunding>;
+  collection: Collection;
+  createCollection: Collection;
+  createRole: Role;
+  deleteCollection: Scalars['Boolean']['output'];
   nonceBitcoin: Nonce;
   nonceEthereum: Nonce;
-  rbac: MutationRbac;
   requestFundingAddress: InscriptionFunding;
+  role: Role;
+  signOutBitcoin: Scalars['Boolean']['output'];
+  signOutEthereum: Scalars['Boolean']['output'];
+  siwb: Web3LoginUser;
   siwe: Web3LoginUser;
 };
 
 
 export type MutationAxolotlFundingAddressRequestArgs = {
   request: AxolotlRequest;
+};
+
+
+export type MutationCollectionArgs = {
+  id: Scalars['ID']['input'];
+};
+
+
+export type MutationCreateCollectionArgs = {
+  input: CollectionInput;
+};
+
+
+export type MutationCreateRoleArgs = {
+  name: Scalars['String']['input'];
+  permissions?: InputMaybe<Array<PermissionInput>>;
+};
+
+
+export type MutationDeleteCollectionArgs = {
+  id: Scalars['ID']['input'];
 };
 
 
@@ -177,20 +227,20 @@ export type MutationRequestFundingAddressArgs = {
 };
 
 
-export type MutationSiweArgs = {
+export type MutationRoleArgs = {
+  id: Scalars['ID']['input'];
+};
+
+
+export type MutationSiwbArgs = {
   address: Scalars['ID']['input'];
   jwe: Scalars['String']['input'];
 };
 
-export type MutationRbac = {
-  __typename?: 'MutationRBAC';
-  createRole: Role;
-};
 
-
-export type MutationRbacCreateRoleArgs = {
-  name: Scalars['String']['input'];
-  permissions?: InputMaybe<Array<PermissionInput>>;
+export type MutationSiweArgs = {
+  address: Scalars['ID']['input'];
+  jwe: Scalars['String']['input'];
 };
 
 export type Nonce = {
@@ -233,15 +283,28 @@ export enum PermissionResource {
   Admin = 'ADMIN',
   Affiliate = 'AFFILIATE',
   All = 'ALL',
+  Collection = 'COLLECTION',
   Presale = 'PRESALE',
+  Role = 'ROLE',
   User = 'USER'
 }
 
 export type Query = {
   __typename?: 'Query';
+  appInfo: AppInfo;
+  collection: Collection;
+  collections: Array<Collection>;
   inscriptionFunding?: Maybe<InscriptionFunding>;
   inscriptionTransaction?: Maybe<InscriptionTransaction>;
+  role?: Maybe<Role>;
+  roles: Array<Role>;
+  self?: Maybe<Web3User>;
   userByAddress: Web3User;
+};
+
+
+export type QueryCollectionArgs = {
+  id: Scalars['ID']['input'];
 };
 
 
@@ -251,6 +314,11 @@ export type QueryInscriptionFundingArgs = {
 
 
 export type QueryInscriptionTransactionArgs = {
+  id: Scalars['ID']['input'];
+};
+
+
+export type QueryRoleArgs = {
   id: Scalars['ID']['input'];
 };
 
@@ -309,10 +377,25 @@ export type Web3User = {
   __typename?: 'Web3User';
   address: Scalars['ID']['output'];
   allowedActions: Array<Permission>;
-  nonce: Scalars['String']['output'];
   roles: Array<Role>;
+  token?: Maybe<Scalars['String']['output']>;
   type: BlockchainNetwork;
 };
+
+export type CreateCollectionMutationVariables = Exact<{
+  input: CollectionInput;
+}>;
+
+
+export type CreateCollectionMutation = { __typename?: 'Mutation', createCollection: { __typename?: 'Collection', id: string, name: string, totalCount: number, maxSupply: number } };
+
+export type UpdateMetadataMutationVariables = Exact<{
+  id: Scalars['ID']['input'];
+  metadata: Array<KeyValueInput> | KeyValueInput;
+}>;
+
+
+export type UpdateMetadataMutation = { __typename?: 'Mutation', collection: { __typename?: 'Collection', updateMetadata: { __typename?: 'Collection', metadata: Array<{ __typename?: 'KeyValue', key: string, value: string }> } } };
 
 export type BitcoinNonceMutationVariables = Exact<{
   address: Scalars['ID']['input'];
@@ -338,6 +421,28 @@ export type SiweMutationVariables = Exact<{
 export type SiweMutation = { __typename?: 'Mutation', siwe: { __typename?: 'Web3LoginUser', token: string } };
 
 
+export const CreateCollectionDocument = gql`
+    mutation CreateCollection($input: CollectionInput!) {
+  createCollection(input: $input) {
+    id
+    name
+    totalCount
+    maxSupply
+  }
+}
+    `;
+export const UpdateMetadataDocument = gql`
+    mutation UpdateMetadata($id: ID!, $metadata: [KeyValueInput!]!) {
+  collection(id: $id) {
+    updateMetadata(metadata: $metadata) {
+      metadata {
+        key
+        value
+      }
+    }
+  }
+}
+    `;
 export const BitcoinNonceDocument = gql`
     mutation BitcoinNonce($address: ID!) {
   nonceBitcoin(address: $address) {
@@ -380,6 +485,12 @@ const defaultWrapper: SdkFunctionWrapper = (action, _operationName, _operationTy
 
 export function getSdk(client: GraphQLClient, withWrapper: SdkFunctionWrapper = defaultWrapper) {
   return {
+    CreateCollection(variables: CreateCollectionMutationVariables, requestHeaders?: GraphQLClientRequestHeaders): Promise<CreateCollectionMutation> {
+      return withWrapper((wrappedRequestHeaders) => client.request<CreateCollectionMutation>(CreateCollectionDocument, variables, {...requestHeaders, ...wrappedRequestHeaders}), 'CreateCollection', 'mutation');
+    },
+    UpdateMetadata(variables: UpdateMetadataMutationVariables, requestHeaders?: GraphQLClientRequestHeaders): Promise<UpdateMetadataMutation> {
+      return withWrapper((wrappedRequestHeaders) => client.request<UpdateMetadataMutation>(UpdateMetadataDocument, variables, {...requestHeaders, ...wrappedRequestHeaders}), 'UpdateMetadata', 'mutation');
+    },
     BitcoinNonce(variables: BitcoinNonceMutationVariables, requestHeaders?: GraphQLClientRequestHeaders): Promise<BitcoinNonceMutation> {
       return withWrapper((wrappedRequestHeaders) => client.request<BitcoinNonceMutation>(BitcoinNonceDocument, variables, {...requestHeaders, ...wrappedRequestHeaders}), 'BitcoinNonce', 'mutation');
     },

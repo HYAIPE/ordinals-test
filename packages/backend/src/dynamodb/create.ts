@@ -14,7 +14,7 @@ export function createDb(opts?: DynamoDBClientConfig) {
   const config = {
     endpoint: dynamoDbUrl.get() ?? awsEndpoint.get(),
     region: dynamoDbRegion.get() ?? awsRegion.get(),
-    sslEnabled: dynamoDbSslEnabled.get(),
+    // sslEnabled: dynamoDbSslEnabled.get(),
     ...(process.env.MOCK_DYNAMODB_ENDPOINT && {
       endpoint: process.env.MOCK_DYNAMODB_ENDPOINT,
       sslEnabled: false,

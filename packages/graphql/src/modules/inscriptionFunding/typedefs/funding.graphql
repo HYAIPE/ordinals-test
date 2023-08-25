@@ -17,3 +17,7 @@ type InscriptionFunding {
 
   inscriptionContent(tapKey: String!): InscriptionData!
 }
+
+type Query {
+  inscriptionFunding(id: ID!): InscriptionFunding
+}

@@ -13,7 +13,7 @@ yarn cli --help
 Uploading all layers:
 
 ```
-yarn cli bulk-mint -n testnet -o av-testnet.json {bc1p....address} '../../packages/assets/web/properties/**/*.webp'
+yarn cli bulk-mint -n testnet -o av-testnet.json {bc1p....address} '../../ordinals/axolotl-valley/web/properties/**/*.webp'
 ```
 
 This takes a while. Send funds to the requested address and wait. At the end you get a av-testnet.json that maps all file paths to ordinal IDs.
@@ -23,7 +23,7 @@ The file was copied and turned into [ordinals/axolotl-valley/src/inscriptions/te
 Creating the javascript:
 
 ```
- yarn cli axolotl-valley script --network testnet script.js
+yarn cli axolotl-valley script --network testnet script.js
 ```
 
 Inscribe the javascript:

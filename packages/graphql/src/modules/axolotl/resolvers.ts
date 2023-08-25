@@ -20,6 +20,7 @@ import { AxolotlModel } from "../axolotl/models.js";
 import { FeeLevel, InputMaybe } from "../../generated-types/graphql.js";
 import { MempoolModel } from "../bitcoin/models.js";
 import { contractAllowanceStrategy } from "./strategy.js";
+import { bitcoinToSats } from "@0xflick/inscriptions";
 
 async function createTranscriptionFunding({
   address,
@@ -81,8 +82,10 @@ async function createTranscriptionFunding({
     address: fundingAddress,
     network,
     contentIds: writableInscriptions.map((inscription) => inscription.tapkey),
-    status: "funding",
+    fundingStatus: "funding",
     timesChecked: 0,
+    fundingAmountBtc,
+    fundingAmountSat: Number(bitcoinToSats(fundingAmountBtc)),
     meta: {},
   });
   const doc: TInscriptionDoc = {

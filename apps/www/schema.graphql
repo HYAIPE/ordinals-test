@@ -32,7 +32,6 @@ type Mutation {
 
 type Query {
   inscriptionTransaction(id: ID!): InscriptionTransaction
-  inscriptionFunding(id: ID!): InscriptionFunding
 
   userByAddress(address: ID!): Web3User!
 }
@@ -159,6 +158,10 @@ type InscriptionFunding {
   inscriptionContent(tapKey: String!): InscriptionData!
 }
 
+type Query {
+  inscriptionFunding(id: ID!): InscriptionFunding
+}
+
 type KeyValue {
   key: String!
   value: String!
@@ -181,6 +184,7 @@ type Collection {
 input CollectionInput {
   name: String!
   maxSupply: Int!
+  meta: String
 }
 
 type Mutation {
@@ -211,9 +215,7 @@ type BitcoinScriptItem {
 }
 
 input AxolotlRequest {
-  destinationAddress: String!
-  request: String
-  proof: String
+  claimingAddress: String!
   network: BitcoinNetwork!
   feeLevel: FeeLevel
   feePerByte: Int
@@ -223,9 +225,6 @@ input AxolotlRequest {
 type AxolotlFunding {
   id: ID!
   inscriptionFunding: InscriptionFunding
-
-  request: String
-  proof: String
 
   tokenId: Int!
   createdAt: String!
@@ -242,7 +241,7 @@ type AxolotlFundingPage {
 
 type Mutation {
   requestFundingAddress(request: InscriptionRequest!): InscriptionFunding!
-  axolotlFundingAddressRequest(request: AxolotlRequest!): AxolotlFunding!
+  axolotlFundingAddressRequest(request: AxolotlRequest!): [AxolotlFunding!]!
 }
 
 type Mutation {

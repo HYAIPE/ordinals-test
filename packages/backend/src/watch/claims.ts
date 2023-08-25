@@ -59,10 +59,6 @@ const fetchLogsInChunks = async ({
       address: contractAddress,
       event: claimEventAbi,
     });
-    logger.info(
-      { contractAddress, chainId, observedBlockHeight, logs: inspect(logs) },
-      "got logs"
-    );
 
     const claims = prepForStorage({
       events: logs,
@@ -229,7 +225,16 @@ export async function watchAllowanceEvents({
         },
         async (events) => {
           const client = clientForChain(chainId);
-          logger.info({ events: inspect(events) }, "Received events");
+          logger.info(
+            {
+              events: events.map((e) => ({
+                claimedAddress: e.args._address,
+                chainId,
+                claims: e.args._claims,
+              })),
+            },
+            "Received events"
+          );
           try {
             const observedClaims = prepForStorage({
               events,

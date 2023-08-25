@@ -22,6 +22,7 @@ export const DISALLOWED_META_KEYS = [
   "collectionName",
   "fundingLastChecked",
   "status",
+  "fundingStatus",
 ];
 
 export interface IFundingDao<
@@ -30,23 +31,24 @@ export interface IFundingDao<
 > {
   getAllFundingsByStatus(opts: {
     id: ID_Collection;
-    status: TFundingStatus;
+    fundingStatus: TFundingStatus;
   }): Promise<
     { address: string; id: string; lastChecked: Date; timesChecked: number }[]
   >;
   listAllFundingsByStatus(opts: {
     id: ID_Collection;
-    status: TFundingStatus;
+    fundingStatus: TFundingStatus;
   }): AsyncGenerator<{
     address: string;
     id: string;
     lastChecked?: Date;
     timesChecked: number;
+    fundingAmountSat: number;
   }>;
   listAllFundingByStatusPaginated(
     opts: {
       id: ID_Collection;
-      status: TFundingStatus;
+      fundingStatus: TFundingStatus;
     } & IPaginationOptions
   ): Promise<
     IPaginatedResult<{
@@ -60,6 +62,7 @@ export interface IFundingDao<
   updateFundingLastChecked(opt: {
     id: string;
     lastChecked: Date;
+    resetTimesChecked?: boolean;
   }): Promise<void>;
   addressFunded(item: {
     id: string;

@@ -7,11 +7,7 @@ export function toAddressInscriptionId(id: string): ID_AddressInscription {
   return id as ID_AddressInscription;
 }
 
-export type TFundingStatus =
-  | "funding"
-  | "funded"
-  | "genesis"
-  | "reveal";
+export type TFundingStatus = "funding" | "funded" | "genesis" | "reveal";
 
 export interface IAddressInscriptionModel<T = Record<string, any>> {
   address: string;
@@ -23,9 +19,11 @@ export interface IAddressInscriptionModel<T = Record<string, any>> {
   fundingVout?: number;
   revealTxid?: string;
   genesisTxid?: string;
-  status: TFundingStatus;
+  fundingStatus: TFundingStatus;
   lastChecked?: Date;
   timesChecked: number;
+  fundingAmountBtc: string;
+  fundingAmountSat: number;
   meta: T;
 }
 
@@ -53,9 +51,11 @@ export class AddressInscriptionModel<T extends Record<string, any> = {}>
   public fundingVout?: number;
   public revealTxid?: string;
   public genesisTxid?: string;
-  public status: TFundingStatus;
+  public fundingStatus: TFundingStatus;
   public lastChecked?: Date;
   public timesChecked: number;
+  public fundingAmountBtc: string;
+  public fundingAmountSat: number;
   public meta: T;
 
   constructor(item: Omit<IAddressInscriptionModel<T>, "id"> & { id?: string }) {
@@ -70,9 +70,11 @@ export class AddressInscriptionModel<T extends Record<string, any> = {}>
     this.fundingVout = item.fundingVout;
     this.revealTxid = item.revealTxid;
     this.genesisTxid = item.genesisTxid;
-    this.status = item.status;
+    this.fundingStatus = item.fundingStatus;
     this.lastChecked = item.lastChecked;
     this.timesChecked = item.timesChecked;
+    this.fundingAmountBtc = item.fundingAmountBtc;
+    this.fundingAmountSat = item.fundingAmountSat;
     this.meta = item.meta;
   }
 

@@ -11,6 +11,7 @@ import { bulkMint } from "./commands/bulkMint.js";
 import { mintSingle } from "./commands/mintSingle.js";
 import { nonceBitcoin, nonceEthereum } from "./commands/login/nonce.js";
 import { siwe } from "./commands/login/siwe.js";
+import { collectionCreate } from "./commands/collection/create.js";
 const program = new Command();
 
 program
@@ -103,7 +104,7 @@ apiCommand
       }
       return value;
     },
-    "bitcoin",
+    "bitcoin"
   )
   .option("-c, --chain-id <chain-id>", "Ethereum chain id", Number, 1)
   .action(async (address, props) => {
@@ -120,10 +121,54 @@ apiCommand
   .option("-u, --url <url>", "api url", "http://localhost:4000")
   .option("-c, --chain-id <chain-id>", "Ethereum chain id", Number, 1)
   .action(async ({ url, chainId }) => {
-    await siwe({
+    const token = await siwe({
       chainId,
       url,
     });
+    console.log(`Token: ${token}`);
   });
 
+const collectionCommand = program.command("collection");
+
+collectionCommand
+  .command("create <name> <maxSupply>")
+  .option("-u, --url <url>", "api url", "http://localhost:4000")
+  .option(
+    "-m, --metadata <metadata>",
+    "metadata in key=value format. can be used multiple times"
+  )
+  .option("-s, --swie-login <chainid>", "login to the api")
+  .option("-d, --doc <doc>", "key=path format. load a file as the metadata")
+  .action(async (name, maxSupply, { url, metadata, doc, swieLogin }) => {
+    const token = swieLogin
+      ? await siwe({
+          chainId: Number(swieLogin),
+          url,
+        })
+      : null;
+    metadata = Array.isArray(metadata)
+      ? metadata
+      : typeof metadata !== "undefined"
+      ? [metadata]
+      : [];
+    if (doc) {
+      doc = Array.isArray(doc) ? doc : [doc];
+      for (const d of doc) {
+        const [key, docPath] = d.split("=");
+        const data = await fs.promises.readFile(docPath, "utf8");
+        metadata = metadata || [];
+        metadata.push(`${key}=${data}`);
+      }
+    }
+    await collectionCreate({
+      name,
+      maxSupply: Number(maxSupply),
+      url,
+      token,
+      keyValues: metadata.map((m: string) => {
+        const [key, value] = m.split("=");
+        return [key, value] as const;
+      }),
+    });
+  });
 program.parse(process.argv);

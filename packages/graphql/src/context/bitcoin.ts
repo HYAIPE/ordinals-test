@@ -7,7 +7,14 @@ export interface IBitcoinContext {
     network: BitcoinNetworkNames;
   }) => MempoolClient["bitcoin"];
 }
-export function createBitcoinContext(config: IConfigContext): IBitcoinContext {
+export function createBitcoinContext(
+  config: Pick<
+    IConfigContext,
+    | "bitcoinRegtestMempoolEndpoint"
+    | "bitcoinTestnetMempoolEndpoint"
+    | "bitcoinMainnetMempoolEndpoint"
+  >,
+): IBitcoinContext {
   const urlForNetworkName = (network: BitcoinNetworkNames): string => {
     switch (network) {
       case "regtest":

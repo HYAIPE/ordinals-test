@@ -36,7 +36,9 @@ export type TFundingDb<T extends Record<string, any>> = {
   genesisTxid?: string;
   lastChecked?: number;
   timesChecked: number;
-  status: string;
+  fundingStatus: string;
+  fundingAmountBtc: string;
+  fundingAmountSat: number;
 } & T;
 
 export type TFundingCollectionDb<T extends Record<string, any>> = {
@@ -69,18 +71,22 @@ export class FundingDao<
 
   public async getAllFundingsByStatus({
     id,
-    status,
+    fundingStatus,
   }: {
     id: ID_Collection;
-    status: TFundingStatus;
+    fundingStatus: TFundingStatus;
   }) {
     const results: {
       address: string;
       id: string;
       lastChecked: Date;
       timesChecked: number;
+      fundingAmountSat: number;
     }[] = [];
-    for await (const item of this.listAllFundingsByStatus({ id, status })) {
+    for await (const item of this.listAllFundingsByStatus({
+      id,
+      fundingStatus,
+    })) {
       results.push(item);
     }
     return results;
@@ -88,9 +94,15 @@ export class FundingDao<
 
   public listAllFundingsByStatus(opts: {
     id: ID_Collection;
-    status: TFundingStatus;
+    fundingStatus: TFundingStatus;
   }): AsyncGenerator<
-    { address: string; id: string; lastChecked: Date; timesChecked: number },
+    {
+      address: string;
+      id: string;
+      lastChecked: Date;
+      timesChecked: number;
+      fundingAmountSat: number;
+    },
     any,
     unknown
   > {
@@ -101,18 +113,19 @@ export class FundingDao<
 
   public async listAllFundingByStatusPaginated({
     id,
-    status,
+    fundingStatus,
     cursor,
     limit,
   }: {
     id: ID_Collection;
-    status: TFundingStatus;
+    fundingStatus: TFundingStatus;
   } & IPaginationOptions): Promise<
     IPaginatedResult<{
       address: string;
       id: string;
       lastChecked: Date;
       timesChecked: number;
+      fundingAmountSat: number;
     }>
   > {
     const pagination = decodeCursor(cursor);
@@ -120,10 +133,11 @@ export class FundingDao<
       new QueryCommand({
         TableName: FundingDao.TABLE_NAME,
         IndexName: "collectionId-index",
-        KeyConditionExpression: "collectionId = :collectionId, status = :sk",
+        KeyConditionExpression:
+          "collectionId = :collectionId AND fundingStatus = :sk",
         ExpressionAttributeValues: {
           ":collectionId": toCollectionId(id),
-          ":sk": status,
+          ":sk": fundingStatus,
         },
         ...(pagination && { ExclusiveStartKey: pagination.lastEvaluatedKey }),
         ...(limit && { Limit: limit }),
@@ -142,11 +156,13 @@ export class FundingDao<
           ? new Date(item.lastChecked)
           : new Date(0),
         timesChecked: item.timesChecked,
+        fundingAmountSat: item.fundingAmountSat,
       })) as {
         address: string;
         id: string;
         lastChecked: Date;
         timesChecked: number;
+        fundingAmountSat: number;
       }[],
       cursor: encodeCursor({
         page,
@@ -198,9 +214,11 @@ export class FundingDao<
   public async updateFundingLastChecked({
     id,
     lastChecked,
+    resetTimesChecked,
   }: {
     id: string;
     lastChecked: Date;
+    resetTimesChecked?: boolean;
   }) {
     await this.client.send(
       new UpdateCommand({
@@ -210,12 +228,18 @@ export class FundingDao<
           sk: "funding",
         },
         ConditionExpression: "attribute_exists(pk)",
-        UpdateExpression:
-          "SET lastChecked = :lastChecked, timesChecked = timesChecked + :one",
-        ExpressionAttributeValues: {
-          ":lastChecked": lastChecked.getTime(),
-          ":one": 1,
-        },
+        UpdateExpression: resetTimesChecked
+          ? "SET lastChecked = :lastChecked, timesChecked = :timesChecked"
+          : "SET lastChecked = :lastChecked, timesChecked = timesChecked + :one",
+        ExpressionAttributeValues: resetTimesChecked
+          ? {
+              ":lastChecked": lastChecked.getTime(),
+              ":timesChecked": 0,
+            }
+          : {
+              ":lastChecked": lastChecked.getTime(),
+              ":one": 1,
+            },
       })
     );
   }
@@ -238,11 +262,11 @@ export class FundingDao<
         },
         ConditionExpression: "attribute_exists(pk)",
         UpdateExpression:
-          "SET fundingTxid = :fundingTxid, fundingVout = :fundingVout, status = :status",
+          "SET fundingTxid = :fundingTxid, fundingVout = :fundingVout, fundingStatus = :fundingStatus",
         ExpressionAttributeValues: {
           ":fundingTxid": fundingTxid,
           ":fundingVout": fundingVout,
-          ":status": "funded",
+          ":fundingStatus": "funded",
         },
       })
     );
@@ -263,10 +287,11 @@ export class FundingDao<
           sk: "funding",
         },
         ConditionExpression: "attribute_exists(pk)",
-        UpdateExpression: "SET genesisTxid = :genesisTxid, status = :status",
+        UpdateExpression:
+          "SET genesisTxid = :genesisTxid, fundingStatus = :fundingStatus",
         ExpressionAttributeValues: {
           ":genesisTxid": genesisTxid,
-          ":status": "genesis",
+          ":fundingStatus": "genesis",
         },
       })
     );
@@ -287,10 +312,11 @@ export class FundingDao<
           sk: "funding",
         },
         ConditionExpression: "attribute_exists(pk)",
-        UpdateExpression: "SET revealTxid = :revealTxid, status = :status",
+        UpdateExpression:
+          "SET revealTxid = :revealTxid, fundingStatus = :fundingStatus",
         ExpressionAttributeValues: {
           ":revealTxid": revealTxid,
-          ":status": "revealed",
+          ":fundingStatus": "revealed",
         },
       })
     );
@@ -496,7 +522,7 @@ export class FundingDao<
     collectionId,
     id,
     network,
-    status,
+    fundingStatus,
     fundingTxid,
     fundingVout,
     genesisTxid,
@@ -504,6 +530,8 @@ export class FundingDao<
     meta,
     lastChecked,
     timesChecked,
+    fundingAmountBtc,
+    fundingAmountSat,
   }: IAddressInscriptionModel<T>): TFundingDb<T> {
     return {
       pk: id,
@@ -513,8 +541,10 @@ export class FundingDao<
       collectionId,
       contentIds,
       network,
-      status,
+      fundingStatus,
       timesChecked,
+      fundingAmountBtc,
+      fundingAmountSat,
       ...(lastChecked && { lastChecked: lastChecked.getTime() }),
       ...(fundingTxid && { fundingTxid }),
       ...(fundingVout && { fundingVout }),
@@ -564,13 +594,15 @@ export class FundingDao<
     collectionId,
     contentIds,
     network,
-    status,
+    fundingStatus,
     fundingTxid,
     fundingVout,
     genesisTxid,
     revealTxid,
     timesChecked,
     lastChecked,
+    fundingAmountBtc,
+    fundingAmountSat,
     ...meta
   }: TFundingDb<T>): IAddressInscriptionModel<T> {
     return {
@@ -578,8 +610,10 @@ export class FundingDao<
       contentIds,
       id: toAddressInscriptionId(id),
       network: toBitcoinNetworkName(network),
-      status: status as TFundingStatus,
+      fundingStatus: fundingStatus as TFundingStatus,
       timesChecked,
+      fundingAmountBtc,
+      fundingAmountSat,
       ...(lastChecked && { lastChecked: new Date(lastChecked) }),
       ...(fundingTxid && { fundingTxid }),
       ...(fundingVout && { fundingVout }),
