@@ -10,6 +10,7 @@ import {
 } from "@0xflick/inscriptions";
 import { lookup } from "mime-types";
 import fs from "fs";
+import { sendBitcoin } from "../bitcoin.js";
 
 export async function mintSingle({
   address,
@@ -17,12 +18,18 @@ export async function mintSingle({
   file,
   mimeType,
   feeRate,
+  rpcuser,
+  rpcpassword,
+  rpcwallet,
 }: {
   address: string;
   file: string;
   mimeType?: string;
   network: BitcoinNetworkNames;
   feeRate: number;
+  rpcuser: string;
+  rpcpassword: string;
+  rpcwallet: string;
 }) {
   const content = await fs.promises.readFile(file);
 
@@ -45,6 +52,14 @@ export async function mintSingle({
   console.log(`Pay ${response.amount} to ${response.fundingAddress}`);
   let funded: readonly [string, number, number] | readonly [null, null, null] =
     [null, null, null];
+  await sendBitcoin({
+    fee_rate: feeRate,
+    network,
+    outputs: [[response.fundingAddress, response.amount]],
+    rpcpassword,
+    rpcuser,
+    rpcwallet,
+  });
   console.log("Waiting for funding...");
   do {
     funded = await addressReceivedMoneyInThisTx(

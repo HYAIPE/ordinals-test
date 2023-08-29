@@ -23,13 +23,13 @@ The file was copied and turned into [ordinals/axolotl-valley/src/inscriptions/te
 Creating the javascript:
 
 ```
-yarn cli axolotl-valley script --network testnet script.js
+yarn cli axolotl-valley script --network regtest script.js
 ```
 
 Inscribe the javascript:
 
 ```
-yarn cli mint -a {bc1p....address} -n mainnet -m text/javascript --fee-rate 14 script.js
+yarn cli mint -a {bc1p....address} -n regtest -m text/javascript --fee-rate 14 script.js
 ```
 
 You'll get an reveal tx. Add `i0` to get the ordinal id

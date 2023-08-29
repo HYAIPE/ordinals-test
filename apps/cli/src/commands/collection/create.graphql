@@ -1,0 +1,8 @@
+mutation CreateCollection($input: CollectionInput!) {
+  createCollection(input: $input) {
+    id
+    name
+    totalCount
+    maxSupply
+  }
+}

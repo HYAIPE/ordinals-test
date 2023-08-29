@@ -12,6 +12,8 @@ import { mintSingle } from "./commands/mintSingle.js";
 import { nonceBitcoin, nonceEthereum } from "./commands/login/nonce.js";
 import { siwe } from "./commands/login/siwe.js";
 import { collectionCreate } from "./commands/collection/create.js";
+import { testOne } from "./commands/test/one.js";
+import { AxolotlRequest } from "./graphql.generated.js";
 const program = new Command();
 
 program
@@ -35,10 +37,27 @@ program
   .option("-a, --address <address>", "Address to mint to")
   .option("-m, --mime-type <mime-type>", "Mime type of file")
   .option("-f, --fee-rate <fee-rate>", "Fee rate in satoshis per vbyte")
+  .option("-w, --rpcwallet <wallet>", "Bitcoin Wallet name", "default")
+  .option("-u, --rpcuser <rpcuser>", "Bitcoin RPC username")
+  .option("-p, --rpcpassword <rpcpassword>", "Bitcoin RPC password")
   .description("Mint an ordinal")
-  .action(async (file, { network, address, mimeType, feeRate }) => {
-    await mintSingle({ file, network, address, mimeType, feeRate });
-  });
+  .action(
+    async (
+      file,
+      { network, address, mimeType, feeRate, rpcpassword, rpcuser, rpcwallet }
+    ) => {
+      await mintSingle({
+        file,
+        network,
+        address,
+        mimeType,
+        feeRate,
+        rpcpassword,
+        rpcuser,
+        rpcwallet,
+      });
+    }
+  );
 
 program
   .command("bulk-mint <address>, <glob>")
@@ -171,4 +190,42 @@ collectionCommand
       }),
     });
   });
+
+const testCommand = program.command("test");
+
+testCommand
+  .command("mint-one")
+  .option("-e, --url <url>", "api url", "http://localhost:4000")
+  .option("-c, --chain-id <chain-id>", "Ethereum chain id", Number, 11155111)
+  .option("-a, --claiming-address <claimingAddress>", "Claiming address")
+  .option("-n, --network <network>", "Bitcoin network", "regtest")
+  .option("-w, --rpcwallet <wallet>", "Bitcoin Wallet name", "default")
+  .option("-u, --rpcuser <rpcuser>", "Bitcoin RPC username")
+  .option("-p, --rpcpassword <rpcpassword>", "Bitcoin RPC password")
+  .option("-s, --script-name <script name>", "Script name", "test")
+  .action(
+    async ({
+      url,
+      chainId,
+      claimingAddress,
+      network,
+      rpcwallet,
+      rpcuser,
+      rpcpassword,
+      scriptName,
+    }) => {
+      await testOne({
+        chainId,
+        url,
+        name: "test",
+        claimingAddress,
+        network,
+        rpcpassword,
+        rpcuser,
+        rpcwallet,
+        scriptName,
+      });
+    }
+  );
+
 program.parse(process.argv);

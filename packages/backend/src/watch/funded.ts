@@ -18,7 +18,7 @@ import { MempoolClient, createLogger } from "../index.js";
 import { ID_Collection } from "@0xflick/ordinals-models";
 import { generateGenesisTransaction } from "@0xflick/inscriptions";
 
-const logger = createLogger({ name: "watch/funded" });
+const logger = createLogger({ name: "watch/genesis" });
 // Queue to process fundings
 const processingQueue = new Queue({ concurrency: 5 });
 

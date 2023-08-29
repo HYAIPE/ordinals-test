@@ -397,6 +397,13 @@ export type UpdateMetadataMutationVariables = Exact<{
 
 export type UpdateMetadataMutation = { __typename?: 'Mutation', collection: { __typename?: 'Collection', updateMetadata: { __typename?: 'Collection', metadata: Array<{ __typename?: 'KeyValue', key: string, value: string }> } } };
 
+export type AxolotlFundingRequestMutationVariables = Exact<{
+  request: AxolotlRequest;
+}>;
+
+
+export type AxolotlFundingRequestMutation = { __typename?: 'Mutation', axolotlFundingAddressRequest: Array<{ __typename?: 'AxolotlFunding', inscriptionFunding?: { __typename?: 'InscriptionFunding', id: string, fundingAddress: string, fundingAmountSats: number, fundingAmountBtc: string } | null }> };
+
 export type BitcoinNonceMutationVariables = Exact<{
   address: Scalars['ID']['input'];
 }>;
@@ -439,6 +446,18 @@ export const UpdateMetadataDocument = gql`
         key
         value
       }
+    }
+  }
+}
+    `;
+export const AxolotlFundingRequestDocument = gql`
+    mutation AxolotlFundingRequest($request: AxolotlRequest!) {
+  axolotlFundingAddressRequest(request: $request) {
+    inscriptionFunding {
+      id
+      fundingAddress
+      fundingAmountSats
+      fundingAmountBtc
     }
   }
 }
@@ -490,6 +509,9 @@ export function getSdk(client: GraphQLClient, withWrapper: SdkFunctionWrapper = 
     },
     UpdateMetadata(variables: UpdateMetadataMutationVariables, requestHeaders?: GraphQLClientRequestHeaders): Promise<UpdateMetadataMutation> {
       return withWrapper((wrappedRequestHeaders) => client.request<UpdateMetadataMutation>(UpdateMetadataDocument, variables, {...requestHeaders, ...wrappedRequestHeaders}), 'UpdateMetadata', 'mutation');
+    },
+    AxolotlFundingRequest(variables: AxolotlFundingRequestMutationVariables, requestHeaders?: GraphQLClientRequestHeaders): Promise<AxolotlFundingRequestMutation> {
+      return withWrapper((wrappedRequestHeaders) => client.request<AxolotlFundingRequestMutation>(AxolotlFundingRequestDocument, variables, {...requestHeaders, ...wrappedRequestHeaders}), 'AxolotlFundingRequest', 'mutation');
     },
     BitcoinNonce(variables: BitcoinNonceMutationVariables, requestHeaders?: GraphQLClientRequestHeaders): Promise<BitcoinNonceMutation> {
       return withWrapper((wrappedRequestHeaders) => client.request<BitcoinNonceMutation>(BitcoinNonceDocument, variables, {...requestHeaders, ...wrappedRequestHeaders}), 'BitcoinNonce', 'mutation');

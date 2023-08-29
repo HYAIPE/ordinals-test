@@ -8,7 +8,8 @@
     "paths": {
       "@0xflick/ordinals-models": ["../../packages/models/src/index"],
       "@0xflick/ordinals-rbac": ["../../packages/rbac/src/index"],
-      "@0xflick/inscriptions": ["../../packages/inscriptions/src/index"]
+      "@0xflick/inscriptions": ["../../packages/inscriptions/src/index"],
+      "@0xflick/ordinals-config": ["../../packages/config/src/index"]
     },
     "noErrorTruncation": true,
     "noImplicitAny": false,
@@ -28,6 +29,9 @@
     },
     {
       "path": "../../packages/inscriptions"
+    },
+    {
+      "path": "../../packages/config"
     }
   ]
 }

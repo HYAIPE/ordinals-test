@@ -1,8 +1,7 @@
 import { configureChains, createConfig } from "@wagmi/core";
-import { sepolia, goerli, mainnet, Chain } from "@wagmi/chains";
+import { sepolia, Chain } from "@wagmi/chains";
 import { jsonRpcProvider } from "@wagmi/core/providers/jsonRpc";
-import { IConfigContext, sepoliaRpcUrl } from "./config.js";
-import { readTestAllowance, testAllowanceABI } from "@0xflick/ordinals-backend";
+import { sepoliaRpcUrl } from "./config.js";
 
 export type TWagmiContext = ReturnType<typeof createWagmiContext>;
 

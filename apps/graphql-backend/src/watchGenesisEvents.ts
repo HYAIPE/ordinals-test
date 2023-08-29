@@ -14,7 +14,7 @@ export function start() {
     bucketName: inscriptionBucket.get(),
   });
   watchForGenesis({
-    collectionId: "bc8e1807-2d51-43ef-8b61-a2d6f0bb95b9" as ID_Collection,
+    collectionId: "5c6c1a08-ea36-4fb3-89e4-8449e0d08e4d" as ID_Collection,
     fundingDao,
     fundingDocDao,
     mempoolBitcoinClient: createMempoolBitcoinClient({ network: "regtest" }),

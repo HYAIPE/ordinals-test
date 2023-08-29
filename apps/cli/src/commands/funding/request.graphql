@@ -1,0 +1,10 @@
+mutation AxolotlFundingRequest($request: AxolotlRequest!) {
+  axolotlFundingAddressRequest(request: $request) {
+    inscriptionFunding {
+      id
+      fundingAddress
+      fundingAmountSats
+      fundingAmountBtc
+    }
+  }
+}

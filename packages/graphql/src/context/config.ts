@@ -56,14 +56,6 @@ export const authMessageJwtClaimIssuer = lazySingleton(() => {
   return process.env.AUTH_MESSAGE_JWT_CLAIM_ISSUER;
 });
 
-export const ethereumDefaultChainId = lazySingleton(() => {
-  const envNum = Number(process.env.ETHEREUM_DEFAULT_CHAIN_ID);
-  if (!Number.isInteger(envNum)) {
-    throw new Error("ETHEREUM_DEFAULT_CHAIN_ID not set");
-  }
-  return envNum;
-});
-
 export const sepoliaEnsRegistryAddress = lazySingleton(() => {
   if (!process.env.SEPOLIA_ENS_REGISTRY_ADDRESS) {
     throw new Error("SEPOLIA_ENS_REGISTRY_ADDRESS not set");
@@ -107,7 +99,6 @@ export interface IConfigContext {
   authMessageExpirationTimeSeconds: number;
   authMessageJwtClaimIssuer: string;
   tableNames: Record<string, string>;
-  ethereumDefaultChainId: number;
   sepoliaEnsRegistryAddress: string;
   sepoliaEnsUniversalResolverAddress: string;
   sepoliaEnsAdmin: string;
@@ -156,9 +147,6 @@ export function createConfigContext(): IConfigContext {
     },
     get tableNames() {
       return tableNames.get();
-    },
-    get ethereumDefaultChainId() {
-      return ethereumDefaultChainId.get();
     },
     get sepoliaEnsRegistryAddress() {
       return sepoliaEnsRegistryAddress.get();

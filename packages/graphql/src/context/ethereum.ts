@@ -9,7 +9,6 @@ const logger = createLogger({
 
 export interface IEthereumContext {
   providerForChain: (chainId: number) => Provider;
-  defaultChainProvider: () => Provider;
   ensAdminForChain: (chainId: number) => string;
 }
 
@@ -17,9 +16,6 @@ export function createEthereumContext(
   config: IConfigContext,
 ): IEthereumContext {
   const self = {
-    defaultChainProvider: () => {
-      return self.providerForChain(config.ethereumDefaultChainId);
-    },
     providerForChain: (chainId: number) => {
       logger.debug(`Creating provider for chainId: ${chainId}`);
       switch (chainId) {

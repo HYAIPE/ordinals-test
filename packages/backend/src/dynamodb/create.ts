@@ -1,20 +1,13 @@
 import { DynamoDBClient, DynamoDBClientConfig } from "@aws-sdk/client-dynamodb";
 import { DynamoDBDocumentClient } from "@aws-sdk/lib-dynamodb";
-import {
-  awsEndpoint,
-  awsRegion,
-  dynamoDbUrl,
-  dynamoDbRegion,
-  dynamoDbSslEnabled,
-} from "../utils/config.js";
+import { deployment } from "@0xflick/ordinals-config";
 
 let instance: DynamoDBDocumentClient;
 
 export function createDb(opts?: DynamoDBClientConfig) {
   const config = {
-    endpoint: dynamoDbUrl.get() ?? awsEndpoint.get(),
-    region: dynamoDbRegion.get() ?? awsRegion.get(),
-    // sslEnabled: dynamoDbSslEnabled.get(),
+    endpoint: deployment.endpoint,
+    region: deployment.region,
     ...(process.env.MOCK_DYNAMODB_ENDPOINT && {
       endpoint: process.env.MOCK_DYNAMODB_ENDPOINT,
       sslEnabled: false,

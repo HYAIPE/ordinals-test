@@ -1,0 +1,39 @@
+{
+  "extends": "@0xflick/tsconfig/tsconfig.base.json",
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["esnext"],
+    "module": "ES2022",
+    "outDir": "./dist",
+    "baseUrl": "./src",
+    "composite": true,
+    "jsx": "preserve",
+    "plugins": [],
+    "paths": {
+      "@0xflick/inscriptions": ["../../packages/inscriptions/src/index"],
+      "@0xflick/ordinals-backend": ["../../packages/backend/src/index"],
+      "@0xflick/ordinals-models": ["../../packages/models/src/index"],
+      "@0xflick/ordinals-rbac": ["../../packages/rbac/src/index"],
+      "@0xflick/ordinals-rbac-models": ["../../packages/rbac-models/src/index"]
+    }
+  },
+  "include": ["src/**/*.ts"],
+  "exclude": ["./node_modules"],
+  "references": [
+    {
+      "path": "../../packages/inscriptions"
+    },
+    {
+      "path": "../../packages/backend"
+    },
+    {
+      "path": "../../packages/models"
+    },
+    {
+      "path": "../../packages/rbac"
+    },
+    {
+      "path": "../../packages/rbac-models"
+    }
+  ]
+}

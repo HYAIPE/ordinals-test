@@ -1,10 +1,16 @@
 {
   "cSpell.words": [
     "cblock",
+    "fundings",
     "inscriptor",
+    "localstack",
+    "rpcpassword",
+    "rpcuser",
+    "rpcwallet",
     "SIWB",
     "siwe",
     "tapkey",
+    "txid",
     "wagmi",
     "Xverse"
   ]
