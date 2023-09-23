@@ -69,6 +69,78 @@ export class FundingDao<
     this.client = client;
   }
 
+  public async getAllFundingByAddressCollection(opts: {
+    collectionId: ID_Collection;
+    address: string;
+  }): Promise<IAddressInscriptionModel<ItemMeta>[]> {
+    const results: IAddressInscriptionModel<ItemMeta>[] = [];
+    for await (const item of this.listAllFundingByAddressCollection(opts)) {
+      results.push(item);
+    }
+    return results;
+  }
+
+  public async *listAllFundingByAddressCollection(
+    opts: {
+      collectionId: ID_Collection;
+      address: string;
+    } & IPaginationOptions
+  ): AsyncGenerator<IAddressInscriptionModel<ItemMeta>, any, unknown> {
+    return paginate((options) =>
+      this.listAllFundingByAddressCollectionPaginated({
+        ...opts,
+        ...options,
+      })
+    );
+  }
+
+  public async listAllFundingByAddressCollectionPaginated({
+    collectionId,
+    address,
+    cursor,
+    limit,
+  }: {
+    collectionId: ID_Collection;
+    address: string;
+  } & IPaginationOptions): Promise<
+    IPaginatedResult<IAddressInscriptionModel<ItemMeta>>
+  > {
+    const pagination = decodeCursor(cursor);
+    const result = await this.client.send(
+      new QueryCommand({
+        TableName: FundingDao.TABLE_NAME,
+        IndexName: "address-collection-index",
+        KeyConditionExpression:
+          "address = :address AND collectionId = :collectionId",
+        ExpressionAttributeValues: {
+          ":address": address,
+          ":collectionId": toCollectionId(collectionId),
+        },
+        ...(pagination && { ExclusiveStartKey: pagination.lastEvaluatedKey }),
+        ...(limit && { Limit: limit }),
+      })
+    );
+    const lastEvaluatedKey = result.LastEvaluatedKey;
+    const page = pagination ? pagination.page + 1 : 1;
+    const size = result.Items?.length || 0;
+    const count = (pagination ? pagination.count : 0) + size;
+
+    return {
+      items:
+        result.Items?.map((item) =>
+          this.fromFundingDb(item as TFundingDb<ItemMeta>)
+        ) ?? [],
+      cursor: encodeCursor({
+        page,
+        count,
+        lastEvaluatedKey,
+      }),
+      page,
+      count,
+      size,
+    };
+  }
+
   public async getAllFundingsByStatus({
     id,
     fundingStatus,
@@ -545,12 +617,22 @@ export class FundingDao<
       timesChecked,
       fundingAmountBtc,
       fundingAmountSat,
-      ...(lastChecked && { lastChecked: lastChecked.getTime() }),
-      ...(fundingTxid && { fundingTxid }),
-      ...(fundingVout && { fundingVout }),
-      ...(genesisTxid && { genesisTxid }),
-      ...(revealTxid && { revealTxid }),
-      ...(meta ? meta : ({} as T)),
+      ...(typeof lastChecked !== "undefined" && {
+        lastChecked: lastChecked.getTime(),
+      }),
+      ...(typeof fundingTxid !== "undefined" && { fundingTxid }),
+      ...(typeof fundingVout !== "undefined" && { fundingVout }),
+      ...(typeof genesisTxid !== "undefined" && { genesisTxid }),
+      ...(typeof revealTxid !== "undefined" && { revealTxid }),
+      ...(typeof meta !== "undefined"
+        ? // remove undefined values
+          Array.from(Object.entries(meta)).reduce((memo, [key, value]) => {
+            if (typeof value !== "undefined") {
+              (memo[key] as any) = value;
+            }
+            return memo;
+          }, {} as T)
+        : ({} as T)),
     };
   }
 
@@ -568,7 +650,15 @@ export class FundingDao<
       collectionName: name,
       maxSupply,
       totalCount,
-      ...(meta ? meta : ({} as T)),
+      ...(meta
+        ? // remove undefined values
+          Array.from(Object.entries(meta)).reduce((memo, [key, value]) => {
+            if (typeof value !== "undefined") {
+              (memo[key] as any) = value;
+            }
+            return memo;
+          }, {} as T)
+        : ({} as T)),
     };
   }
 
@@ -614,12 +704,16 @@ export class FundingDao<
       timesChecked,
       fundingAmountBtc,
       fundingAmountSat,
-      ...(lastChecked && { lastChecked: new Date(lastChecked) }),
-      ...(fundingTxid && { fundingTxid }),
-      ...(fundingVout && { fundingVout }),
-      ...(genesisTxid && { genesisTxid }),
-      ...(revealTxid && { revealTxid }),
-      ...(collectionId ? { collectionId: toCollectionId(collectionId) } : {}),
+      ...(typeof lastChecked !== "undefined" && {
+        lastChecked: new Date(lastChecked),
+      }),
+      ...(typeof fundingTxid !== "undefined" && { fundingTxid }),
+      ...(typeof fundingVout !== "undefined" && { fundingVout }),
+      ...(typeof genesisTxid !== "undefined" && { genesisTxid }),
+      ...(typeof revealTxid !== "undefined" && { revealTxid }),
+      ...(typeof collectionId !== "undefined"
+        ? { collectionId: toCollectionId(collectionId) }
+        : {}),
       meta: excludePrimaryKeys(meta) as T,
     };
   }

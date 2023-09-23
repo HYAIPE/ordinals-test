@@ -37,6 +37,7 @@ export async function createInscriptionTransaction({
     padding,
     totalFee,
     files,
+    secKey,
   } = await generateFundingAddress({
     address,
     inscriptions,
@@ -63,7 +64,7 @@ export async function createInscriptionTransaction({
     network,
     overhead,
     padding,
-    secKey: privKey,
+    secKey: Buffer.from(secKey.raw).toString("hex"),
     totalFee,
     writableInscriptions: inscriptionsToWrite,
     tip,

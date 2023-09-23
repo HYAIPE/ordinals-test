@@ -23,7 +23,33 @@ type AxolotlFundingPage {
   cursor: String
 }
 
+input AxolotlAvailableFundingRequest {
+  claimingAddress: String!
+  collectionId: ID!
+}
+
+enum FundingStatus {
+  UNVERIFIED
+  UNCLAIMED
+  FUNDING
+  FUNDED
+  GENESIS
+  REVEAL
+}
+
+type AxolotlAvailableFunding {
+  id: ID!
+  destinationAddress: String!
+  claimingAddress: String!
+  status: FundingStatus!
+  network: BitcoinNetwork
+  funding: InscriptionFunding
+}
+
 type Mutation {
   requestFundingAddress(request: InscriptionRequest!): InscriptionFunding!
   axolotlFundingAddressRequest(request: AxolotlRequest!): [AxolotlFunding!]!
+  axolotlAvailableFundingAddresses(
+    request: AxolotlAvailableFundingRequest!
+  ): [AxolotlAvailableFunding!]!
 }

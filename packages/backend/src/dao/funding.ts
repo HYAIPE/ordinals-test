@@ -29,6 +29,22 @@ export interface IFundingDao<
   ItemMeta extends Record<string, any> = {},
   CollectionMeta extends Record<string, any> = {}
 > {
+  getAllFundingByAddressCollection(opts: {
+    collectionId: ID_Collection;
+    address: string;
+  }): Promise<IAddressInscriptionModel<ItemMeta>[]>;
+  listAllFundingByAddressCollectionPaginated(
+    opts: {
+      collectionId: ID_Collection;
+      address: string;
+    } & IPaginationOptions
+  ): Promise<IPaginatedResult<IAddressInscriptionModel<ItemMeta>>>;
+  listAllFundingByAddressCollection(
+    opts: {
+      collectionId: ID_Collection;
+      address: string;
+    } & IPaginationOptions
+  ): AsyncGenerator<IAddressInscriptionModel<ItemMeta>>;
   getAllFundingsByStatus(opts: {
     id: ID_Collection;
     fundingStatus: TFundingStatus;

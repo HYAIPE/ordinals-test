@@ -17,6 +17,21 @@ export function toBitcoinNetworkName(
   }
 }
 
+export function toGraphqlBitcoinNetworkName(
+  bitcoinNetworkName: BitcoinNetworkNames,
+): BitcoinNetwork {
+  switch (bitcoinNetworkName) {
+    case "mainnet":
+      return "MAINNET";
+    case "testnet":
+      return "TESTNET";
+    case "regtest":
+      return "REGTEST";
+    default:
+      throw new Error(`Unsupported network: ${bitcoinNetworkName}`);
+  }
+}
+
 export function toFeeLevel(feeLevel: FeeLevel, fees: IFeesRecommended) {
   switch (feeLevel) {
     case "GLACIAL":

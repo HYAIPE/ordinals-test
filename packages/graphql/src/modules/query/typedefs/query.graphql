@@ -1,5 +1,3 @@
 type Query {
   inscriptionTransaction(id: ID!): InscriptionTransaction
-
-  userByAddress(address: ID!): Web3User!
 }

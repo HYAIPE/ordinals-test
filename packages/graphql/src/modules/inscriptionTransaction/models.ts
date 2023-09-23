@@ -1,8 +1,7 @@
-import { InscriptionTransaction } from "../../generated-types/graphql.js";
 import { InscriptionFundingModel } from "../inscriptionFunding/models.js";
 import { InscriptionTransactionContentModel } from "../inscriptionRequest/models.js";
 
-export class InscriptionTransactionModel implements InscriptionTransaction {
+export class InscriptionTransactionModel {
   private readonly inscriptionFunding: InscriptionFundingModel;
 
   constructor(inscriptionFunding: InscriptionFundingModel) {
@@ -25,9 +24,11 @@ export class InscriptionTransactionModel implements InscriptionTransaction {
     return this.inscriptionFunding.initLeaf;
   }
 
-  public get inscriptions(): InscriptionTransactionContentModel[] {
-    return this.inscriptionFunding.inscriptions.map(
-      (inscription) => new InscriptionTransactionContentModel(inscription),
+  public get inscriptions(): Promise<InscriptionTransactionContentModel[]> {
+    return this.inscriptionFunding.inscriptions.then((inscriptions) =>
+      inscriptions.map(
+        (inscription) => new InscriptionTransactionContentModel(inscription),
+      ),
     );
   }
 

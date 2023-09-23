@@ -369,7 +369,7 @@ export async function generateGenesisTransaction({
   ];
 
   let rawTx = Tx.encode(initRedeemTx).hex;
-  return rawTx;
+  return rawTx as string;
 }
 
 export interface RevealTransactionRequest {

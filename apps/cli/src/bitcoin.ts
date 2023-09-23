@@ -110,6 +110,32 @@ export async function sendBitcoin({
     "outputs=" + JSON.stringify(Object.fromEntries(outputs)),
     "fee_rate=" + fee_rate,
   ];
+  console.log("bitcoin-cli", args.join(" "));
   const stdout = await spawnAsync("bitcoin-cli", args);
   return JSON.parse(stdout);
+}
+
+export async function generateOrdinalAddress({
+  network,
+}: {
+  network: BitcoinNetworkNames;
+}) {
+  const networkFlag = (() => {
+    switch (network) {
+      case "regtest":
+        return "--regtest";
+      case "testnet":
+        return "--testnet";
+      case "mainnet":
+        return null;
+      default:
+        throw new Error(`Unknown network ${network}`);
+    }
+  })();
+
+  const args = [...(networkFlag ? [networkFlag] : []), "wallet", "receive"];
+
+  const stdout = await spawnAsync("ord", args);
+  const { address } = JSON.parse(stdout.trim());
+  return address;
 }

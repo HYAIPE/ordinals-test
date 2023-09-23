@@ -7,6 +7,7 @@ export namespace UserModule {
     Web3User: 'address' | 'type' | 'roles' | 'allowedActions' | 'token';
     Web3LoginUser: 'address' | 'user' | 'token';
     Mutation: 'nonceEthereum' | 'nonceBitcoin';
+    Query: 'userByAddress';
   };
   
   export type Nonce = Pick<Types.Nonce, DefinedFields['Nonce']>;
@@ -16,17 +17,20 @@ export namespace UserModule {
   export type Permission = Types.Permission;
   export type Web3LoginUser = Pick<Types.Web3LoginUser, DefinedFields['Web3LoginUser']>;
   export type Mutation = Pick<Types.Mutation, DefinedFields['Mutation']>;
+  export type Query = Pick<Types.Query, DefinedFields['Query']>;
   
   export type NonceResolvers = Pick<Types.NonceResolvers, DefinedFields['Nonce'] | '__isTypeOf'>;
   export type Web3UserResolvers = Pick<Types.Web3UserResolvers, DefinedFields['Web3User'] | '__isTypeOf'>;
   export type Web3LoginUserResolvers = Pick<Types.Web3LoginUserResolvers, DefinedFields['Web3LoginUser'] | '__isTypeOf'>;
   export type MutationResolvers = Pick<Types.MutationResolvers, DefinedFields['Mutation']>;
+  export type QueryResolvers = Pick<Types.QueryResolvers, DefinedFields['Query']>;
   
   export interface Resolvers {
     Nonce?: NonceResolvers;
     Web3User?: Web3UserResolvers;
     Web3LoginUser?: Web3LoginUserResolvers;
     Mutation?: MutationResolvers;
+    Query?: QueryResolvers;
   };
   
   export interface MiddlewareMap {
@@ -63,6 +67,10 @@ export namespace UserModule {
       '*'?: gm.Middleware[];
       nonceEthereum?: gm.Middleware[];
       nonceBitcoin?: gm.Middleware[];
+    };
+    Query?: {
+      '*'?: gm.Middleware[];
+      userByAddress?: gm.Middleware[];
     };
   };
 }

@@ -2,7 +2,6 @@ import { IObservedClaim } from "@0xflick/ordinals-models";
 import Bottleneck from "bottleneck";
 import { createLogger } from "@0xflick/ordinals-backend";
 import { Address } from "@0xflick/tapscript";
-import { inspect } from "util";
 import { Log } from "viem";
 import { watchIAllowanceEvent, iAllowanceABI } from "../wagmi/generated.js";
 import { ClaimsDao } from "../index.js";
@@ -208,7 +207,7 @@ export async function updateStorage({
   }
 }
 
-export async function watchAllowanceEvents({
+export async function watchForAllowance({
   observables,
   claimsDao,
 }: {

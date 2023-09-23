@@ -1,6 +1,6 @@
 import { ID_AddressInscription } from "@0xflick/ordinals-models";
 import { Context } from "../../context/index.js";
-import { readIAllowance } from "@0xflick/ordinals-backend";
+import { fetchAllClaimables } from "./controllers.js";
 
 type InscriptionFactoryFn<T extends { id: ID_AddressInscription }> = (
   requests: {
@@ -25,54 +25,12 @@ export async function contractAllowanceStrategy<
     inscriptionFactory: InscriptionFactoryFn<T>;
   },
 ) {
-  const [onChainClaimables, existingClaimables] = await Promise.all([
-    readIAllowance({
-      chainId: axolotlAllowanceChainId,
-      address: axolotlAllowanceContractAddress,
-      functionName: "allClaimable",
-      args: [address],
-    }),
-    claimsDao.getAllClaims({
-      address,
-      contractAddress: axolotlAllowanceContractAddress,
-      chainId: axolotlAllowanceChainId,
-    }),
-  ]);
-
-  // Find the claimables that are not yet claimed by filtering out any existing claimables that already have a fundingId
-  // but first we need to track the index of the claimables before we filter
-  const destinationAddressesWithIndex = onChainClaimables.map(
-    (destinationAddress, index) => ({
-      destinationAddress,
-      index,
-    }),
-  );
-
-  const claimables = destinationAddressesWithIndex.reduce(
-    (accumulator, { destinationAddress, index }) => {
-      const existingClaimable = existingClaimables.find(
-        (claimable) =>
-          claimable.index === index &&
-          claimable.destinationAddress === destinationAddress &&
-          !claimable.fundingId,
-      );
-
-      if (existingClaimable) {
-        accumulator.push({
-          destinationAddress,
-          index,
-          observedBlockHeight: existingClaimable.observedBlockHeight,
-        });
-      }
-
-      return accumulator;
-    },
-    [] as {
-      destinationAddress: string;
-      index: number;
-      observedBlockHeight: number;
-    }[],
-  );
+  const { verified: claimables } = await fetchAllClaimables({
+    address,
+    axolotlAllowanceChainId,
+    axolotlAllowanceContractAddress,
+    claimsDao,
+  });
 
   // Now we can create the inscription documents
   const inscriptionDocs = await inscriptionFactory(claimables);

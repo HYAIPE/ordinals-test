@@ -1,12 +1,5 @@
 import { lazySingleton } from "@0xflick/ordinals-models";
-import {
-  createPublicClient,
-  http,
-  Client,
-  HttpTransport,
-  PublicClient,
-  Chain,
-} from "viem";
+import { createPublicClient, http, HttpTransport, PublicClient } from "viem";
 import { mainnet, sepolia, goerli } from "viem/chains";
 
 let sepoliaClient: PublicClient<HttpTransport, typeof sepolia> | undefined =

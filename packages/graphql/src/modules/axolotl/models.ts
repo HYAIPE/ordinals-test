@@ -1,3 +1,4 @@
+import { S3Client } from "@aws-sdk/client-s3";
 import {
   TInscriptionDoc,
   BitcoinNetworkNames,
@@ -26,6 +27,8 @@ export interface IAxolotlMeta {
   tokenId: number;
   chameleon: boolean;
   revealedAt: number;
+  claimIndex?: number;
+  claimAddress?: string;
 }
 
 export interface IAxolotlCollectionConfigNetwork {
@@ -172,6 +175,9 @@ export class AxolotlModel implements IAxolotlMeta {
     inscriptionBucket,
     feeLevel,
     tip,
+    claimAddress,
+    claimIndex,
+    s3Client,
   }: {
     collectionId: ID_Collection;
     incrementingRevealDao: TAxolotlFundingDao;
@@ -183,6 +189,9 @@ export class AxolotlModel implements IAxolotlMeta {
     feeLevel?: InputMaybe<FeeLevel>;
     inscriptionBucket: string;
     tip: number;
+    claimAddress?: string;
+    claimIndex?: number;
+    s3Client: S3Client;
   }) {
     const collection = await incrementingRevealDao.getCollection(collectionId);
     const { config: configStr } = collection.meta ?? {};
@@ -235,7 +244,6 @@ export class AxolotlModel implements IAxolotlMeta {
       secKey,
       totalFee,
       writableInscriptions,
-      files,
     } = await createInscriptionTransaction({
       address: destinationAddress,
       feeRate: finalFee,
@@ -243,6 +251,8 @@ export class AxolotlModel implements IAxolotlMeta {
       tip,
       inscriptions: [inscriptionContent],
     });
+
+    console.log({ secKey }, "Created inscription transaction");
 
     const addressModel = new AddressInscriptionModel<IAxolotlMeta>({
       collectionId,
@@ -257,6 +267,8 @@ export class AxolotlModel implements IAxolotlMeta {
         chameleon: false,
         revealedAt,
         tokenId,
+        claimAddress,
+        claimIndex,
       },
     });
     const doc: TInscriptionDoc = {
@@ -279,6 +291,8 @@ export class AxolotlModel implements IAxolotlMeta {
       id: addressModel.id,
       bucket: inscriptionBucket,
       document: doc,
+      fundingAddress,
+      s3Client,
     });
     await Promise.all([
       fundingDocDao.updateOrSaveInscriptionTransaction(doc),

@@ -5,6 +5,7 @@ export namespace InscriptionFundingModule {
   interface DefinedFields {
     S3Object: 'bucket' | 'key';
     InscriptionFunding: 'id' | 's3Object' | 'fundingAmountBtc' | 'fundingAmountSats' | 'fundingAddress' | 'network' | 'qrValue' | 'qrSrc' | 'inscriptionTransaction' | 'inscriptionContent';
+    Query: 'inscriptionFunding';
   };
   
   export type S3Object = Pick<Types.S3Object, DefinedFields['S3Object']>;
@@ -12,13 +13,16 @@ export namespace InscriptionFundingModule {
   export type BitcoinNetwork = Types.BitcoinNetwork;
   export type InscriptionTransaction = Types.InscriptionTransaction;
   export type InscriptionData = Types.InscriptionData;
+  export type Query = Pick<Types.Query, DefinedFields['Query']>;
   
   export type S3ObjectResolvers = Pick<Types.S3ObjectResolvers, DefinedFields['S3Object'] | '__isTypeOf'>;
   export type InscriptionFundingResolvers = Pick<Types.InscriptionFundingResolvers, DefinedFields['InscriptionFunding'] | '__isTypeOf'>;
+  export type QueryResolvers = Pick<Types.QueryResolvers, DefinedFields['Query']>;
   
   export interface Resolvers {
     S3Object?: S3ObjectResolvers;
     InscriptionFunding?: InscriptionFundingResolvers;
+    Query?: QueryResolvers;
   };
   
   export interface MiddlewareMap {
@@ -42,6 +46,10 @@ export namespace InscriptionFundingModule {
       qrSrc?: gm.Middleware[];
       inscriptionTransaction?: gm.Middleware[];
       inscriptionContent?: gm.Middleware[];
+    };
+    Query?: {
+      '*'?: gm.Middleware[];
+      inscriptionFunding?: gm.Middleware[];
     };
   };
 }

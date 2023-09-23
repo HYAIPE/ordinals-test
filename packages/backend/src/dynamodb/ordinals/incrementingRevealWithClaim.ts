@@ -118,33 +118,33 @@ export class IncrementingRevealWithClaimDao<
     ]);
   }
 
-  async inscriptionsForClaims({
-    observedClaims,
-    inscriptor,
-  }: {
-    observedClaims: IObservedClaim[];
-    inscriptor: InscriptionDecoratorFn<
-      Omit<ItemMeta, keyof IIncrementingRevealItemMeta> &
-        IIncrementingRevealItemMeta
-    >;
-  }) {
-    const nextTokenId = await this.fundingDao.incrementCollectionTotalCount(
-      this.collectionId
-    );
-    // We try very hard to fail after this point and save this inscription
-    const { inscriptions, itemMeta } = await inscriptor(
-      await Promise.all(
-        observedClaims.map(async (observedClaim) => {
-          const nextTokenId =
-            await this.fundingDao.incrementCollectionTotalCount(
-              this.collectionId
-            );
-          return {
-            observedClaim,
-            nextTokenId,
-          };
-        })
-      )
-    );
-  }
+  // async inscriptionsForClaims({
+  //   observedClaims,
+  //   inscriptor,
+  // }: {
+  //   observedClaims: IObservedClaim[];
+  //   inscriptor: InscriptionDecoratorFn<
+  //     Omit<ItemMeta, keyof IIncrementingRevealItemMeta> &
+  //       IIncrementingRevealItemMeta
+  //   >;
+  // }) {
+  //   const nextTokenId = await this.fundingDao.incrementCollectionTotalCount(
+  //     this.collectionId
+  //   );
+  //   // We try very hard to fail after this point and save this inscription
+  //   const { inscriptions, itemMeta } = await inscriptor(
+  //     await Promise.all(
+  //       observedClaims.map(async (observedClaim) => {
+  //         const nextTokenId =
+  //           await this.fundingDao.incrementCollectionTotalCount(
+  //             this.collectionId
+  //           );
+  //         return {
+  //           observedClaim,
+  //           nextTokenId,
+  //         };
+  //       })
+  //     )
+  //   );
+  // }
 }

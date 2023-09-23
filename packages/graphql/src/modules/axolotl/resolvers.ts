@@ -1,3 +1,4 @@
+import { S3Client } from "@aws-sdk/client-s3";
 import { AxolotlModule } from "./generated-types/module-types.js";
 import {
   IFundingDao,
@@ -5,8 +6,11 @@ import {
   MempoolClient,
   createInscriptionTransaction,
 } from "@0xflick/ordinals-backend";
-import { toBitcoinNetworkName } from "../bitcoin/transforms.js";
-import { fileToInscription } from "./transforms.js";
+import {
+  toBitcoinNetworkName,
+  toGraphqlBitcoinNetworkName,
+} from "../bitcoin/transforms.js";
+import { fileToInscription, toGraphqlFundingStatus } from "./transforms.js";
 import { estimateFeesWithMempool } from "../bitcoin/fees.js";
 import { InscriptionFundingModel } from "../inscriptionFunding/models.js";
 import {
@@ -17,10 +21,18 @@ import {
   InscriptionContent,
 } from "@0xflick/ordinals-models";
 import { AxolotlModel } from "../axolotl/models.js";
-import { FeeLevel, InputMaybe } from "../../generated-types/graphql.js";
+import {
+  AxolotlAvailableFunding,
+  FeeLevel,
+  InputMaybe,
+  Maybe,
+  ResolversTypes,
+} from "../../generated-types/graphql.js";
 import { MempoolModel } from "../bitcoin/models.js";
 import { contractAllowanceStrategy } from "./strategy.js";
 import { bitcoinToSats } from "@0xflick/inscriptions";
+import { AxolotlError } from "./errors.js";
+import { fetchAllClaimables } from "./controllers.js";
 
 async function createTranscriptionFunding({
   address,
@@ -30,6 +42,7 @@ async function createTranscriptionFunding({
   network,
   fundingDao,
   fundingDocDao,
+  s3Client,
   inscriptionBucket,
   createMempoolBitcoinClient,
   tip,
@@ -42,6 +55,7 @@ async function createTranscriptionFunding({
   fundingDao: IFundingDao;
   fundingDocDao: IFundingDocDao;
   inscriptionBucket: string;
+  s3Client: S3Client;
   tip: number;
   createMempoolBitcoinClient: (opts: {
     network: BitcoinNetworkNames;
@@ -108,6 +122,8 @@ async function createTranscriptionFunding({
     id: addressModel.id,
     bucket: inscriptionBucket,
     document: doc,
+    fundingAddress,
+    s3Client,
   });
   await Promise.all([
     fundingDocDao.updateOrSaveInscriptionTransaction(doc),
@@ -135,7 +151,7 @@ export const resolvers: AxolotlModule.Resolvers = {
         address: claimingAddress as `0x${string}`,
         inscriptionFactory: async (requests) => {
           return await Promise.all(
-            requests.map(async ({ destinationAddress }) => {
+            requests.map(async ({ destinationAddress, index }) => {
               const {
                 inscriptionBucket,
                 axolotlInscriptionTip,
@@ -158,6 +174,9 @@ export const resolvers: AxolotlModule.Resolvers = {
                 fundingDocDao,
                 inscriptionBucket,
                 tip: axolotlInscriptionTip,
+                s3Client: context.s3Client,
+                claimAddress: claimingAddress,
+                claimIndex: index,
               });
 
               return axolotlModel;
@@ -165,6 +184,9 @@ export const resolvers: AxolotlModule.Resolvers = {
           );
         },
       });
+      if (inscriptions.length === 0) {
+        throw new AxolotlError("No available claims", "NO_CLAIM_FOUND");
+      }
       return inscriptions.map(({ claimable, inscriptionDoc }) => ({
         chameleon: inscriptionDoc.chameleon,
         createdAt: new Date().toISOString(),
@@ -190,6 +212,7 @@ export const resolvers: AxolotlModule.Resolvers = {
         fundingDocDao,
         inscriptionBucket,
         inscriptionTip,
+        s3Client,
         createMempoolBitcoinClient,
       },
     ) => {
@@ -206,7 +229,80 @@ export const resolvers: AxolotlModule.Resolvers = {
         inscriptionBucket,
         createMempoolBitcoinClient,
         tip: inscriptionTip,
+        s3Client,
       });
+    },
+    axolotlAvailableFundingAddresses: async (parent, params, context) => {
+      const {
+        request: { claimingAddress, collectionId },
+      } = params;
+      const {
+        claimsDao,
+        axolotlAllowanceChainId,
+        axolotlAllowanceContractAddress,
+        s3Client,
+        inscriptionBucket,
+      } = context;
+      const revealDao = AxolotlModel.createDefaultIncrementingRevealDao();
+      const { verified, unverified } = await fetchAllClaimables({
+        address: claimingAddress as `0x${string}`,
+        axolotlAllowanceChainId,
+        axolotlAllowanceContractAddress,
+        claimsDao,
+      });
+
+      const fundings = await revealDao.getAllFundingByAddressCollection({
+        address: claimingAddress as `0x${string}`,
+        collectionId: collectionId as ID_Collection,
+      });
+
+      // using the claiming address and index, match funding addresses to existing claimables
+      const result: (Omit<AxolotlAvailableFunding, "funding"> & {
+        funding?: Maybe<ResolversTypes["InscriptionFunding"]>;
+      })[] = [];
+      for (const claimable of verified) {
+        const funding = fundings.find(
+          (funding) =>
+            funding.address === claimable.destinationAddress &&
+            claimable.index === funding.meta.claimIndex &&
+            claimingAddress === funding.meta.claimAddress,
+        );
+        if (funding) {
+          funding.fundingStatus;
+          result.push({
+            claimingAddress,
+            destinationAddress: funding.address,
+            network: toGraphqlBitcoinNetworkName(funding.network),
+            id: funding.id,
+            status: toGraphqlFundingStatus(funding.fundingStatus),
+            // we can also attach the funding model here
+            funding: new InscriptionFundingModel({
+              id: funding.id,
+              s3Client,
+              bucket: inscriptionBucket,
+              fundingAddress: funding.address,
+            }),
+          });
+        } else {
+          result.push({
+            claimingAddress,
+            destinationAddress: claimable.destinationAddress,
+            id: claimable.destinationAddress,
+            status: "UNCLAIMED",
+          });
+        }
+      }
+      // These are claims that the backend has not processed yet
+      for (const unverifiedClaim of unverified) {
+        result.push({
+          claimingAddress,
+          destinationAddress: unverifiedClaim.destinationAddress,
+          id: `unverified-${unverifiedClaim.destinationAddress}-${unverifiedClaim.index}`,
+          status: "UNVERIFIED",
+        });
+      }
+
+      return result;
     },
   },
 };

@@ -1,5 +1,8 @@
-import { InscriptionContent } from "@0xflick/ordinals-models";
-import { InscriptionData } from "../../generated-types/graphql.js";
+import { InscriptionContent, TFundingStatus } from "@0xflick/ordinals-models";
+import {
+  FundingStatus,
+  InscriptionData,
+} from "../../generated-types/graphql.js";
 
 export function fileToInscription(file: InscriptionData): InscriptionContent {
   if (!file.textContent && !file.base64Content) {
@@ -12,4 +15,19 @@ export function fileToInscription(file: InscriptionData): InscriptionContent {
     content,
     mimeType: file.contentType,
   };
+}
+
+export function toGraphqlFundingStatus(status: TFundingStatus): FundingStatus {
+  switch (status) {
+    case "funded":
+      return "FUNDED";
+    case "funding":
+      return "FUNDING";
+    case "genesis":
+      return "GENESIS";
+    case "reveal":
+      return "REVEAL";
+    default:
+      throw new Error(`Unsupported funding status: ${status}`);
+  }
 }

@@ -2,6 +2,7 @@ import {
   TInscriptionDoc,
   INewFundingAddressModel,
   InscriptionFile,
+  IInscriptionDocCommon,
 } from "@0xflick/ordinals-models";
 import { GetObjectCommand, S3Client } from "@aws-sdk/client-s3";
 import { UnableToGetS3ObjectError } from "../../errors/s3.js";
@@ -9,44 +10,48 @@ import { toDataURL, QRCodeToDataURLOptions } from "qrcode";
 
 export class InscriptionFundingModel {
   private id: string;
-  private document: TInscriptionDoc;
+  private readonly fundingAddress: string;
+  private document?: TInscriptionDoc;
   private readonly bucket: string;
+  private s3Client: S3Client;
 
   constructor({
     id,
     document,
+    fundingAddress,
     bucket,
+    s3Client,
   }: {
     id: string;
-    document: TInscriptionDoc;
+    document?: TInscriptionDoc;
+    fundingAddress: string;
     bucket: string;
+    s3Client: S3Client;
   }) {
     this.id = id;
     this.document = document;
+    this.fundingAddress = fundingAddress;
     this.bucket = bucket;
-  }
-
-  public get fundingAddress() {
-    return this.document.fundingAddress;
+    this.s3Client = s3Client;
   }
 
   public get network() {
-    return this.document.network;
+    return this.fetchInscription().then((doc) => doc.network);
   }
 
   public get rootDocumentKey() {
     return `address/${this.fundingAddress}/inscriptions/${this.id}/transaction.json`;
   }
   private _fetchingDocPromise?: Promise<TInscriptionDoc>;
-  public async fetchInscription(s3Client: S3Client) {
+  public async fetchInscription(): Promise<IInscriptionDocCommon> {
     if (this.document) {
-      return;
+      return this.document;
     }
     if (this._fetchingDocPromise) {
       return await this._fetchingDocPromise;
     }
     this._fetchingDocPromise = Promise.resolve().then(async () => {
-      const getObjectResponse = await s3Client.send(
+      const getObjectResponse = await this.s3Client.send(
         new GetObjectCommand({
           Bucket: this.bucket,
           Key: this.rootDocumentKey,
@@ -75,7 +80,7 @@ export class InscriptionFundingModel {
       } catch (e) {
         throw new UnableToGetS3ObjectError(
           this.bucket,
-          this.rootDocumentKey,
+          await this.rootDocumentKey,
           "Unable to parse JSON",
         );
       }
@@ -127,7 +132,8 @@ export class InscriptionFundingModel {
   }
 
   public async fetchAllInscriptionContent(s3Client: S3Client) {
-    const inscriptions = this.document.writableInscriptions;
+    const document = await this.fetchInscription();
+    const inscriptions = document.writableInscriptions;
     // returns inscriptions in the order they are inscribed
     // Assumes all fetched
     const inscriptionOrder = (): Promise<InscriptionFile>[] => {
@@ -161,15 +167,17 @@ export class InscriptionFundingModel {
   }
 
   public get inscriptions() {
-    return this.document.writableInscriptions;
+    return this.fetchInscription().then((d) => d.writableInscriptions);
   }
 
   public get qrValue() {
-    return `bitcoin:${this.fundingAddress}?amount=${this.fundingAmountBtc}`;
+    return this.fundingAmountBtc.then((fundingAmountBtc) => {
+      return `bitcoin:${this.fundingAddress}?amount=${fundingAmountBtc}`;
+    });
   }
 
   public get fundingAmountBtc() {
-    return this.document.fundingAmountBtc;
+    return this.fetchInscription().then((f) => f.fundingAmountBtc);
   }
 
   private _qrSrc?: {
@@ -179,11 +187,11 @@ export class InscriptionFundingModel {
   private qrOptionsToMemo(options: QRCodeToDataURLOptions) {
     return JSON.stringify(options);
   }
-  public getQrSrc(options: QRCodeToDataURLOptions) {
+  public async getQrSrc(options: QRCodeToDataURLOptions) {
     const optionsHash = this.qrOptionsToMemo(options);
     if (!this._qrSrc || optionsHash !== this._qrSrc.memo) {
       this._qrSrc = {
-        src: toDataURL(this.qrValue, options),
+        src: toDataURL(await this.qrValue, options),
         memo: optionsHash,
       };
     }
@@ -191,40 +199,42 @@ export class InscriptionFundingModel {
   }
 
   public get initScript() {
-    return this.document.initScript.map((script) => {
-      if (typeof script === "string") {
-        return {
-          text: script,
-        };
-      }
+    return this.fetchInscription().then((doc) =>
+      doc.initScript.map((script) => {
+        if (typeof script === "string") {
+          return {
+            text: script,
+          };
+        }
 
-      return {
-        base64: script.base64,
-      };
-    });
+        return {
+          base64: script.base64,
+        };
+      }),
+    );
   }
 
   public get initTapKey() {
-    return this.document.initTapKey;
+    return this.fetchInscription().then((d) => d.initTapKey);
   }
 
   public get initLeaf() {
-    return this.document.initLeaf;
+    return this.fetchInscription().then((d) => d.initLeaf);
   }
 
   public get initCBlock() {
-    return this.document.initCBlock;
+    return this.fetchInscription().then((d) => d.initCBlock);
   }
 
   public get overhead() {
-    return this.document.overhead;
+    return this.fetchInscription().then((d) => d.overhead);
   }
 
   public get privateKey() {
-    return this.document.secKey;
+    return this.fetchInscription().then((d) => d.secKey);
   }
 
   public get padding() {
-    return this.document.padding;
+    return this.fetchInscription().then((d) => d.padding);
   }
 }

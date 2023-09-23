@@ -51,6 +51,8 @@ async function fetchFunding({
 }
 
 function customBackoff(retries: number) {
+  if (retries < 10) return 3000;
+  if (retries < 20) return 5 * 1000;
   if (retries < 30) return 60 * 1000;
   if (retries < 40) return 5 * 60 * 1000;
   if (retries < 50) return 10 * 60 * 1000;
@@ -65,15 +67,27 @@ function customBackoff(retries: number) {
  * Not currently expiring fundings, but we could do that in the future.
  *
  */
-export function watchForFundings({
-  collectionId,
-  fundingDao,
-  mempoolBitcoinClient,
-}: {
-  collectionId: ID_Collection;
-  fundingDao: IFundingDao;
-  mempoolBitcoinClient: MempoolClient["bitcoin"];
-}) {
+export function watchForFundings(
+  {
+    collectionId,
+    fundingDao,
+    mempoolBitcoinClient,
+    pollInterval = 60000,
+  }: {
+    collectionId: ID_Collection;
+    fundingDao: IFundingDao;
+    mempoolBitcoinClient: MempoolClient["bitcoin"];
+    pollInterval?: number;
+  },
+  notify?: (funding: {
+    txid: string;
+    vout: number;
+    fundedAmount: number;
+    address: string;
+    id: string;
+    fundingAmountSat: number;
+  }) => void
+) {
   logger.info(`Watching for fundings for collection ${collectionId}`);
   const enqueueFunding = (funding: {
     address: string;
@@ -104,7 +118,7 @@ export function watchForFundings({
   const stop$ = new Subject();
 
   // 1. Periodically check for new fundings and add new fundings to the queue
-  const pollForFundings$ = interval(60000 /* e.g., every 60 seconds */).pipe(
+  const pollForFundings$ = interval(pollInterval).pipe(
     startWith(0),
     takeUntil(stop$),
     tap(() => logger.info(`Polling for new fundings`)),
@@ -159,8 +173,10 @@ export function watchForFundings({
               throw error;
             }),
             retry({
+              resetOnSuccess: true,
+              count: funding.timesChecked,
               delay(error, retryCount) {
-                return timer(customBackoff(retryCount + funding.timesChecked));
+                return timer(customBackoff(retryCount));
               },
             })
           );
@@ -172,6 +188,7 @@ export function watchForFundings({
   // When $fundings is complete and we have a vout value, we can update the funding with the new txid and vout
   // This assumes the checkFundings observable emits individual funding results.
   pollForFundings$.subscribe(async (funding) => {
+    logger.info({ funding }, "Funding result");
     if (!funding) {
       logger.error("No funding found!");
       return;
@@ -195,6 +212,7 @@ export function watchForFundings({
           lastChecked: new Date(),
           resetTimesChecked: true,
         });
+        notify?.(funding);
       }
     } catch (error) {
       logger.error(error, "Error updating address funded for", funding.address);

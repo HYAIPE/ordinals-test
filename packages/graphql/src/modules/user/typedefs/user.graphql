@@ -29,3 +29,7 @@ type Mutation {
   nonceEthereum(address: ID!, chainId: Int!): Nonce!
   nonceBitcoin(address: ID!): Nonce!
 }
+
+type Query {
+  userByAddress(address: ID!): Web3User!
+}

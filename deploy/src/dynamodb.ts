@@ -160,6 +160,18 @@ export class DynamoDB extends Construct {
       projectionType: dynamodb.ProjectionType.INCLUDE,
       nonKeyAttributes: ["address", "id", "fundingAmountSat"],
     });
+    fundingTable.addGlobalSecondaryIndex({
+      indexName: "address-collection-index",
+      partitionKey: {
+        name: "address",
+        type: dynamodb.AttributeType.STRING,
+      },
+      sortKey: {
+        name: "collectionId",
+        type: dynamodb.AttributeType.STRING,
+      },
+      projectionType: dynamodb.ProjectionType.ALL,
+    });
     this.fundingTable = fundingTable;
     new cdk.CfnOutput(this, "FundingTableName", {
       exportName: "FundingTableName",

@@ -10,9 +10,9 @@ export default defineConfig({
     }),
     actions({
       readContract: true,
-      writeContract: false,
+      writeContract: true,
       watchContractEvent: true,
-      prepareWriteContract: false,
+      prepareWriteContract: true,
     }),
   ],
 });

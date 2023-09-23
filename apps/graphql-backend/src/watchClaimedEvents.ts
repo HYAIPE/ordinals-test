@@ -1,8 +1,9 @@
 import {
-  watchAllowanceEvents,
+  watchForAllowance,
   createDynamoDbClaimsDao,
   getDb,
   tableNames,
+  getTestAllowance,
 } from "@0xflick/ordinals-backend";
 
 export async function start() {
@@ -12,11 +13,12 @@ export async function start() {
     claimsTableName: tableNames.get().claims,
     db,
   });
-  await watchAllowanceEvents({
+  await watchForAllowance({
     claimsDao,
     observables: [
       {
-        contractAddress: "0xebA311021913C299F4522aE5828A4257ec52492A",
+        contractAddress: process.env
+          .AXOLOTL_ALLOWANCE_CONTRACT_ADDRESS! as `0x${string}`,
         chainId: 11155111,
         startBlockHeight: 3904660,
       },

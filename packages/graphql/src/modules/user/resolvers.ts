@@ -9,6 +9,7 @@ import { RoleModel } from "../permissions/models.js";
 import { UserModule } from "./generated-types/module-types.js";
 import { modelPermissionToGraphql } from "../permissions/transforms.js";
 import { keccak256, toUtf8Bytes } from "ethers";
+import { Web3UserModel } from "./models.js";
 
 const logger = createLogger({
   name: "graphql/user-resolvers",
@@ -49,6 +50,11 @@ export const resolvers: UserModule.Resolvers = {
       return permissions.map(modelPermissionToGraphql);
     },
   },
+  Query: {
+    userByAddress: async (_, { address }, { getToken }) => {
+      return new Web3UserModel(address, getToken());
+    },
+  },
   Mutation: {
     nonceEthereum: async (
       _,
@@ -85,12 +91,6 @@ export const resolvers: UserModule.Resolvers = {
         uri: authMessageJwtClaimIssuer,
         version: "1",
       });
-      console.log(
-        "message to sign",
-        messageToSign,
-        "\n",
-        keccak256(toUtf8Bytes(messageToSign)),
-      );
 
       return {
         nonce,

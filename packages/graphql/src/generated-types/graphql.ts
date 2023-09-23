@@ -31,6 +31,21 @@ export type AppInfo = {
   pubKey: Scalars['String']['output'];
 };
 
+export type AxolotlAvailableFunding = {
+  __typename?: 'AxolotlAvailableFunding';
+  claimingAddress: Scalars['String']['output'];
+  destinationAddress: Scalars['String']['output'];
+  funding?: Maybe<InscriptionFunding>;
+  id: Scalars['ID']['output'];
+  network?: Maybe<BitcoinNetwork>;
+  status: FundingStatus;
+};
+
+export type AxolotlAvailableFundingRequest = {
+  claimingAddress: Scalars['String']['input'];
+  collectionId: Scalars['ID']['input'];
+};
+
 export type AxolotlFunding = {
   __typename?: 'AxolotlFunding';
   chameleon: Scalars['Boolean']['output'];
@@ -98,6 +113,14 @@ export type FeeLevel =
   | 'HIGH'
   | 'LOW'
   | 'MEDIUM';
+
+export type FundingStatus =
+  | 'FUNDED'
+  | 'FUNDING'
+  | 'GENESIS'
+  | 'REVEAL'
+  | 'UNCLAIMED'
+  | 'UNVERIFIED';
 
 export type InscriptionData = {
   __typename?: 'InscriptionData';
@@ -174,6 +197,7 @@ export type KeyValueInput = {
 
 export type Mutation = {
   __typename?: 'Mutation';
+  axolotlAvailableFundingAddresses: Array<AxolotlAvailableFunding>;
   axolotlFundingAddressRequest: Array<AxolotlFunding>;
   collection: Collection;
   createCollection: Collection;
@@ -187,6 +211,11 @@ export type Mutation = {
   signOutEthereum: Scalars['Boolean']['output'];
   siwb: Web3LoginUser;
   siwe: Web3LoginUser;
+};
+
+
+export type MutationAxolotlAvailableFundingAddressesArgs = {
+  request: AxolotlAvailableFundingRequest;
 };
 
 
@@ -457,6 +486,8 @@ export type DirectiveResolverFn<TResult = {}, TParent = {}, TContext = {}, TArgs
 /** Mapping between all available schema types and the resolvers types */
 export type ResolversTypes = {
   AppInfo: ResolverTypeWrapper<AppInfo>;
+  AxolotlAvailableFunding: ResolverTypeWrapper<Omit<AxolotlAvailableFunding, 'funding'> & { funding?: Maybe<ResolversTypes['InscriptionFunding']> }>;
+  AxolotlAvailableFundingRequest: AxolotlAvailableFundingRequest;
   AxolotlFunding: ResolverTypeWrapper<Omit<AxolotlFunding, 'inscriptionFunding'> & { inscriptionFunding?: Maybe<ResolversTypes['InscriptionFunding']> }>;
   AxolotlFundingPage: ResolverTypeWrapper<Omit<AxolotlFundingPage, 'items'> & { items?: Maybe<Array<Maybe<ResolversTypes['AxolotlFunding']>>> }>;
   AxolotlRequest: AxolotlRequest;
@@ -467,6 +498,7 @@ export type ResolversTypes = {
   Collection: ResolverTypeWrapper<CollectionModel>;
   CollectionInput: CollectionInput;
   FeeLevel: FeeLevel;
+  FundingStatus: FundingStatus;
   ID: ResolverTypeWrapper<Scalars['ID']['output']>;
   InscriptionData: ResolverTypeWrapper<InscriptionData>;
   InscriptionDataInput: InscriptionDataInput;
@@ -494,6 +526,8 @@ export type ResolversTypes = {
 /** Mapping between all available schema types and the resolvers parents */
 export type ResolversParentTypes = {
   AppInfo: AppInfo;
+  AxolotlAvailableFunding: Omit<AxolotlAvailableFunding, 'funding'> & { funding?: Maybe<ResolversParentTypes['InscriptionFunding']> };
+  AxolotlAvailableFundingRequest: AxolotlAvailableFundingRequest;
   AxolotlFunding: Omit<AxolotlFunding, 'inscriptionFunding'> & { inscriptionFunding?: Maybe<ResolversParentTypes['InscriptionFunding']> };
   AxolotlFundingPage: Omit<AxolotlFundingPage, 'items'> & { items?: Maybe<Array<Maybe<ResolversParentTypes['AxolotlFunding']>>> };
   AxolotlRequest: AxolotlRequest;
@@ -526,6 +560,16 @@ export type ResolversParentTypes = {
 export type AppInfoResolvers<ContextType = Context, ParentType extends ResolversParentTypes['AppInfo'] = ResolversParentTypes['AppInfo']> = {
   name?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   pubKey?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+};
+
+export type AxolotlAvailableFundingResolvers<ContextType = Context, ParentType extends ResolversParentTypes['AxolotlAvailableFunding'] = ResolversParentTypes['AxolotlAvailableFunding']> = {
+  claimingAddress?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  destinationAddress?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  funding?: Resolver<Maybe<ResolversTypes['InscriptionFunding']>, ParentType, ContextType>;
+  id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
+  network?: Resolver<Maybe<ResolversTypes['BitcoinNetwork']>, ParentType, ContextType>;
+  status?: Resolver<ResolversTypes['FundingStatus'], ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 };
 
@@ -613,6 +657,7 @@ export type KeyValueResolvers<ContextType = Context, ParentType extends Resolver
 };
 
 export type MutationResolvers<ContextType = Context, ParentType extends ResolversParentTypes['Mutation'] = ResolversParentTypes['Mutation']> = {
+  axolotlAvailableFundingAddresses?: Resolver<Array<ResolversTypes['AxolotlAvailableFunding']>, ParentType, ContextType, RequireFields<MutationAxolotlAvailableFundingAddressesArgs, 'request'>>;
   axolotlFundingAddressRequest?: Resolver<Array<ResolversTypes['AxolotlFunding']>, ParentType, ContextType, RequireFields<MutationAxolotlFundingAddressRequestArgs, 'request'>>;
   collection?: Resolver<ResolversTypes['Collection'], ParentType, ContextType, RequireFields<MutationCollectionArgs, 'id'>>;
   createCollection?: Resolver<ResolversTypes['Collection'], ParentType, ContextType, RequireFields<MutationCreateCollectionArgs, 'input'>>;
@@ -697,6 +742,7 @@ export type Web3UserResolvers<ContextType = Context, ParentType extends Resolver
 
 export type Resolvers<ContextType = Context> = {
   AppInfo?: AppInfoResolvers<ContextType>;
+  AxolotlAvailableFunding?: AxolotlAvailableFundingResolvers<ContextType>;
   AxolotlFunding?: AxolotlFundingResolvers<ContextType>;
   AxolotlFundingPage?: AxolotlFundingPageResolvers<ContextType>;
   BitcoinScriptItem?: BitcoinScriptItemResolvers<ContextType>;
