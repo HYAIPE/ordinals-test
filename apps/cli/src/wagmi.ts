@@ -23,10 +23,11 @@ export const { publicClient, webSocketPublicClient } = configureChains(
   ]
 );
 
+const frame = ethProvider("frame");
 export const frameConnector = new InjectedConnector({
   options: {
     name: "Frame",
-    getProvider: () => ethProvider("frame") as any,
+    getProvider: () => frame as any,
   },
 });
 

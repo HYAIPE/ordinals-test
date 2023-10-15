@@ -4,6 +4,7 @@
     "module": "ES2022",
     "target": "ES2022",
     "composite": true,
+    "moduleResolution": "NodeNext",
     "outDir": "dist",
     "paths": {
       "@0xflick/ordinals-models": ["../../packages/models/src/index"],

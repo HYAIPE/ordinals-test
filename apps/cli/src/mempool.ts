@@ -28,7 +28,7 @@ export function createMempoolBitcoinClient({
   network,
 }: {
   network: BitcoinNetworkNames;
-}) {
+}): MempoolClient["bitcoin"] {
   const url = new URL(urlForNetworkName(network));
   const protocol = url.protocol.slice(0, -1);
   if (!["http", "https"].includes(protocol)) {
@@ -38,5 +38,5 @@ export function createMempoolBitcoinClient({
     network,
     hostname: url.hostname,
     protocol: protocol as "http" | "https",
-  }).bitcoin;
+  }).bitcoin as MempoolClient["bitcoin"];
 }
