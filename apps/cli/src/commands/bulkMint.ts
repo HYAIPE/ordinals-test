@@ -42,6 +42,8 @@ export async function bulkMint({
     });
   }
 
+  console.log(`Found ${inscriptions.length} inscriptions`);
+
   const response = await generateFundingAddress({
     address,
     inscriptions,
@@ -77,7 +79,7 @@ export async function bulkMint({
     txid,
     vout,
   });
-  // console.log(`Genesis tx: ${genesisTx}`);
+  console.log(`Genesis tx: ${genesisTx}`);
   const genesisTxId = await broadcastTx(genesisTx, network);
   console.log(`Genesis tx id: ${genesisTxId}`);
 

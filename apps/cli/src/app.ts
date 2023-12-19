@@ -13,7 +13,6 @@ import { nonceBitcoin, nonceEthereum } from "./commands/login/nonce.js";
 import { siwe } from "./commands/login/siwe.js";
 import { collectionCreate } from "./commands/collection/create.js";
 import { testOne } from "./commands/test/one.js";
-import { AxolotlRequest } from "./graphql.generated.js";
 const program = new Command();
 
 program
@@ -40,11 +39,21 @@ program
   .option("-w, --rpcwallet <wallet>", "Bitcoin Wallet name", "default")
   .option("-u, --rpcuser <rpcuser>", "Bitcoin RPC username")
   .option("-p, --rpcpassword <rpcpassword>", "Bitcoin RPC password")
+  .option("--no-send", "Don't automatically pay")
   .description("Mint an ordinal")
   .action(
     async (
       file,
-      { network, address, mimeType, feeRate, rpcpassword, rpcuser, rpcwallet }
+      {
+        network,
+        address,
+        mimeType,
+        feeRate,
+        rpcpassword,
+        rpcuser,
+        rpcwallet,
+        noSend,
+      }
     ) => {
       await mintSingle({
         file,
@@ -55,6 +64,7 @@ program
         rpcpassword,
         rpcuser,
         rpcwallet,
+        noSend: true
       });
     }
   );

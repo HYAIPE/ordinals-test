@@ -119,4 +119,5 @@ export async function generateScript(
     minify: true,
     ...additionalOptions,
   });
+  console.log("done");
 }

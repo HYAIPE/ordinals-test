@@ -21,6 +21,7 @@ export async function mintSingle({
   rpcuser,
   rpcpassword,
   rpcwallet,
+  noSend,
 }: {
   address: string;
   file: string;
@@ -30,6 +31,7 @@ export async function mintSingle({
   rpcuser: string;
   rpcpassword: string;
   rpcwallet: string;
+  noSend: boolean;
 }) {
   const content = await fs.promises.readFile(file);
 
@@ -52,14 +54,16 @@ export async function mintSingle({
   console.log(`Pay ${response.amount} to ${response.fundingAddress}`);
   let funded: readonly [string, number, number] | readonly [null, null, null] =
     [null, null, null];
-  await sendBitcoin({
-    fee_rate: feeRate,
-    network,
-    outputs: [[response.fundingAddress, response.amount]],
-    rpcpassword,
-    rpcuser,
-    rpcwallet,
-  });
+  if (!noSend) {
+    await sendBitcoin({
+      fee_rate: feeRate,
+      network,
+      outputs: [[response.fundingAddress, response.amount]],
+      rpcpassword,
+      rpcuser,
+      rpcwallet,
+    });
+  }
   console.log("Waiting for funding...");
   do {
     funded = await addressReceivedMoneyInThisTx(

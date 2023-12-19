@@ -13,7 +13,7 @@ yarn cli --help
 Uploading all layers:
 
 ```
-yarn cli bulk-mint -n testnet -o av-testnet.json {bc1p....address} '../../ordinals/axolotl-valley/web/properties/**/*.webp'
+yarn cli bulk-mint -n testnet -o av-testnet.json {bc1p....address} '../../ordinals/axolotl-valley/web/content/**/*.webp'
 ```
 
 This takes a while. Send funds to the requested address and wait. At the end you get a av-testnet.json that maps all file paths to ordinal IDs.
@@ -44,4 +44,10 @@ Finally inscribe the html:
 
 ```
 yarn cli mint -a {bc1p....address} -n testnet -m text/html;charset=utf-8 --fee-rate 14 index.html
+```
+
+with the backend running, create the collection:
+
+```
+yarn cli collection create -s 11155111 -m 'config={"testnet": { "scriptName": "/content/895a395c34147e77033a0c5812d441a7e0946638abb168f78ccfd2e440da175i0", "revealBlockDelta": 2 }' axolotl-valley 1000
 ```
