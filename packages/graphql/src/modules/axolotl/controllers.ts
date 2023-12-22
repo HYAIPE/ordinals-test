@@ -1,4 +1,6 @@
-import { ClaimsDao, readIAllowance } from "@0xflick/ordinals-backend";
+import { readContract } from "@wagmi/core";
+import { ClaimsDao, iAllowanceAbi } from "@0xflick/ordinals-backend";
+import { wagmi } from "@0xflick/ordinals-config";
 
 export type TClaimable = {
   destinationAddress: string;
@@ -18,8 +20,9 @@ export async function fetchAllClaimables({
   claimsDao: ClaimsDao;
 }) {
   const [onChainClaimables, existingClaimables] = await Promise.all([
-    readIAllowance({
-      chainId: axolotlAllowanceChainId,
+    readContract(wagmi.config, {
+      abi: iAllowanceAbi,
+      chainId: axolotlAllowanceChainId as 1 | 11155111 | 8453,
       address: axolotlAllowanceContractAddress,
       functionName: "allClaimable",
       args: [address],

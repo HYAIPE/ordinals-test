@@ -27,7 +27,7 @@ export const DISALLOWED_META_KEYS = [
 
 export interface IFundingDao<
   ItemMeta extends Record<string, any> = {},
-  CollectionMeta extends Record<string, any> = {}
+  CollectionMeta extends Record<string, any> = {},
 > {
   getAllFundingByAddressCollection(opts: {
     collectionId: ID_Collection;
@@ -37,13 +37,13 @@ export interface IFundingDao<
     opts: {
       collectionId: ID_Collection;
       address: string;
-    } & IPaginationOptions
+    } & IPaginationOptions,
   ): Promise<IPaginatedResult<IAddressInscriptionModel<ItemMeta>>>;
   listAllFundingByAddressCollection(
     opts: {
       collectionId: ID_Collection;
       address: string;
-    } & IPaginationOptions
+    } & IPaginationOptions,
   ): AsyncGenerator<IAddressInscriptionModel<ItemMeta>>;
   getAllFundingsByStatus(opts: {
     id: ID_Collection;
@@ -65,7 +65,7 @@ export interface IFundingDao<
     opts: {
       id: ID_Collection;
       fundingStatus: TFundingStatus;
-    } & IPaginationOptions
+    } & IPaginationOptions,
   ): Promise<
     IPaginatedResult<{
       address: string;
@@ -92,15 +92,16 @@ export interface IFundingDao<
   createCollection(item: TCollectionModel<CollectionMeta>): Promise<void>;
   getCollection(id: ID_Collection): Promise<TCollectionModel<CollectionMeta>>;
   getCollectionByName(
-    name: string
+    name: string,
   ): Promise<TCollectionModel<CollectionMeta>[]>;
   getAllCollections(): Promise<TCollectionModel<CollectionMeta>[]>;
+  getAllCollectionPaginated(options?: IPaginationOptions): Promise<IPaginatedResult<TCollectionModel<CollectionMeta>>>
   deleteCollection(id: ID_Collection): Promise<void>;
   incrementCollectionTotalCount(id: ID_Collection): Promise<number>;
   updateMaxSupply(id: ID_Collection, maxSupply: number): Promise<void>;
   updateCollectionMeta(
     id: ID_Collection,
-    meta: CollectionMeta
+    meta: CollectionMeta,
   ): Promise<TCollectionModel<CollectionMeta>>;
 }
 

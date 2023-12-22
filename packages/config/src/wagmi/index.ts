@@ -1,34 +1,22 @@
-import { configureChains } from "@wagmi/core";
-import { jsonRpcProvider } from "@wagmi/core/providers/jsonRpc";
+import { createConfig, http, webSocket, fallback } from "@wagmi/core";
 import { sepolia, sepoliaRpcUrl } from "./sepolia.js";
-import { IWagmiConfig } from "../types.js";
-
-type TChains = typeof sepolia;
-
-export const chainConfig: ReturnType<typeof configureChains<TChains>> =
-  configureChains<TChains>(
-    [sepolia],
-    [
-      jsonRpcProvider({
-        rpc: (chain) => {
-          switch (chain.id) {
-            case sepolia.id:
-              return {
-                http: sepoliaRpcUrl.get(),
-              };
-            default:
-              return null;
-          }
-        },
-      }),
-    ],
-  );
+import { base, baseRpcUrl, baseWsRpcUrl } from "./base.js";
+import { mainnet, mainnetRpcUrl } from "./mainnet.js";
 
 export const chains = {
-  sepolia,
+  [mainnet.id]: mainnet,
+  [sepolia.id]: sepolia,
+  [base.id]: base,
 };
 
-export const wagmiConfig: IWagmiConfig = {
-  chainConfig,
-  chains,
-};
+export const config = createConfig({
+  chains: [mainnet, sepolia, base],
+  transports: {
+    [mainnet.id]: fallback([http(mainnetRpcUrl.get())]),
+    [sepolia.id]: fallback([http(sepoliaRpcUrl.get())]),
+    [base.id]: fallback([
+      webSocket(baseWsRpcUrl.get()),
+      http(baseRpcUrl.get()),
+    ]),
+  },
+});

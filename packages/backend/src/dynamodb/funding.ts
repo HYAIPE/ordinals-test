@@ -50,7 +50,7 @@ export type TFundingCollectionDb<T extends Record<string, any>> = {
 } & T;
 
 function excludePrimaryKeys<T extends Record<string, any>>(
-  input: T
+  input: T,
 ): Record<string, any> {
   const { pk, sk, ...rest } = input;
   return rest;
@@ -58,7 +58,7 @@ function excludePrimaryKeys<T extends Record<string, any>>(
 
 export class FundingDao<
   ItemMeta extends Record<string, any> = {},
-  CollectionMeta extends Record<string, any> = {}
+  CollectionMeta extends Record<string, any> = {},
 > implements IFundingDao<ItemMeta, CollectionMeta>
 {
   public static TABLE_NAME = "Funding";
@@ -84,13 +84,13 @@ export class FundingDao<
     opts: {
       collectionId: ID_Collection;
       address: string;
-    } & IPaginationOptions
+    } & IPaginationOptions,
   ): AsyncGenerator<IAddressInscriptionModel<ItemMeta>, any, unknown> {
     return paginate((options) =>
       this.listAllFundingByAddressCollectionPaginated({
         ...opts,
         ...options,
-      })
+      }),
     );
   }
 
@@ -118,7 +118,7 @@ export class FundingDao<
         },
         ...(pagination && { ExclusiveStartKey: pagination.lastEvaluatedKey }),
         ...(limit && { Limit: limit }),
-      })
+      }),
     );
     const lastEvaluatedKey = result.LastEvaluatedKey;
     const page = pagination ? pagination.page + 1 : 1;
@@ -128,7 +128,7 @@ export class FundingDao<
     return {
       items:
         result.Items?.map((item) =>
-          this.fromFundingDb(item as TFundingDb<ItemMeta>)
+          this.fromFundingDb(item as TFundingDb<ItemMeta>),
         ) ?? [],
       cursor: encodeCursor({
         page,
@@ -179,7 +179,7 @@ export class FundingDao<
     unknown
   > {
     return paginate((options) =>
-      this.listAllFundingByStatusPaginated({ ...opts, ...options })
+      this.listAllFundingByStatusPaginated({ ...opts, ...options }),
     );
   }
 
@@ -213,7 +213,7 @@ export class FundingDao<
         },
         ...(pagination && { ExclusiveStartKey: pagination.lastEvaluatedKey }),
         ...(limit && { Limit: limit }),
-      })
+      }),
     );
     const lastEvaluatedKey = result.LastEvaluatedKey;
     const page = pagination ? pagination.page + 1 : 1;
@@ -254,7 +254,7 @@ export class FundingDao<
         TableName: FundingDao.TABLE_NAME,
         Item: db,
         ReturnValues: "NONE",
-      })
+      }),
     );
   }
 
@@ -266,7 +266,7 @@ export class FundingDao<
           pk: id,
           sk: "funding",
         },
-      })
+      }),
     );
     return this.fromFundingDb(db.Item as TFundingDb<ItemMeta>);
   }
@@ -279,7 +279,7 @@ export class FundingDao<
           pk: id,
           sk: "funding",
         },
-      })
+      }),
     );
   }
 
@@ -312,7 +312,7 @@ export class FundingDao<
               ":lastChecked": lastChecked.getTime(),
               ":one": 1,
             },
-      })
+      }),
     );
   }
 
@@ -340,7 +340,7 @@ export class FundingDao<
           ":fundingVout": fundingVout,
           ":fundingStatus": "funded",
         },
-      })
+      }),
     );
   }
 
@@ -365,7 +365,7 @@ export class FundingDao<
           ":genesisTxid": genesisTxid,
           ":fundingStatus": "genesis",
         },
-      })
+      }),
     );
   }
 
@@ -390,7 +390,7 @@ export class FundingDao<
           ":revealTxid": revealTxid,
           ":fundingStatus": "revealed",
         },
-      })
+      }),
     );
   }
 
@@ -401,7 +401,7 @@ export class FundingDao<
         TableName: FundingDao.TABLE_NAME,
         Item: db,
         ReturnValues: "NONE",
-      })
+      }),
     );
   }
 
@@ -413,10 +413,10 @@ export class FundingDao<
           pk: id,
           sk: "collection",
         },
-      })
+      }),
     );
     return this.fromCollectionDb(
-      db.Item as TFundingCollectionDb<CollectionMeta>
+      db.Item as TFundingCollectionDb<CollectionMeta>,
     );
   }
 
@@ -429,13 +429,13 @@ export class FundingDao<
         ExpressionAttributeValues: {
           ":collectionName": name,
         },
-      })
+      }),
     );
     if (db.Items == null) {
       return [];
     }
     return db.Items.map((item) =>
-      this.fromCollectionDb(item as TFundingCollectionDb<CollectionMeta>)
+      this.fromCollectionDb(item as TFundingCollectionDb<CollectionMeta>),
     );
   }
 
@@ -447,12 +447,12 @@ export class FundingDao<
           pk: id,
           sk: "collection",
         },
-      })
+      }),
     );
   }
 
   public async incrementCollectionTotalCount(
-    id: ID_Collection
+    id: ID_Collection,
   ): Promise<number> {
     const response = await this.client.send(
       new UpdateCommand({
@@ -467,7 +467,7 @@ export class FundingDao<
           ":one": 1,
         },
         ReturnValues: "ALL_NEW",
-      })
+      }),
     );
     if (!response.Attributes) {
       throw new Error("Collection not found");
@@ -477,7 +477,7 @@ export class FundingDao<
 
   public async updateMaxSupply(
     id: ID_Collection,
-    maxSupply: number
+    maxSupply: number,
   ): Promise<void> {
     await this.client.send(
       new UpdateCommand({
@@ -491,11 +491,13 @@ export class FundingDao<
         ExpressionAttributeValues: {
           ":maxSupply": maxSupply,
         },
-      })
+      }),
     );
   }
 
-  async getAllCollections(): Promise<TCollectionModel<CollectionMeta>[]> {
+  public async getAllCollections(): Promise<
+    TCollectionModel<CollectionMeta>[]
+  > {
     const models: TCollectionModel<CollectionMeta>[] = [];
     for await (const model of this.getAllCollectionIterator()) {
       models.push(model);
@@ -507,8 +509,8 @@ export class FundingDao<
     return paginate((options) => this.getAllCollectionPaginated(options));
   }
 
-  private async getAllCollectionPaginated(
-    options?: IPaginationOptions
+  public async getAllCollectionPaginated(
+    options?: IPaginationOptions,
   ): Promise<IPaginatedResult<TCollectionModel<CollectionMeta>>> {
     const pagination = decodeCursor(options?.cursor);
     const result = await this.client.send(
@@ -529,7 +531,7 @@ export class FundingDao<
         ExpressionAttributeValues: {
           ":sk": "collection",
         },
-      })
+      }),
     );
 
     const lastEvaluatedKey = result.LastEvaluatedKey;
@@ -540,7 +542,7 @@ export class FundingDao<
     return {
       items:
         result.Items?.map((item) =>
-          this.fromCollectionDb(item as TFundingCollectionDb<CollectionMeta>)
+          this.fromCollectionDb(item as TFundingCollectionDb<CollectionMeta>),
         ) ?? [],
       cursor,
       page,
@@ -558,14 +560,14 @@ export class FundingDao<
         ...acc,
         [`:${key}`]: meta[key],
       }),
-      {} as Record<string, any>
+      {} as Record<string, any>,
     );
     const expressionAttributeNames = Object.keys(meta).reduce(
       (acc, key) => ({
         ...acc,
         [`#${key}`]: key,
       }),
-      {} as Record<string, string>
+      {} as Record<string, string>,
     );
     const response = await this.client.send(
       new UpdateCommand({
@@ -578,13 +580,13 @@ export class FundingDao<
         ExpressionAttributeValues: expressionAttributeValues,
         ExpressionAttributeNames: expressionAttributeNames,
         ReturnValues: "ALL_NEW",
-      })
+      }),
     );
     if (!response.Attributes) {
       throw new Error("Collection not found");
     }
     return this.fromCollectionDb(
-      response.Attributes as TFundingCollectionDb<CollectionMeta>
+      response.Attributes as TFundingCollectionDb<CollectionMeta>,
     );
   }
 

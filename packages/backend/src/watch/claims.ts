@@ -1,18 +1,20 @@
 import { IObservedClaim } from "@0xflick/ordinals-models";
+import { wagmi } from "@0xflick/ordinals-config";
 import Bottleneck from "bottleneck";
 import { createLogger } from "@0xflick/ordinals-backend";
 import { Address } from "@0xflick/tapscript";
 import { Log } from "viem";
-import { watchIAllowanceEvent, iAllowanceABI } from "../wagmi/generated.js";
+import { iAllowanceAbi } from "../wagmi/generated.js";
 import { ClaimsDao } from "../index.js";
 import { clientForChain } from "./viem.js";
+import { watchContractEvent } from "@wagmi/core";
 
 const logger = createLogger({
   name: "watchClaimedEvents",
 });
-const claimEventAbi = iAllowanceABI[0];
+const claimEventAbi = iAllowanceAbi[0];
 type ClaimedEvent = typeof claimEventAbi;
-type ClaimedEventLog = Log<bigint, number, ClaimedEvent, undefined>;
+type ClaimedEventLog = Log<bigint, number, false, ClaimedEvent, undefined>;
 
 interface IObservableContract {
   contractAddress: `0x${string}`;
@@ -27,6 +29,7 @@ const limiter = new Bottleneck({
 const GET_LOG_BLOCK_REQUEST_SIZE = 10000;
 
 const fetchLogsInChunks = async ({
+  collectionIds,
   contractAddress,
   chainId,
   claimsDao,
@@ -36,10 +39,11 @@ const fetchLogsInChunks = async ({
   chainId: number;
   claimsDao: ClaimsDao;
   observedBlockHeight: number;
+  collectionIds: string[];
 }) => {
   logger.info(
     { contractAddress, chainId, observedBlockHeight },
-    "fetching logs in chunks"
+    "fetching logs in chunks",
   );
   const client = clientForChain(chainId);
   let currentStartBlock = observedBlockHeight;
@@ -47,10 +51,10 @@ const fetchLogsInChunks = async ({
   while (currentStartBlock < currentBlockHeight) {
     const endBlock = Math.min(
       currentStartBlock + GET_LOG_BLOCK_REQUEST_SIZE,
-      currentBlockHeight
+      currentBlockHeight,
     );
     logger.info(
-      `catching up on ${contractAddress}#${chainId} from ${currentStartBlock} to ${endBlock}`
+      `catching up on ${contractAddress}#${chainId} from ${currentStartBlock} to ${endBlock}`,
     );
     const logs = await client.getLogs({
       fromBlock: BigInt(currentStartBlock),
@@ -66,6 +70,7 @@ const fetchLogsInChunks = async ({
         chainId,
         startBlockHeight: observedBlockHeight,
       },
+      collectionIds,
     });
     await updateStorage({
       chainId,
@@ -81,9 +86,11 @@ const fetchLogsInChunks = async ({
 async function catchUp({
   observables,
   claimsDao,
+  collectionIds,
 }: {
   observables: IObservableContract[];
   claimsDao: ClaimsDao;
+  collectionIds: string[];
 }) {
   // organize the observables by `${contractAddress}#${chainId}` and max block height
   // for each of them, get all events from the last block height to the current block height
@@ -108,13 +115,13 @@ async function catchUp({
       !info.find(
         (entry) =>
           entry.contractAddress === observable.contractAddress &&
-          entry.chainId === observable.chainId
-      )
+          entry.chainId === observable.chainId,
+      ),
   );
 
   if (missing.length > 0) {
     logger.info(
-      `Found ${missing.length} observables that have never been queried before.`
+      `Found ${missing.length} observables that have never been queried before.`,
     );
   }
 
@@ -133,17 +140,20 @@ async function catchUp({
       await rateLimitedFetchLogsInChunks({
         ...contractInfo,
         claimsDao,
+        collectionIds,
       });
-    })
+    }),
   );
 }
 
 function prepForStorage({
+  collectionIds,
   events,
   observable,
 }: {
   events: ClaimedEventLog[];
   observable: IObservableContract;
+  collectionIds: string[];
 }) {
   const observedClaims = events.reduce((memo, event) => {
     if (
@@ -162,15 +172,18 @@ function prepForStorage({
     let validClaims: IObservedClaim[] = [];
 
     for (const address of allAddressesClaimed) {
-      if (Address.decode(address).type === "p2tr") {
-        validClaims.push({
-          claimedAddress: addressThatClaimed,
-          chainId: observable.chainId,
-          contractAddress: observable.contractAddress as `0x${string}`,
-          destinationAddress: address,
-          index: currentIndex,
-          observedBlockHeight: Number(event.blockNumber),
-        });
+      for (const collectionId of collectionIds) {
+        if (Address.decode(address).type === "p2tr") {
+          validClaims.push({
+            claimedAddress: addressThatClaimed,
+            chainId: observable.chainId,
+            contractAddress: observable.contractAddress as `0x${string}`,
+            destinationAddress: address,
+            index: currentIndex,
+            observedBlockHeight: Number(event.blockNumber),
+            collectionId,
+          });
+        }
       }
       currentIndex++;
     }
@@ -208,21 +221,22 @@ export async function updateStorage({
 }
 
 export async function watchForAllowance({
+  collectionIds,
   observables,
   claimsDao,
 }: {
+  collectionIds: string[];
   observables: IObservableContract[];
   claimsDao: ClaimsDao;
 }) {
   const watches = observables.map(
     ({ chainId, contractAddress, startBlockHeight }) => {
-      return watchIAllowanceEvent(
-        {
-          address: contractAddress,
-          chainId: chainId,
-          eventName: "Claimed",
-        },
-        async (events) => {
+      return watchContractEvent(wagmi.config, {
+        address: contractAddress,
+        eventName: "Claimed",
+        abi: iAllowanceAbi,
+        chainId: chainId as 1 | 11155111 | 8453,
+        async onLogs(events) {
           const client = clientForChain(chainId);
           logger.info(
             {
@@ -232,10 +246,11 @@ export async function watchForAllowance({
                 claims: e.args._claims,
               })),
             },
-            "Received events"
+            "Received events",
           );
           try {
             const observedClaims = prepForStorage({
+              collectionIds,
               events,
               observable: {
                 chainId,
@@ -257,13 +272,14 @@ export async function watchForAllowance({
           } catch (err) {
             logger.error(err, "Failed to update storage with events");
           }
-        }
-      );
-    }
+        },
+      });
+    },
   );
   await catchUp({
     observables,
     claimsDao,
+    collectionIds,
   });
   process.on("SIGINT", () => {
     watches.forEach((watch) => {

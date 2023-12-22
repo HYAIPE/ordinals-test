@@ -1,5 +1,5 @@
-import { Chain } from "@wagmi/chains";
-import type { configureChains } from "@wagmi/core";
+import { Chain } from "@wagmi/core/chains";
+import type { config } from "./wagmi/index.js";
 
 export type TDeployment = "localstack" | "aws";
 
@@ -16,8 +16,8 @@ export interface IAwsConfig {
 }
 
 export interface IWagmiConfig {
-  chainConfig: ReturnType<typeof configureChains<Chain>>;
-  chains: Record<Chain["name"], TAdminChain<Chain>>;
+  config: typeof config;
+  chains: Record<Chain["id"], TAdminChain<Chain>>;
 }
 
 export type TBitcoinNetworkName = "regtest" | "testnet" | "mainnet";

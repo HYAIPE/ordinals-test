@@ -3,7 +3,7 @@ import {
   createDynamoDbClaimsDao,
   getDb,
   tableNames,
-  getTestAllowance,
+  createDynamoDbFundingDao,
 } from "@0xflick/ordinals-backend";
 
 export async function start() {
@@ -13,6 +13,8 @@ export async function start() {
     claimsTableName: tableNames.get().claims,
     db,
   });
+  const fundingsDao = createDynamoDbFundingDao<{}, {}>();
+  const allCollections = await fundingsDao.getAllCollections();
   await watchForAllowance({
     claimsDao,
     observables: [
@@ -23,6 +25,7 @@ export async function start() {
         startBlockHeight: 3904660,
       },
     ],
+    collectionIds: allCollections.map((collection) => collection.id),
   });
   console.log("📈 all caught up on events");
 }

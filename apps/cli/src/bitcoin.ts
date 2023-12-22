@@ -15,27 +15,33 @@ async function spawnAsync(command: string, args: string[]): Promise<string> {
     proc.stdout.on("data", (data) => {
       stdout += data;
     });
+    let stderr = "";
+    proc.stderr.on("data", (data) => {
+      stderr += data;
+    });
     proc.on("exit", (code) => {
       if (code === 0) {
         resolve(stdout);
       } else {
+        console.error(stderr);
         reject(new CodeError(code));
       }
     });
   });
 }
 
-// bitcoin-cli -regtest -rpcuser=electrum -rpcpassword=9bmpgU2HhdhtIDhYMDNy5MPcyB5MKDYRUxbVgKvcsGw loadwallet default
 export async function loadWallet({
   network,
   rpcuser,
   rpcpassword,
   wallet,
+  bitcoinDataDir,
 }: {
   network: BitcoinNetworkNames;
   rpcuser: string;
   rpcpassword: string;
   wallet: string;
+  bitcoinDataDir?: string;
 }): Promise<{
   name: string;
 }> {
@@ -53,11 +59,13 @@ export async function loadWallet({
   })();
   const args = [
     ...(networkFlag ? [networkFlag] : []),
+    ...(bitcoinDataDir ? ["-datadir=" + bitcoinDataDir] : []),
     "-rpcuser=" + rpcuser,
     "-rpcpassword=" + rpcpassword,
     "loadwallet",
     wallet,
   ];
+  console.log("bitcoin-cli", args.join(" "));
   try {
     const stdout = await spawnAsync("bitcoin-cli", args);
     return JSON.parse(stdout);
@@ -77,6 +85,7 @@ export async function sendBitcoin({
   rpcwallet,
   outputs,
   fee_rate,
+  bitcoinDataDir,
 }: {
   network: BitcoinNetworkNames;
   rpcuser: string;
@@ -84,6 +93,7 @@ export async function sendBitcoin({
   rpcwallet: string;
   outputs: [string, string][];
   fee_rate: number;
+  bitcoinDataDir?: string;
 }): Promise<{
   txid: string;
   complete: boolean;
@@ -102,6 +112,7 @@ export async function sendBitcoin({
   })();
   const args = [
     ...(networkFlag ? [networkFlag] : []),
+    ...(bitcoinDataDir ? ["-datadir=" + bitcoinDataDir] : []),
     "-rpcuser=" + rpcuser,
     "-rpcpassword=" + rpcpassword,
     "-rpcwallet=" + rpcwallet,
@@ -117,8 +128,10 @@ export async function sendBitcoin({
 
 export async function generateOrdinalAddress({
   network,
+  bitcoinDataDir,
 }: {
   network: BitcoinNetworkNames;
+  bitcoinDataDir?: string;
 }) {
   const networkFlag = (() => {
     switch (network) {
@@ -133,8 +146,13 @@ export async function generateOrdinalAddress({
     }
   })();
 
-  const args = [...(networkFlag ? [networkFlag] : []), "wallet", "receive"];
-
+  const args = [
+    ...(networkFlag ? [networkFlag] : []),
+    ...(bitcoinDataDir ? ["--bitcoin-data-dir", bitcoinDataDir] : []),
+    "wallet",
+    "receive",
+  ];
+  console.log("ord", args.join(" "));
   const stdout = await spawnAsync("ord", args);
   const { address } = JSON.parse(stdout.trim());
   return address;

@@ -1,4 +1,4 @@
-import { ID_AddressInscription } from "@0xflick/ordinals-models";
+import { ID_AddressInscription, ID_Collection } from "@0xflick/ordinals-models";
 import { Context } from "../../context/index.js";
 import { fetchAllClaimables } from "./controllers.js";
 
@@ -8,6 +8,24 @@ type InscriptionFactoryFn<T extends { id: ID_AddressInscription }> = (
     index: number;
   }[],
 ) => Promise<T[]>;
+
+export async function openEditionStrategy() {
+  return (
+    claimables: {
+      destinationAddress: string;
+      index: number;
+    }[],
+  ) => {
+    return claimables.map((claimable) => ({
+      id: claimable.destinationAddress,
+      inscriptionType: "OPEN_EDITION",
+      inscriptionStatus: "PENDING",
+      inscriptionData: {
+        index: claimable.index,
+      },
+    }));
+  };
+}
 
 export async function contractAllowanceStrategy<
   T extends { id: ID_AddressInscription },
@@ -19,9 +37,11 @@ export async function contractAllowanceStrategy<
   }: Context,
   {
     address,
+    collectionId,
     inscriptionFactory,
   }: {
     address: `0x${string}`;
+    collectionId: ID_Collection;
     inscriptionFactory: InscriptionFactoryFn<T>;
   },
 ) {
@@ -48,6 +68,7 @@ export async function contractAllowanceStrategy<
       claimedAddress: address,
       contractAddress: axolotlAllowanceContractAddress,
       observedBlockHeight: claimable.observedBlockHeight,
+      collectionId,
     })),
   });
 

@@ -1,4 +1,5 @@
 import { v4 as uuid } from "uuid";
+import { frameConnector } from "@0xflick/frame";
 import { collectionCreate } from "../collection/create.js";
 import { siwe } from "../login/siwe.js";
 import {
@@ -15,17 +16,16 @@ import {
   watchForGenesisEvents,
 } from "../../events/inscriptions.js";
 import {
-  prepareWriteTestAllowance,
+  iAllowanceAbi,
   watchForFunded,
   watchForFundings,
   watchForGenesis,
-  writeTestAllowance,
 } from "@0xflick/ordinals-backend";
 import { createMempoolBitcoinClient } from "../../mempool.js";
-import ethProvider from "eth-provider";
-import { mainnet, sepolia, goerli } from "@wagmi/chains";
-import { createWalletClient, custom } from "viem";
-import { frameConnector, promiseClaimEvent } from "../../wagmi.js";
+import { mainnet, sepolia, base } from "@wagmi/core/chains";
+import { config, promiseClaimEvent } from "../../wagmi.js";
+import { connect, writeContract } from "@wagmi/core";
+import { retryWithBackOff } from "@0xflick/inscriptions";
 
 export async function testOne({
   name,
@@ -37,6 +37,7 @@ export async function testOne({
   rpcpassword,
   rpcwallet,
   network,
+  bitcoinDataDir,
 }: {
   name?: string;
   url: string;
@@ -47,11 +48,13 @@ export async function testOne({
   rpcpassword: string;
   rpcwallet: string;
   network: BitcoinNetworkNames;
+  bitcoinDataDir: string;
 }) {
   name = name ? `${name}-${uuid()}` : uuid();
 
   const bitcoinAddress = await generateOrdinalAddress({
     network,
+    bitcoinDataDir,
   });
 
   console.log(`Claiming address: ${bitcoinAddress}`);
@@ -59,34 +62,27 @@ export async function testOne({
   console.log(`Creating collection ${name}...`);
   const token = await siwe({ chainId, url });
 
-  const frame = ethProvider("frame");
-  const chain = [mainnet, sepolia, goerli].find(
-    (chain) => chain.id === chainId
-  );
-  if (!chain) throw new Error(`Chain ${chainId} not found`);
-  await frameConnector.connect({ chainId });
-  const walletClient = createWalletClient({
-    chain,
-    transport: custom(frame),
+  await connect(config, {
+    connector: frameConnector(),
   });
+  const chain = [mainnet, sepolia, base].find((chain) => chain.id === chainId);
+
+  if (!chain) throw new Error(`Chain ${chainId} not found`);
+
   const promiseClaimedProcessed = promiseClaimEvent({
     contractAddress: "0x8297AA011A99244A571190455CE61846806BF0ce",
-    chainId,
+    chainId: chain.id,
   });
   // add a test allowance
-  const allowanceConfig = await prepareWriteTestAllowance({
-    chainId,
-    account: claimingAddress,
+  const allowanceResult = await writeContract(config, {
+    chainId: chain.id,
     address: "0x8297AA011A99244A571190455CE61846806BF0ce",
+    abi: iAllowanceAbi,
     functionName: "claim",
-    walletClient,
     args: [[bitcoinAddress]],
   });
-  const testAllowanceResult = await writeTestAllowance({
-    ...allowanceConfig,
-    walletClient,
-  });
-  console.log(`Test allowance txid: ${testAllowanceResult.hash}`);
+
+  console.log(`Test allowance txid: ${allowanceResult}`);
   await promiseClaimedProcessed;
   console.log(`Test allowance processed`);
   const collectionId = await collectionCreate({
@@ -112,6 +108,7 @@ export async function testOne({
     rpcpassword,
     rpcuser,
     wallet: rpcwallet,
+    bitcoinDataDir,
   });
 
   const bitcoinNetwork = (network: BitcoinNetworkNames) => {
@@ -132,9 +129,6 @@ export async function testOne({
       feeLevel: FeeLevel.Medium,
       claimingAddress,
     },
-    rpcpassword,
-    rpcuser,
-    rpcwallet,
     token,
     url,
   });
@@ -150,12 +144,48 @@ export async function testOne({
       reveal?: Parameters<Parameters<typeof watchForGenesis>[1]>[0];
     }
   >();
+
+  const { txid } = await sendBitcoin({
+    fee_rate: 1,
+    network,
+    outputs: fundings.map(
+      ({ inscriptionFunding: { fundingAddress, fundingAmountBtc } }) => [
+        fundingAddress,
+        fundingAmountBtc,
+      ],
+    ),
+    rpcpassword,
+    rpcuser,
+    rpcwallet,
+    bitcoinDataDir,
+  });
+  const mempoolClient = createMempoolBitcoinClient({
+    network,
+  });
+
+  const fundingTx = await retryWithBackOff(
+    () => mempoolClient.transactions.getTx({ txid }),
+    10,
+    100,
+  );
+  for (const {
+    inscriptionFunding: { fundingAddress, fundingAmountBtc },
+  } of fundings) {
+    fundingMap.set(fundingAddress, {
+      funding: {
+        address: fundingAddress,
+        amount: fundingAmountBtc,
+        txid,
+      },
+    });
+  }
+
   const cancelFundingWatch = new Promise<() => void>((resolve, reject) => {
     const cancel = watchForFundingEvents(collectionId, (funded) => {
       const { address } = funded;
       // for each noticed funding, take note of the txid so that we can watch for the funded events, then resolve the promise
       if (!fundingMap.has(address)) {
-        reject(new Error(`Address ${address} not found in funding map`));
+        return reject(new Error(`Address ${address} not found in funding map`));
       }
       const funding = fundingMap.get(address)!;
       funding.funded = funded;
@@ -171,7 +201,7 @@ export async function testOne({
       const { address } = genesis;
       // now for each genesis event, update the funding map
       if (!fundingMap.has(address)) {
-        reject(new Error(`Address ${address} not found in funding map`));
+        return reject(new Error(`Address ${address} not found in funding map`));
       }
       const funding = fundingMap.get(address)!;
       funding.genesis = genesis;
@@ -186,7 +216,7 @@ export async function testOne({
     const cancel = watchForGenesisEvents(collectionId, (reveal) => {
       const { address } = reveal;
       if (!fundingMap.has(address)) {
-        reject(new Error(`Address ${address} not found in funding map`));
+        return reject(new Error(`Address ${address} not found in funding map`));
       }
       const funding = fundingMap.get(address)!;
       funding.reveal = reveal;
@@ -197,37 +227,6 @@ export async function testOne({
       resolve(cancel);
     });
   });
-
-  const { txid } = await sendBitcoin({
-    fee_rate: 1,
-    network,
-    outputs: fundings.map(
-      ({ inscriptionFunding: { fundingAddress, fundingAmountBtc } }) => [
-        fundingAddress,
-        fundingAmountBtc,
-      ]
-    ),
-    rpcpassword,
-    rpcuser,
-    rpcwallet,
-  });
-  const mempoolClient = createMempoolBitcoinClient({
-    network,
-  });
-
-  const fundingTx = await mempoolClient.transactions.getTx({ txid });
-  for (const {
-    inscriptionFunding: { fundingAddress, fundingAmountBtc },
-  } of fundings) {
-    fundingMap.set(fundingAddress, {
-      funding: {
-        address: fundingAddress,
-        amount: fundingAmountBtc,
-        txid,
-      },
-    });
-  }
-
   console.log(`Funding tx: ${fundingTx.txid}`);
 
   const cancels = await Promise.all([

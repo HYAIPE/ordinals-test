@@ -64,7 +64,7 @@ program
         rpcpassword,
         rpcuser,
         rpcwallet,
-        noSend: true
+        noSend: true,
       });
     }
   );
@@ -212,6 +212,7 @@ testCommand
   .option("-w, --rpcwallet <wallet>", "Bitcoin Wallet name", "default")
   .option("-u, --rpcuser <rpcuser>", "Bitcoin RPC username")
   .option("-p, --rpcpassword <rpcpassword>", "Bitcoin RPC password")
+  .option("--bitcoin-data-dir <bitcoinDataDir>", "Bitcoin data directory")
   .option("-s, --script-name <script name>", "Script name", "test")
   .action(
     async ({
@@ -223,6 +224,7 @@ testCommand
       rpcuser,
       rpcpassword,
       scriptName,
+      bitcoinDataDir,
     }) => {
       await testOne({
         chainId,
@@ -234,6 +236,7 @@ testCommand
         rpcuser,
         rpcwallet,
         scriptName,
+        bitcoinDataDir,
       });
     }
   );

@@ -45,21 +45,11 @@ export function textToHex(text: string) {
 }
 
 export function isValidAddress(address: string) {
-  if (!isValidTaprootAddress(address)) {
-    return false;
-  }
-
-  return true;
+  return isValidTaprootAddress(address);
 }
 
 export function isValidTaprootAddress(address: string) {
-  try {
-    Address.p2tr.decode(address).hex;
-    return true;
-  } catch (e) {
-    console.log(e);
-  }
-  return;
+  return Address.p2tr.check(address);
 }
 
 export function isValidJson(content: string) {

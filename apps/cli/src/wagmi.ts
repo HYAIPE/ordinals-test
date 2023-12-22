@@ -1,54 +1,36 @@
-import { watchIAllowanceEvent } from "@0xflick/ordinals-backend";
-import { mainnet, sepolia, goerli } from "@wagmi/chains";
-import { InjectedConnector, configureChains } from "@wagmi/core";
+import { iAllowanceAbi } from "@0xflick/ordinals-backend";
+import { mainnet, sepolia, base } from "@wagmi/core/chains";
+import { createConfig, watchContractEvent } from "@wagmi/core";
+import { frameTransport } from "@0xflick/frame";
 
 import ethProvider from "eth-provider";
 
-export const { publicClient, webSocketPublicClient } = configureChains(
-  [mainnet, sepolia, goerli],
-  [
-    function (chain) {
-      if (chain.id === 11155111) {
-        return {
-          chain,
-          rpcUrls: { http: [process.env.SEPOLIA_RPC_URL!] },
-        };
-      }
-      if (!chain.rpcUrls.public.http[0]) return null;
-      return {
-        chain,
-        rpcUrls: chain.rpcUrls.public,
-      };
-    },
-  ]
-);
-
-const frame = ethProvider("frame");
-export const frameConnector = new InjectedConnector({
-  options: {
-    name: "Frame",
-    getProvider: () => frame as any,
+export const config = createConfig({
+  chains: [mainnet, sepolia, base],
+  transports: {
+    [mainnet.id]: frameTransport(),
+    [sepolia.id]: frameTransport(),
+    [base.id]: frameTransport(),
   },
 });
 
 export async function promiseClaimEvent({
-  contractAddress,
   chainId,
+  contractAddress,
 }: {
+  chainId: 1 | 11155111 | 8453;
   contractAddress: `0x${string}`;
-  chainId: number;
 }) {
   return new Promise((resolve) => {
-    const cancel = watchIAllowanceEvent(
-      {
-        address: contractAddress,
-        chainId,
-        eventName: "Claimed",
-      },
-      (event) => {
+    const cancel = watchContractEvent(config, {
+      address: contractAddress,
+      eventName: "Claimed",
+      abi: iAllowanceAbi,
+      chainId,
+      onLogs(events) {
         cancel();
-        resolve(event);
-      }
-    );
+        resolve(events);
+      },
+    });
   });
 }

@@ -17,6 +17,6 @@ export function start() {
     collectionId: "0307d97f-25d8-4789-b582-4f481f97af54" as ID_Collection,
     fundingDao,
     fundingDocDao,
-    mempoolBitcoinClient: createMempoolBitcoinClient({ network: "regtest" }),
+    mempoolBitcoinClient: createMempoolBitcoinClient({ network: "testnet" }),
   });
 }

@@ -16,8 +16,21 @@ export const sepoliaRpcUrl = lazySingleton(() => {
   return process.env.SEPOLIA_RPC_URL;
 });
 
+export function chainForChainId(chainId: number) {
+  switch (chainId) {
+    case sepolia.id:
+      return sepolia;
+    case goerli.id:
+      return goerli;
+    case mainnet.id:
+      return mainnet;
+    default:
+      throw new Error(`Unsupported chainId: ${chainId}`);
+  }
+}
+
 export function clientForChain(
-  chainId: number
+  chainId: number,
 ): PublicClient<
   HttpTransport,
   typeof sepolia | typeof goerli | typeof mainnet

@@ -149,6 +149,7 @@ export const resolvers: AxolotlModule.Resolvers = {
     ) => {
       const inscriptions = await contractAllowanceStrategy(context, {
         address: claimingAddress as `0x${string}`,
+        collectionId: collectionId as ID_Collection,
         inscriptionFactory: async (requests) => {
           return await Promise.all(
             requests.map(async ({ destinationAddress, index }) => {

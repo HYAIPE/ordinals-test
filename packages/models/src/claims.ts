@@ -6,7 +6,7 @@ export interface IObservedClaim {
   index: number;
   observedBlockHeight: number;
   fundingId?: string;
-  collectionId?: string;
+  collectionId: string;
 }
 
 export interface IObservedContract {

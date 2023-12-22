@@ -51,3 +51,9 @@ with the backend running, create the collection:
 ```
 yarn cli collection create -s 11155111 -m 'config={"testnet": { "scriptName": "/content/895a395c34147e77033a0c5812d441a7e0946638abb168f78ccfd2e440da175i0", "revealBlockDelta": 2 }' axolotl-valley 1000
 ```
+
+do a test mint:
+
+```
+yarn cli test mint-one --claiming-address 0xf11cc36Cc9e0F2925a3660D5E4dC6bb232CF2A57 --rpcuser user --rpcpassword password --script-name e9143b17a26c7dc4e62480976152cb4826744feade4eeca0d783cbc3edf019dei0
+```

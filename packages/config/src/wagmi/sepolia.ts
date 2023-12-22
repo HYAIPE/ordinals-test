@@ -1,4 +1,4 @@
-import { Chain, sepolia as wagmiSepolia } from "@wagmi/chains";
+import { Chain, sepolia as wagmiSepolia } from "@wagmi/core/chains";
 import { lazySingleton } from "../lazy.js";
 import { TAdminChain } from "../types.js";
 

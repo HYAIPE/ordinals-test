@@ -10,25 +10,19 @@ import { BitcoinNetworkNames } from "@0xflick/inscriptions";
 
 function createClient(
   endpoint: string,
-  requestConfig?: RequestConfig
+  requestConfig?: RequestConfig,
 ): GraphQLClient {
   return new GraphQLClient(endpoint, requestConfig);
 }
 
 export async function fundingRequest({
   request,
-  rpcpassword,
-  rpcuser,
-  rpcwallet,
   url,
   token,
 }: {
   request: AxolotlRequest;
   url: string;
   token: string | null;
-  rpcuser: string;
-  rpcpassword: string;
-  rpcwallet: string;
 }) {
   const client = createClient(
     url,
@@ -36,31 +30,19 @@ export async function fundingRequest({
       headers: {
         authorization: `Bearer ${token}`,
       },
-    }
+    },
   );
   const sdk = getSdk(client);
   const { axolotlFundingAddressRequest } = await sdk.AxolotlFundingRequest({
     request,
   });
-  const network: BitcoinNetworkNames = (() => {
-    switch (request.network) {
-      case BitcoinNetwork.Regtest:
-        return "regtest";
-      case BitcoinNetwork.Testnet:
-        return "testnet";
-      case BitcoinNetwork.Mainnet:
-        return "mainnet";
-    }
-  })();
 
-  // for (const { inscriptionFunding } of axolotlFundingAddressRequest) {
-  //   console.log(`Funding address: ${inscriptionFunding.fundingAddress}`);
-  //   console.log(`Funding amount BTC: ${inscriptionFunding.fundingAmountBtc}`);
-  //   console.log(`Funding amount sats: ${inscriptionFunding.fundingAmountSats}`);
-  //   console.log(`Funding address ID: ${inscriptionFunding.id}`);
-
-  //   return inscriptionFunding;
-  // }
+  for (const { inscriptionFunding } of axolotlFundingAddressRequest) {
+    console.log(`Funding address: ${inscriptionFunding.fundingAddress}`);
+    console.log(`Funding amount BTC: ${inscriptionFunding.fundingAmountBtc}`);
+    console.log(`Funding amount sats: ${inscriptionFunding.fundingAmountSats}`);
+    console.log(`Funding address ID: ${inscriptionFunding.id}`);
+  }
 
   return axolotlFundingAddressRequest;
 }
