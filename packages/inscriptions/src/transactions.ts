@@ -1,5 +1,6 @@
 // const buf = buffer;
 // const { Address, Script, Signer, Tap, Tx } = window.tapscript;\
+import cbor from "cbor";
 import { Address, Script, Signer, Tap, Tx } from "@0xflick/tapscript";
 import * as cryptoUtils from "@0xflick/crypto-utils";
 import {
@@ -23,10 +24,13 @@ import {
 } from "./utils.js";
 import { createQR } from "./qrcode.js";
 
+const { encode: cborEncode } = cbor;
+
 export interface InscriptionContent {
   isBin?: boolean;
   content: ArrayBuffer;
   mimeType: string;
+  metadata?: Record<string, any>;
 }
 
 export interface PendingTransaction {
@@ -80,10 +84,11 @@ export async function generateFundingAddress({
     throw new InvalidAddressError(address);
   }
 
-  for (const { content, mimeType } of inscriptions) {
+  for (const { content, mimeType, metadata } of inscriptions) {
     files.push({
       content,
       mimetype: mimeType,
+      metadata,
     });
   }
 
@@ -139,7 +144,7 @@ export async function generateFundingAddress({
 
   if (!isValid) {
     throw new InvalidKeyError(
-      "Generated keys could not be validated. Please reload the app."
+      "Generated keys could not be validated. Please reload the app.",
     );
   }
 
@@ -149,7 +154,17 @@ export async function generateFundingAddress({
 
   for (let i = 0; i < files.length; i++) {
     const data = files[i].content;
+    const metadata = files[i].metadata;
     const mimetype = ec.encode(files[i].mimetype);
+
+    // chunk metadataCbor into 520 byte chunks
+    const chunks = [];
+    if (metadata) {
+      const metadataCbor = cborEncode(metadata);
+      for (let i = 0; i < metadataCbor.byteLength; i += 520) {
+        chunks.push(Uint8Array.prototype.slice.call(metadataCbor, i, i + 520));
+      }
+    }
     const dataArray = new Uint8Array(data);
     const script: (string | Uint8Array)[] = [
       pubkey,
@@ -159,6 +174,7 @@ export async function generateFundingAddress({
       ec.encode("ord"),
       "01",
       mimetype,
+      ...chunks.map((chunk) => ["05", chunk]).flat(),
       "OP_0",
       dataArray,
       "OP_ENDIF",
@@ -169,7 +185,7 @@ export async function generateFundingAddress({
 
     const inscriptionAddress = Address.p2tr.encode(
       tapKey,
-      networkNamesToTapScriptName(network)
+      networkNamesToTapScriptName(network),
     );
 
     const prefix = 160;
@@ -198,7 +214,7 @@ export async function generateFundingAddress({
 
   let fundingAddress = Address.p2tr.encode(
     init_tapkey,
-    networkNamesToTapScriptName(network)
+    networkNamesToTapScriptName(network),
   );
 
   if (!isNaN(tip) && tip >= 500) {

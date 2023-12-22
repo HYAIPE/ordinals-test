@@ -22,6 +22,7 @@ export async function mintSingle({
   rpcpassword,
   rpcwallet,
   noSend,
+  metadataFile,
 }: {
   address: string;
   file: string;
@@ -32,8 +33,12 @@ export async function mintSingle({
   rpcpassword: string;
   rpcwallet: string;
   noSend: boolean;
+  metadataFile?: string;
 }) {
   const content = await fs.promises.readFile(file);
+  const metadata = metadataFile
+    ? await fs.promises.readFile(metadataFile, "utf8")
+    : undefined;
 
   const privKey = generatePrivKey();
   console.log(`privKey: ${privKey}`);
@@ -43,6 +48,7 @@ export async function mintSingle({
       {
         content,
         mimeType: (mimeType ?? lookup(file)) || "application/octet-stream",
+        ...(metadata ? { metadata: JSON.parse(metadata) } : {}),
       },
     ],
     padding: 546,
@@ -68,7 +74,7 @@ export async function mintSingle({
   do {
     funded = await addressReceivedMoneyInThisTx(
       response.fundingAddress,
-      network
+      network,
     );
     await new Promise((resolve) => setTimeout(resolve, 1000));
   } while (funded[0] == null);
@@ -95,7 +101,7 @@ export async function mintSingle({
   do {
     funded = await addressReceivedMoneyInThisTx(
       response.inscriptionsToWrite[0].inscriptionAddress,
-      network
+      network,
     );
     await new Promise((resolve) => setTimeout(resolve, 1000));
   } while (funded[0] == null);
@@ -106,7 +112,7 @@ export async function mintSingle({
 
     const [txid, vout, amount] = await waitForInscriptionFunding(
       inscription,
-      network
+      network,
     );
 
     const revealTx = await generateRevealTransaction({

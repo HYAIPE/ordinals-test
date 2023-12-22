@@ -1,6 +1,7 @@
 {
   "cSpell.words": [
     "cblock",
+    "cbor",
     "Claimables",
     "fundings",
     "inscriptor",
@@ -11,6 +12,7 @@
     "SIWB",
     "siwe",
     "tapkey",
+    "tapscript",
     "txid",
     "wagmi",
     "Xverse"

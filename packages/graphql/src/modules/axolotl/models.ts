@@ -225,6 +225,11 @@ export class AxolotlModel implements IAxolotlMeta {
     const inscriptionContent: InscriptionContent = {
       content: Buffer.from(htmlContent, "utf8"),
       mimeType: "text/html",
+      metadata: {
+        tokenId,
+        genesis: false,
+        revealedAt,
+      },
     };
     const finalFee = await estimateFeesWithMempool({
       mempoolBitcoinClient: mempool,

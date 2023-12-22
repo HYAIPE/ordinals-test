@@ -8,8 +8,7 @@
     "cli": "node --loader ts-node/esm src/index.ts",
     "start:dev": "ts-node-dev -r dotenv/config -- src/index.ts | bunyan",
     "cli:debug": "node --inspect-brk --loader ts-node/esm src/index.ts",
-    "schema:types": "yarn graphql-codegen --config codegen.ts",
-    "test": "node --loader ts-node/esm src/index.ts test mint-one --claiming-address 0xf11cc36Cc9e0F2925a3660D5E4dC6bb232CF2A57 -n testnet --script-name 1a8cf888120ed9230591cbc4f36587677759786269e8c92933923a65a163c91ci0 --rpcuser mempool --rpcpassword Nc1TiceXXlLbNufJVV3GrrH6Wrcos2FOaFxSaZB9rG4 --bitcoin-data-dir '/media/user/Extreme SSD/Blockchain/Bitcoin/'"
+    "schema:types": "yarn graphql-codegen --config codegen.ts"
   },
   "devDependencies": {
     "@graphql-codegen/typescript": "^4.0.1",

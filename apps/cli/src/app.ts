@@ -40,6 +40,7 @@ program
   .option("-u, --rpcuser <rpcuser>", "Bitcoin RPC username")
   .option("-p, --rpcpassword <rpcpassword>", "Bitcoin RPC password")
   .option("--no-send", "Don't automatically pay")
+  .option("-d, --metadata-file <metadata-file>", "Metadata file")
   .description("Mint an ordinal")
   .action(
     async (
@@ -53,7 +54,8 @@ program
         rpcuser,
         rpcwallet,
         noSend,
-      }
+        metadataFile,
+      },
     ) => {
       await mintSingle({
         file,
@@ -64,9 +66,10 @@ program
         rpcpassword,
         rpcuser,
         rpcwallet,
-        noSend: true,
+        noSend,
+        metadataFile,
       });
-    }
+    },
   );
 
 program
@@ -133,7 +136,7 @@ apiCommand
       }
       return value;
     },
-    "bitcoin"
+    "bitcoin",
   )
   .option("-c, --chain-id <chain-id>", "Ethereum chain id", Number, 1)
   .action(async (address, props) => {
@@ -164,7 +167,7 @@ collectionCommand
   .option("-u, --url <url>", "api url", "http://localhost:4000")
   .option(
     "-m, --metadata <metadata>",
-    "metadata in key=value format. can be used multiple times"
+    "metadata in key=value format. can be used multiple times",
   )
   .option("-s, --swie-login <chainid>", "login to the api")
   .option("-d, --doc <doc>", "key=path format. load a file as the metadata")
@@ -238,7 +241,7 @@ testCommand
         scriptName,
         bitcoinDataDir,
       });
-    }
+    },
   );
 
 program.parse(process.argv);

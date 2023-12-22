@@ -8,6 +8,7 @@ export interface InscriptionFile {
   id?: InscriptionId;
   content: ArrayBuffer;
   mimetype: string;
+  metadata?: Record<string, any>;
 }
 
 export interface WritableInscription {
@@ -19,6 +20,7 @@ export interface WritableInscription {
   fee: number;
   file?: InscriptionFile;
   script: BitcoinScriptData[];
+  metadata?: Record<string, any>;
 }
 
 export type BitcoinScriptData = { base64: string } | string;

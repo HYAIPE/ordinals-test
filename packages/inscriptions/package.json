@@ -12,6 +12,7 @@
     "@0xflick/tapscript": "^2.0.1",
     "@noble/secp256k1": "^2.0.0",
     "bitcoin-address-validation": "^2.2.1",
+    "cbor": "^9.0.1",
     "cross-fetch": "^4.0.0",
     "qrcode": "^1.5.3"
   },
