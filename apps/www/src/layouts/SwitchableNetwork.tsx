@@ -104,13 +104,20 @@ export const SwitchableNetwork: FC<
     title: string;
     initialBitcoinNetwork: BitcoinNetwork["type"];
     initialBitcoinPurpose: AddressPurposes;
+    ethereumAutoConnect?: boolean;
   }>
-> = ({ children, title, initialBitcoinNetwork, initialBitcoinPurpose }) => {
+> = ({
+  children,
+  title,
+  ethereumAutoConnect,
+  initialBitcoinNetwork,
+  initialBitcoinPurpose,
+}) => {
   return (
     <MultiChainProvider
       bitcoinNetwork={initialBitcoinNetwork}
       bitcoinPurpose={initialBitcoinPurpose}
-      ethereumAutoConnect={false}
+      ethereumAutoConnect={ethereumAutoConnect}
     >
       <AppBar left={title} right={<Connect />} />
       <Container

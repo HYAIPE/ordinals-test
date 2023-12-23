@@ -23,6 +23,8 @@ import { useSelf } from "./useSelf";
 import { graphQlAllowedActionToPermission } from "../transforms/allowedActions";
 import { useGetAppInfoQuery } from "./app.generated";
 
+
+
 function useAuthContext({ autoLogin = false }: { autoLogin?: boolean }) {
   const [stateToken, setStateToken] = useState<string | null>(null);
   const [roleIds, setRoleIds] = useState<string[]>([]);
@@ -92,7 +94,9 @@ function useAuthContext({ autoLogin = false }: { autoLogin?: boolean }) {
     data: user,
     isLoggedIn: userIsLoggedInToGraphql,
     error: selfError,
-  } = useSelf();
+  } = useSelf({
+    skip: !isAuthenticated,
+  });
   useEffect(() => {
     if (userIsLoggedInToGraphql && user?.token) {
       setState("AUTHENTICATED");
@@ -277,6 +281,7 @@ function useAuthContext({ autoLogin = false }: { autoLogin?: boolean }) {
     isUserSigningOut,
     token: stateToken || tokenData?.siwe?.token || user?.token || undefined,
     user,
+    roleIds,
     allowedActions:
       user?.allowedActions.map(graphQlAllowedActionToPermission) ?? [],
     signIn,

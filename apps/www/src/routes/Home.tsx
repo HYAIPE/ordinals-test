@@ -10,6 +10,7 @@ import { useXverse } from "@/features/xverse/Context";
 import { AsyncStatus } from "@/features/xverse/ducks";
 import { SwitchableNetwork } from "@/layouts/SwitchableNetwork";
 import { AddressPurposes } from "sats-connect";
+import { FC } from "react";
 
 const TestConnectCard = () => {
   const {
@@ -37,13 +38,16 @@ const TestConnectCard = () => {
   );
 };
 
-export default function Home() {
+export const Home: FC<{
+  initialBitcoinNetwork: "Mainnet" | "Testnet";
+  initialBitcoinPurpose: AddressPurposes;
+}> = ({ initialBitcoinNetwork, initialBitcoinPurpose }) => {
   return (
     <DefaultProvider>
       <SwitchableNetwork
         title="home"
-        initialBitcoinNetwork="Testnet"
-        initialBitcoinPurpose={AddressPurposes.ORDINALS}
+        initialBitcoinNetwork={initialBitcoinNetwork}
+        initialBitcoinPurpose={initialBitcoinPurpose}
       >
         <Grid2 container spacing={2}>
           <Grid2 xs={12} sm={6} md={4}>
@@ -53,4 +57,4 @@ export default function Home() {
       </SwitchableNetwork>
     </DefaultProvider>
   );
-}
+};

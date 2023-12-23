@@ -18,6 +18,7 @@ import {
 import "@wagmi/core";
 import "@wagmi/connectors";
 import { defaultChain } from "@/utils/config";
+import { appConnectors } from "./wagmi";
 
 export type TChain = Chain & {
   chainImageUrl: string;
@@ -40,6 +41,34 @@ export function decorateChainImageUrl(chain?: Chain): string {
   return chainImageUrl;
 }
 
+export const useLocalLastSeemNetwork = ({
+  autoConnect = true,
+}: {
+  autoConnect?: boolean;
+}) => {
+  const { connector: activeConnector, isConnected } = useAccount();
+  const { connect } = useConnect();
+
+  useEffect(() => {
+    if (autoConnect && !isConnected) {
+      const lastSeenConnector = localStorage.getItem("lastSeenConnector");
+      if (lastSeenConnector) {
+        const { connectorName } = JSON.parse(lastSeenConnector);
+        if (connectorName) {
+          const connector = appConnectors
+            .get()
+            .find((c) => c.name === connectorName);
+          if (connector) {
+            connect({
+              connector,
+            });
+          }
+        }
+      }
+    }
+  }, [autoConnect, isConnected, activeConnector, connect]);
+};
+
 function useDeferFirstRender() {
   const [isFirstLoad, setIsFirstLoad] = useState(true);
   if (typeof window === "undefined") {
@@ -58,13 +87,23 @@ function useDeferFirstRender() {
 
 export function useWeb3Context() {
   const [triedDefaultChain, setTriedDefaultChain] = useState(false);
-  const { connector: activeConnector, isConnected, address } = useAccount({});
+  const { connector: activeConnector, isConnected, address } = useAccount();
   const { connect, isLoading, data: provider } = useConnect();
   const { disconnect } = useDisconnect();
   // We don't want the address to be available on first load so that client render matches server render
   const isFirstLoad = useDeferFirstRender();
   const { chain } = useNetwork();
   const { switchNetwork } = useSwitchNetwork();
+  useEffect(() => {
+    if (isConnected && activeConnector?.name) {
+      localStorage.setItem(
+        "lastSeenConnector",
+        JSON.stringify({
+          connectorName: activeConnector.name,
+        })
+      );
+    }
+  }, [isConnected, activeConnector]);
   useEffect(() => {
     if (
       !triedDefaultChain &&

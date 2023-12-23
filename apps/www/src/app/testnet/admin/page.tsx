@@ -1,9 +1,9 @@
-import { Home } from "@/routes/Home";
+import { AdminRoute } from "@/routes/Admin";
 import { AddressPurposes } from "sats-connect";
 
 export default function Page() {
   return (
-    <Home
+    <AdminRoute
       initialBitcoinNetwork="Testnet"
       initialBitcoinPurpose={AddressPurposes.ORDINALS}
     />

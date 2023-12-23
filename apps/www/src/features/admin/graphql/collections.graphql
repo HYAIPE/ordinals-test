@@ -1,0 +1,10 @@
+query Collections {
+  collections {
+    id
+    name
+    metadata {
+      key
+      value
+    }
+  }
+}

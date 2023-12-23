@@ -27,8 +27,6 @@ export type AxolotlFunding = {
   id: Scalars['ID']['output'];
   inscriptionFunding?: Maybe<InscriptionFunding>;
   originAddress: Scalars['String']['output'];
-  proof?: Maybe<Scalars['String']['output']>;
-  request?: Maybe<Scalars['String']['output']>;
   tokenId: Scalars['Int']['output'];
 };
 
@@ -41,12 +39,11 @@ export type AxolotlFundingPage = {
 };
 
 export type AxolotlRequest = {
-  destinationAddress: Scalars['String']['input'];
+  claimingAddress: Scalars['String']['input'];
+  collectionId: Scalars['ID']['input'];
   feeLevel?: InputMaybe<FeeLevel>;
   feePerByte?: InputMaybe<Scalars['Int']['input']>;
   network: BitcoinNetwork;
-  proof?: InputMaybe<Scalars['String']['input']>;
-  request?: InputMaybe<Scalars['String']['input']>;
 };
 
 export enum BitcoinNetwork {
@@ -70,12 +67,20 @@ export type Collection = {
   __typename?: 'Collection';
   id: Scalars['ID']['output'];
   maxSupply: Scalars['Int']['output'];
+  metadata: Array<KeyValue>;
   name: Scalars['String']['output'];
   totalCount: Scalars['Int']['output'];
+  updateMetadata: Collection;
+};
+
+
+export type CollectionUpdateMetadataArgs = {
+  metadata: Array<KeyValueInput>;
 };
 
 export type CollectionInput = {
   maxSupply: Scalars['Int']['input'];
+  meta?: InputMaybe<Scalars['String']['input']>;
   name: Scalars['String']['input'];
 };
 
@@ -148,15 +153,28 @@ export type InscriptionTransactionContent = {
   txsize: Scalars['Int']['output'];
 };
 
+export type KeyValue = {
+  __typename?: 'KeyValue';
+  key: Scalars['String']['output'];
+  value: Scalars['String']['output'];
+};
+
+export type KeyValueInput = {
+  key: Scalars['String']['input'];
+  value: Scalars['String']['input'];
+};
+
 export type Mutation = {
   __typename?: 'Mutation';
-  axolotlFundingAddressRequest: AxolotlFunding;
+  axolotlFundingAddressRequest: Array<AxolotlFunding>;
+  collection: Collection;
   createCollection: Collection;
+  createRole: Role;
   deleteCollection: Scalars['Boolean']['output'];
   nonceBitcoin: Nonce;
   nonceEthereum: Nonce;
-  rbac: MutationRbac;
   requestFundingAddress: InscriptionFunding;
+  role: Role;
   signOutBitcoin: Scalars['Boolean']['output'];
   signOutEthereum: Scalars['Boolean']['output'];
   siwb: Web3LoginUser;
@@ -169,8 +187,19 @@ export type MutationAxolotlFundingAddressRequestArgs = {
 };
 
 
+export type MutationCollectionArgs = {
+  id: Scalars['ID']['input'];
+};
+
+
 export type MutationCreateCollectionArgs = {
   input: CollectionInput;
+};
+
+
+export type MutationCreateRoleArgs = {
+  name: Scalars['String']['input'];
+  permissions?: InputMaybe<Array<PermissionInput>>;
 };
 
 
@@ -195,6 +224,11 @@ export type MutationRequestFundingAddressArgs = {
 };
 
 
+export type MutationRoleArgs = {
+  id: Scalars['ID']['input'];
+};
+
+
 export type MutationSiwbArgs = {
   address: Scalars['ID']['input'];
   jwe: Scalars['String']['input'];
@@ -204,17 +238,6 @@ export type MutationSiwbArgs = {
 export type MutationSiweArgs = {
   address: Scalars['ID']['input'];
   jwe: Scalars['String']['input'];
-};
-
-export type MutationRbac = {
-  __typename?: 'MutationRBAC';
-  createRole: Role;
-};
-
-
-export type MutationRbacCreateRoleArgs = {
-  name: Scalars['String']['input'];
-  permissions?: InputMaybe<Array<PermissionInput>>;
 };
 
 export type Nonce = {
@@ -257,17 +280,28 @@ export enum PermissionResource {
   Admin = 'ADMIN',
   Affiliate = 'AFFILIATE',
   All = 'ALL',
+  Collection = 'COLLECTION',
   Presale = 'PRESALE',
+  Role = 'ROLE',
   User = 'USER'
 }
 
 export type Query = {
   __typename?: 'Query';
   appInfo: AppInfo;
+  collection: Collection;
+  collections: Array<Collection>;
   inscriptionFunding?: Maybe<InscriptionFunding>;
   inscriptionTransaction?: Maybe<InscriptionTransaction>;
+  role?: Maybe<Role>;
+  roles: Array<Role>;
   self?: Maybe<Web3User>;
   userByAddress: Web3User;
+};
+
+
+export type QueryCollectionArgs = {
+  id: Scalars['ID']['input'];
 };
 
 
@@ -277,6 +311,11 @@ export type QueryInscriptionFundingArgs = {
 
 
 export type QueryInscriptionTransactionArgs = {
+  id: Scalars['ID']['input'];
+};
+
+
+export type QueryRoleArgs = {
   id: Scalars['ID']['input'];
 };
 
@@ -335,7 +374,6 @@ export type Web3User = {
   __typename?: 'Web3User';
   address: Scalars['ID']['output'];
   allowedActions: Array<Permission>;
-  nonce: Scalars['String']['output'];
   roles: Array<Role>;
   token?: Maybe<Scalars['String']['output']>;
   type: BlockchainNetwork;

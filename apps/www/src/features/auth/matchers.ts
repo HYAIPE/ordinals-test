@@ -7,10 +7,7 @@ import {
 
 export const canSeeAdminPanel = defaultAdminStrategyAll(
   EResource.ADMIN,
-  isOneOfActionOnResource(
-    [EActions.LIST, EActions.UPDATE, EActions.USE],
-    EResource.ADMIN
-  )
+  isOneOfActionOnResource([EActions.USE], EResource.ADMIN)
 );
 
 export const canPreSaleMint = defaultAdminStrategyAll(

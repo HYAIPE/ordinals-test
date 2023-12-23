@@ -3,8 +3,8 @@ import { Inter } from "next/font/google";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata = {
-  title: "Bitflick",
-  description: "Bitflick inscription launchpad",
+  title: "Bitflick: Testnet",
+  description: "Admin panel for Bitflick",
 };
 
 export default function RootLayout({
