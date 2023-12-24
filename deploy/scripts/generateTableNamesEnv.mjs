@@ -14,6 +14,8 @@ for (const [key, value] of Object.entries(outputs["ordinal-backend"])) {
     tableNames.funding = value;
   } else if (key.startsWith("DynamoDBClaimsTableName")) {
     tableNames.claims = value;
+  } else if (key.startsWith("DynamoDBOpenEditionClaimsTableName")) {
+    tableNames.openEditionClaims = value;
   } else if (key.startsWith("StorageInscriptionBucketName")) {
     inscriptionBucketName = value;
   }

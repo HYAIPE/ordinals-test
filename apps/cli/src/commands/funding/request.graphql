@@ -1,5 +1,5 @@
-mutation AxolotlFundingRequest($request: AxolotlRequest!) {
-  axolotlFundingAddressRequest(request: $request) {
+mutation AxolotlFundingRequest($request: AxolotlClaimRequest!) {
+  axolotlFundingClaimRequest(request: $request) {
     inscriptionFunding {
       id
       fundingAddress

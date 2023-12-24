@@ -19,6 +19,7 @@ import "@wagmi/core";
 import "@wagmi/connectors";
 import { defaultChain } from "@/utils/config";
 import { appConnectors } from "./wagmi";
+import { useDeferFirstRender } from "@/hooks/useDeferredRender";
 
 export type TChain = Chain & {
   chainImageUrl: string;
@@ -47,7 +48,7 @@ export const useLocalLastSeemNetwork = ({
   autoConnect?: boolean;
 }) => {
   const { connector: activeConnector, isConnected } = useAccount();
-  const { connect } = useConnect();
+  const { connectAsync } = useConnect();
 
   useEffect(() => {
     if (autoConnect && !isConnected) {
@@ -59,31 +60,15 @@ export const useLocalLastSeemNetwork = ({
             .get()
             .find((c) => c.name === connectorName);
           if (connector) {
-            connect({
+            connectAsync({
               connector,
-            });
+            }).then(() => {});
           }
         }
       }
     }
-  }, [autoConnect, isConnected, activeConnector, connect]);
+  }, [autoConnect, isConnected, activeConnector, connectAsync]);
 };
-
-function useDeferFirstRender() {
-  const [isFirstLoad, setIsFirstLoad] = useState(true);
-  if (typeof window === "undefined") {
-    return true;
-  }
-  // We don't want the address to be available on first load so that client render matches server render
-  // eslint-disable-next-line react-hooks/rules-of-hooks
-  useLayoutEffect(() => {
-    if (isFirstLoad) {
-      setIsFirstLoad(false);
-    }
-  }, [isFirstLoad]);
-
-  return isFirstLoad;
-}
 
 export function useWeb3Context() {
   const [triedDefaultChain, setTriedDefaultChain] = useState(false);
@@ -125,6 +110,7 @@ export function useWeb3Context() {
     isConnected,
     isLoading,
   };
+
   return result;
 }
 

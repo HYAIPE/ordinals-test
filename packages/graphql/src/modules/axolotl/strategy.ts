@@ -9,22 +9,56 @@ type InscriptionFactoryFn<T extends { id: ID_AddressInscription }> = (
   }[],
 ) => Promise<T[]>;
 
-export async function openEditionStrategy() {
-  return (
-    claimables: {
-      destinationAddress: string;
-      index: number;
-    }[],
-  ) => {
-    return claimables.map((claimable) => ({
-      id: claimable.destinationAddress,
-      inscriptionType: "OPEN_EDITION",
-      inscriptionStatus: "PENDING",
-      inscriptionData: {
-        index: claimable.index,
-      },
-    }));
-  };
+export async function openEditionStrategy<
+  T extends { id: ID_AddressInscription },
+>(
+  { fundingDao, openEditionClaimsDao }: Context,
+  {
+    claimCount,
+    destinationAddress,
+    collectionId,
+    inscriptionFactory,
+  }: {
+    claimCount: number;
+    destinationAddress: `0x${string}`;
+    collectionId: ID_Collection;
+    inscriptionFactory: InscriptionFactoryFn<T>;
+  },
+) {
+  const existingFundings = await fundingDao.getAllFundingByAddressCollection({
+    address: destinationAddress,
+    collectionId,
+  });
+  const claimables: {
+    destinationAddress: string;
+    index: number;
+  }[] = [];
+  for (let i = 0; i < claimCount; i++) {
+    claimables.push({
+      destinationAddress,
+      index: existingFundings.length + i,
+    });
+  }
+  const inscriptionDocs = await inscriptionFactory(claimables);
+
+  await openEditionClaimsDao.putBatch(
+    inscriptionDocs.map((doc, index) => {
+      return {
+        collectionId,
+        destinationAddress,
+        fundingId: doc.id,
+        index: existingFundings.length + index,
+      };
+    }),
+  );
+
+  return inscriptionDocs.map((doc, index) => ({
+    claimable: {
+      destinationAddress,
+      index: existingFundings.length + index,
+    },
+    inscriptionDoc: doc,
+  }));
 }
 
 export async function contractAllowanceStrategy<
@@ -50,6 +84,7 @@ export async function contractAllowanceStrategy<
     axolotlAllowanceChainId,
     axolotlAllowanceContractAddress,
     claimsDao,
+    collectionId,
   });
 
   // Now we can create the inscription documents

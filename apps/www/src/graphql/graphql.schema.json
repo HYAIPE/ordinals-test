@@ -117,7 +117,7 @@
             "deprecationReason": null
           },
           {
-            "name": "originAddress",
+            "name": "destinationAddress",
             "description": null,
             "args": [],
             "type": {
@@ -1398,7 +1398,7 @@
         "description": null,
         "fields": [
           {
-            "name": "axolotlFundingAddressRequest",
+            "name": "axolotlFundingClaimRequest",
             "description": null,
             "args": [
               {

@@ -22,14 +22,14 @@ import {
 } from "@0xflick/ordinals-models";
 import { AxolotlModel } from "../axolotl/models.js";
 import {
-  AxolotlAvailableFunding,
+  AxolotlAvailableClaimedFunding,
   FeeLevel,
   InputMaybe,
   Maybe,
   ResolversTypes,
 } from "../../generated-types/graphql.js";
 import { MempoolModel } from "../bitcoin/models.js";
-import { contractAllowanceStrategy } from "./strategy.js";
+import { contractAllowanceStrategy, openEditionStrategy } from "./strategy.js";
 import { bitcoinToSats } from "@0xflick/inscriptions";
 import { AxolotlError } from "./errors.js";
 import { fetchAllClaimables } from "./controllers.js";
@@ -134,7 +134,7 @@ async function createTranscriptionFunding({
 }
 export const resolvers: AxolotlModule.Resolvers = {
   Mutation: {
-    axolotlFundingAddressRequest: async (
+    axolotlFundingClaimRequest: async (
       _,
       {
         request: {
@@ -192,7 +192,71 @@ export const resolvers: AxolotlModule.Resolvers = {
         chameleon: inscriptionDoc.chameleon,
         createdAt: new Date().toISOString(),
         id: inscriptionDoc.id,
-        originAddress: claimable.destinationAddress,
+        destinationAddress: claimable.destinationAddress,
+        tokenId: inscriptionDoc.tokenId,
+        inscriptionFunding: inscriptionDoc.inscriptionFunding,
+      }));
+    },
+    axolotlFundingOpenEditionRequest: async (
+      _,
+      {
+        request: {
+          collectionId,
+          claimCount,
+          destinationAddress,
+          network,
+          feeLevel,
+          feePerByte,
+        },
+      },
+      context,
+    ) => {
+      const inscriptions = await openEditionStrategy(context, {
+        claimCount: claimCount ?? 1,
+        destinationAddress: destinationAddress as `0x${string}`,
+        collectionId: collectionId as ID_Collection,
+        async inscriptionFactory(requests) {
+          return await Promise.all(
+            requests.map(async ({ destinationAddress, index }) => {
+              const {
+                inscriptionBucket,
+                axolotlInscriptionTip,
+                fundingDocDao,
+                createMempoolBitcoinClient,
+              } = context;
+              const axolotlModel = await AxolotlModel.create({
+                collectionId: collectionId as ID_Collection,
+                incrementingRevealDao:
+                  AxolotlModel.createDefaultIncrementingRevealDao(),
+                network: toBitcoinNetworkName(network),
+                mempool: new MempoolModel(
+                  createMempoolBitcoinClient({
+                    network: toBitcoinNetworkName(network),
+                  }),
+                ),
+                destinationAddress,
+                feeLevel,
+                feePerByte,
+                fundingDocDao,
+                inscriptionBucket,
+                tip: axolotlInscriptionTip,
+                s3Client: context.s3Client,
+                claimIndex: index,
+              });
+
+              return axolotlModel;
+            }),
+          );
+        },
+      });
+      if (inscriptions.length === 0) {
+        throw new AxolotlError("No available claims", "NO_CLAIM_FOUND");
+      }
+      return inscriptions.map(({ claimable, inscriptionDoc }) => ({
+        chameleon: inscriptionDoc.chameleon,
+        createdAt: new Date().toISOString(),
+        id: inscriptionDoc.id,
+        destinationAddress: claimable.destinationAddress,
         tokenId: inscriptionDoc.tokenId,
         inscriptionFunding: inscriptionDoc.inscriptionFunding,
       }));
@@ -233,7 +297,33 @@ export const resolvers: AxolotlModule.Resolvers = {
         s3Client,
       });
     },
-    axolotlAvailableFundingAddresses: async (parent, params, context) => {
+  },
+  Query: {
+    axolotlAvailableOpenEditionFundingClaims: async (_, params, context) => {
+      const {
+        request: { collectionId, destinationAddress },
+      } = params;
+      const revealDao = AxolotlModel.createDefaultIncrementingRevealDao();
+      const fundings = await revealDao.getAllFundingByAddressCollection({
+        address: destinationAddress as `0x${string}`,
+        collectionId: collectionId as ID_Collection,
+      });
+
+      return fundings.map((funding) => ({
+        id: funding.id,
+        tokenId: funding.meta.tokenId,
+        destinationAddress: funding.address,
+        status: toGraphqlFundingStatus(funding.fundingStatus),
+        funding: new InscriptionFundingModel({
+          bucket: context.inscriptionBucket,
+          fundingAddress: funding.address,
+          id: funding.id,
+          s3Client: context.s3Client,
+        }),
+        network: toGraphqlBitcoinNetworkName(funding.network),
+      }));
+    },
+    axolotlAvailableClaimedFundingClaims: async (_, params, context) => {
       const {
         request: { claimingAddress, collectionId },
       } = params;
@@ -250,6 +340,7 @@ export const resolvers: AxolotlModule.Resolvers = {
         axolotlAllowanceChainId,
         axolotlAllowanceContractAddress,
         claimsDao,
+        collectionId,
       });
 
       const fundings = await revealDao.getAllFundingByAddressCollection({
@@ -258,7 +349,7 @@ export const resolvers: AxolotlModule.Resolvers = {
       });
 
       // using the claiming address and index, match funding addresses to existing claimables
-      const result: (Omit<AxolotlAvailableFunding, "funding"> & {
+      const result: (Omit<AxolotlAvailableClaimedFunding, "funding"> & {
         funding?: Maybe<ResolversTypes["InscriptionFunding"]>;
       })[] = [];
       for (const claimable of verified) {
@@ -271,6 +362,7 @@ export const resolvers: AxolotlModule.Resolvers = {
         if (funding) {
           funding.fundingStatus;
           result.push({
+            tokenId: funding.meta.tokenId,
             claimingAddress,
             destinationAddress: funding.address,
             network: toGraphqlBitcoinNetworkName(funding.network),
@@ -288,7 +380,7 @@ export const resolvers: AxolotlModule.Resolvers = {
           result.push({
             claimingAddress,
             destinationAddress: claimable.destinationAddress,
-            id: claimable.destinationAddress,
+            id: `${claimable.destinationAddress}-${claimable.index}`,
             status: "UNCLAIMED",
           });
         }

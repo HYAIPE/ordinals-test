@@ -48,7 +48,8 @@ const fetchLogsInChunks = async ({
   const client = clientForChain(chainId);
   let currentStartBlock = observedBlockHeight;
   const currentBlockHeight = Number(await client.getBlockNumber());
-  while (currentStartBlock < currentBlockHeight) {
+
+  while (currentStartBlock <= currentBlockHeight) {
     const endBlock = Math.min(
       currentStartBlock + GET_LOG_BLOCK_REQUEST_SIZE,
       currentBlockHeight,
@@ -63,15 +64,21 @@ const fetchLogsInChunks = async ({
       event: claimEventAbi,
     });
 
-    const claims = prepForStorage({
-      events: logs,
-      observable: {
-        contractAddress,
-        chainId,
-        startBlockHeight: observedBlockHeight,
-      },
-      collectionIds,
-    });
+    logger.info(`Found ${logs.length} logs.`);
+
+    const claims = collectionIds
+      .map((collectionId) =>
+        prepForStorage({
+          events: logs,
+          observable: {
+            contractAddress,
+            chainId,
+            startBlockHeight: currentStartBlock,
+            collectionId,
+          },
+        }),
+      )
+      .flat();
     await updateStorage({
       chainId,
       claimsDao,
@@ -92,14 +99,27 @@ async function catchUp({
   claimsDao: ClaimsDao;
   collectionIds: string[];
 }) {
+  // explode out all observables by all collectionIds
+  const observablesWithCollectionIds = observables.reduce(
+    (memo, observable) => {
+      return memo.concat(
+        collectionIds.map((collectionId) => ({
+          ...observable,
+          collectionId,
+        })),
+      );
+    },
+    [] as {
+      contractAddress: `0x${string}`;
+      chainId: number;
+      startBlockHeight: number;
+      collectionId: string;
+    }[],
+  );
   // organize the observables by `${contractAddress}#${chainId}` and max block height
   // for each of them, get all events from the last block height to the current block height
-  const info: {
-    contractAddress: `0x${string}`;
-    chainId: number;
-    observedBlockHeight: number;
-  }[] = await claimsDao.batchGetLastObservedBlockHeight({
-    observedContracts: observables,
+  const info = await claimsDao.batchGetLastObservedBlockHeight({
+    observedContracts: observablesWithCollectionIds,
   });
 
   logger.info(`Found ${info.length} observables in the database.`);
@@ -110,7 +130,7 @@ async function catchUp({
   // for these we will use an observedBlockHeight of 0, which will cause us to
   // query all events from genesis to now.
 
-  const missing = observables.filter(
+  const missing = observablesWithCollectionIds.filter(
     (observable) =>
       !info.find(
         (entry) =>
@@ -130,6 +150,7 @@ async function catchUp({
       contractAddress: observable.contractAddress as `0x${string}`,
       chainId: observable.chainId,
       observedBlockHeight: observable.startBlockHeight,
+      collectionId: observable.collectionId,
     });
   }
 
@@ -137,7 +158,7 @@ async function catchUp({
 
   await Promise.all(
     info.map(async (contractInfo) => {
-      await rateLimitedFetchLogsInChunks({
+      return await rateLimitedFetchLogsInChunks({
         ...contractInfo,
         claimsDao,
         collectionIds,
@@ -147,13 +168,11 @@ async function catchUp({
 }
 
 function prepForStorage({
-  collectionIds,
   events,
   observable,
 }: {
   events: ClaimedEventLog[];
-  observable: IObservableContract;
-  collectionIds: string[];
+  observable: IObservableContract & { collectionId: string };
 }) {
   const observedClaims = events.reduce((memo, event) => {
     if (
@@ -172,18 +191,16 @@ function prepForStorage({
     let validClaims: IObservedClaim[] = [];
 
     for (const address of allAddressesClaimed) {
-      for (const collectionId of collectionIds) {
-        if (Address.decode(address).type === "p2tr") {
-          validClaims.push({
-            claimedAddress: addressThatClaimed,
-            chainId: observable.chainId,
-            contractAddress: observable.contractAddress as `0x${string}`,
-            destinationAddress: address,
-            index: currentIndex,
-            observedBlockHeight: Number(event.blockNumber),
-            collectionId,
-          });
-        }
+      if (Address.decode(address).type === "p2tr") {
+        validClaims.push({
+          claimedAddress: addressThatClaimed,
+          chainId: observable.chainId,
+          contractAddress: observable.contractAddress as `0x${string}`,
+          destinationAddress: address,
+          index: currentIndex,
+          observedBlockHeight: Number(event.blockNumber),
+          collectionId: observable.collectionId,
+        });
       }
       currentIndex++;
     }
@@ -195,29 +212,18 @@ function prepForStorage({
 }
 
 export async function updateStorage({
-  contractAddress,
-  chainId,
   claimsDao,
-  fromBlockHeight,
   observedClaims,
 }: {
   contractAddress: `0x${string}`;
   chainId: number;
   claimsDao: ClaimsDao;
   fromBlockHeight?: number;
-  observedClaims: IObservedClaim[];
+  observedClaims: (IObservedClaim & { collectionId: string })[];
 }) {
-  if (observedClaims.length === 0) {
-    await claimsDao.updateLastObserved({
-      contractAddress: contractAddress,
-      chainId: chainId,
-      observedBlockHeight: fromBlockHeight ?? 0,
-    });
-  } else {
-    await claimsDao.batchUpdateObservedClaims({
-      observedClaims,
-    });
-  }
+  await claimsDao.batchUpdateObservedClaims({
+    observedClaims,
+  });
 }
 
 export async function watchForAllowance({
@@ -249,15 +255,19 @@ export async function watchForAllowance({
             "Received events",
           );
           try {
-            const observedClaims = prepForStorage({
-              collectionIds,
-              events,
-              observable: {
-                chainId,
-                contractAddress,
-                startBlockHeight,
-              },
-            });
+            const observedClaims = collectionIds
+              .map((collectionId) =>
+                prepForStorage({
+                  events,
+                  observable: {
+                    contractAddress,
+                    chainId,
+                    startBlockHeight,
+                    collectionId,
+                  },
+                }),
+              )
+              .flat();
             await updateStorage({
               contractAddress,
               chainId,
@@ -286,4 +296,5 @@ export async function watchForAllowance({
       watch();
     });
   });
+  return watches;
 }

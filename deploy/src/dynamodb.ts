@@ -9,8 +9,9 @@ export class DynamoDB extends Construct {
   public readonly userNonceTable: dynamodb.Table;
   public readonly fundingTable: dynamodb.Table;
   public readonly claimsTable: dynamodb.Table;
+  public readonly openEditionClaimsTable: dynamodb.Table;
 
-  constructor(scope: Construct, id: string, props: IProps) {
+  constructor(scope: Construct, id: string, _: IProps) {
     super(scope, id);
 
     const rbacTable = new dynamodb.Table(this, "RbacTable", {
@@ -215,6 +216,19 @@ export class DynamoDB extends Construct {
     });
 
     claimsTable.addGlobalSecondaryIndex({
+      indexName: "ClaimsByCollectionAddress",
+      partitionKey: {
+        name: "ClaimedAddressCollection",
+        type: dynamodb.AttributeType.STRING,
+      },
+      sortKey: {
+        name: "sk",
+        type: dynamodb.AttributeType.STRING,
+      },
+      projectionType: dynamodb.ProjectionType.ALL,
+    });
+
+    claimsTable.addGlobalSecondaryIndex({
       indexName: "ObservedBlockHeight-index",
       partitionKey: {
         name: "ObservedBlockHeight",
@@ -223,10 +237,59 @@ export class DynamoDB extends Construct {
       projectionType: dynamodb.ProjectionType.ALL,
     });
 
+    claimsTable.addGlobalSecondaryIndex({
+      indexName: "ClaimsByCollection",
+      partitionKey: {
+        name: "CollectionId",
+        type: dynamodb.AttributeType.STRING,
+      },
+      sortKey: {
+        name: "sk",
+        type: dynamodb.AttributeType.STRING,
+      },
+      projectionType: dynamodb.ProjectionType.ALL,
+    });
+
     this.claimsTable = claimsTable;
     new cdk.CfnOutput(this, "ClaimsTableName", {
       exportName: "ClaimsTableName",
       value: claimsTable.tableName,
+    });
+
+    const openEditionClaimsTable = new dynamodb.Table(
+      this,
+      "OpenEditionClaims",
+      {
+        partitionKey: {
+          name: "pk",
+          type: dynamodb.AttributeType.STRING,
+        },
+        sortKey: {
+          name: "sk",
+          type: dynamodb.AttributeType.STRING,
+        },
+        tableClass: dynamodb.TableClass.STANDARD,
+        billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
+      },
+    );
+
+    openEditionClaimsTable.addGlobalSecondaryIndex({
+      indexName: "GSI1",
+      partitionKey: {
+        name: "gsi1pk",
+        type: dynamodb.AttributeType.STRING,
+      },
+      sortKey: {
+        name: "sk",
+        type: dynamodb.AttributeType.STRING,
+      },
+      projectionType: dynamodb.ProjectionType.ALL,
+    });
+
+    this.openEditionClaimsTable = openEditionClaimsTable;
+    new cdk.CfnOutput(this, "OpenEditionClaimsTableName", {
+      exportName: "OpenEditionClaimsTableName",
+      value: openEditionClaimsTable.tableName,
     });
   }
 }

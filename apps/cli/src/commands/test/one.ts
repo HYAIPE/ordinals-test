@@ -11,6 +11,7 @@ import { BitcoinNetworkNames } from "@0xflick/inscriptions";
 import { fundingRequest } from "../funding/request.js";
 import { BitcoinNetwork, FeeLevel } from "../../graphql.generated.js";
 import {
+  watchForClaimedEvents,
   watchForFundedEvents,
   watchForFundingEvents,
   watchForGenesisEvents,
@@ -24,13 +25,17 @@ import {
 import { createMempoolBitcoinClient } from "../../mempool.js";
 import { mainnet, sepolia, base } from "@wagmi/core/chains";
 import { config, promiseClaimEvent } from "../../wagmi.js";
-import { connect, writeContract } from "@wagmi/core";
+import {
+  connect,
+  getBlockNumber,
+  waitForTransactionReceipt,
+  writeContract,
+} from "@wagmi/core";
 import { retryWithBackOff } from "@0xflick/inscriptions";
 
 export async function testOne({
   name,
   url,
-  claimingAddress,
   chainId,
   scriptName,
   rpcuser,
@@ -38,17 +43,18 @@ export async function testOne({
   rpcwallet,
   network,
   bitcoinDataDir,
+  skipClaim,
 }: {
   name?: string;
   url: string;
   scriptName: string;
-  claimingAddress: string;
   chainId: number;
   rpcuser: string;
   rpcpassword: string;
   rpcwallet: string;
   network: BitcoinNetworkNames;
   bitcoinDataDir: string;
+  skipClaim?: boolean;
 }) {
   name = name ? `${name}-${uuid()}` : uuid();
 
@@ -61,30 +67,6 @@ export async function testOne({
 
   console.log(`Creating collection ${name}...`);
   const token = await siwe({ chainId, url });
-
-  await connect(config, {
-    connector: frameConnector(),
-  });
-  const chain = [mainnet, sepolia, base].find((chain) => chain.id === chainId);
-
-  if (!chain) throw new Error(`Chain ${chainId} not found`);
-
-  const promiseClaimedProcessed = promiseClaimEvent({
-    contractAddress: "0x8297AA011A99244A571190455CE61846806BF0ce",
-    chainId: chain.id,
-  });
-  // add a test allowance
-  const allowanceResult = await writeContract(config, {
-    chainId: chain.id,
-    address: "0x8297AA011A99244A571190455CE61846806BF0ce",
-    abi: iAllowanceAbi,
-    functionName: "claim",
-    args: [[bitcoinAddress]],
-  });
-
-  console.log(`Test allowance txid: ${allowanceResult}`);
-  await promiseClaimedProcessed;
-  console.log(`Test allowance processed`);
   const collectionId = await collectionCreate({
     name,
     maxSupply: 1,
@@ -102,6 +84,52 @@ export async function testOne({
     token,
     url,
   });
+
+  const connected = await connect(config, {
+    connector: frameConnector(),
+  });
+  const claimingAddress = connected.accounts[0];
+  if (!claimingAddress) throw new Error("No connected account");
+  const chain = [mainnet, sepolia, base].find((chain) => chain.id === chainId);
+
+  if (!chain) throw new Error(`Chain ${chainId} not found`);
+  const blockHeight = await getBlockNumber(config, {
+    chainId: chain.id,
+  });
+  if (!skipClaim) {
+    const promiseClaimedProcessed = promiseClaimEvent({
+      contractAddress: "0x8297AA011A99244A571190455CE61846806BF0ce",
+      chainId: chain.id,
+    });
+    // add a test allowance
+    const allowanceResult = await writeContract(config, {
+      chainId: chain.id,
+      address: "0x8297AA011A99244A571190455CE61846806BF0ce",
+      abi: iAllowanceAbi,
+      functionName: "claim",
+      args: [[bitcoinAddress]],
+    });
+
+    console.log(`Test allowance txid: ${allowanceResult}`);
+
+    await promiseClaimedProcessed;
+
+    await waitForTransactionReceipt(config, {
+      hash: allowanceResult,
+      chainId: chain.id,
+    });
+    console.log(`Test allowance processed`);
+  }
+
+  await watchForClaimedEvents({
+    chainId: chain.id,
+    collectionId,
+    contractAddress: "0x8297AA011A99244A571190455CE61846806BF0ce",
+    startBlockHeight: skipClaim ? 3904660 : Number(blockHeight) - 10,
+  });
+
+  console.log(`Claimed event watcher caught up?`);
+  await new Promise((resolve) => setTimeout(resolve, 14000));
 
   await loadWallet({
     network,
@@ -132,8 +160,6 @@ export async function testOne({
     token,
     url,
   });
-
-  console.log(JSON.stringify(fundings, null, 2));
 
   const fundingMap = new Map<
     string,

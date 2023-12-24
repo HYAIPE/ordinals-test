@@ -23,13 +23,52 @@ export type AppInfo = {
   pubKey: Scalars['String']['output'];
 };
 
+export type AxolotlAvailableClaimedFunding = {
+  __typename?: 'AxolotlAvailableClaimedFunding';
+  claimingAddress: Scalars['String']['output'];
+  destinationAddress: Scalars['String']['output'];
+  funding?: Maybe<InscriptionFunding>;
+  id: Scalars['ID']['output'];
+  network?: Maybe<BitcoinNetwork>;
+  status: FundingStatus;
+  tokenId?: Maybe<Scalars['Int']['output']>;
+};
+
+export type AxolotlAvailableClaimedRequest = {
+  claimingAddress: Scalars['String']['input'];
+  collectionId: Scalars['ID']['input'];
+};
+
+export type AxolotlAvailableOpenEditionFunding = {
+  __typename?: 'AxolotlAvailableOpenEditionFunding';
+  destinationAddress: Scalars['String']['output'];
+  funding?: Maybe<InscriptionFunding>;
+  id: Scalars['ID']['output'];
+  network?: Maybe<BitcoinNetwork>;
+  status: FundingStatus;
+  tokenId: Scalars['Int']['output'];
+};
+
+export type AxolotlAvailableOpenEditionRequest = {
+  collectionId: Scalars['ID']['input'];
+  destinationAddress: Scalars['String']['input'];
+};
+
+export type AxolotlClaimRequest = {
+  claimingAddress: Scalars['String']['input'];
+  collectionId: Scalars['ID']['input'];
+  feeLevel?: InputMaybe<FeeLevel>;
+  feePerByte?: InputMaybe<Scalars['Int']['input']>;
+  network: BitcoinNetwork;
+};
+
 export type AxolotlFunding = {
   __typename?: 'AxolotlFunding';
   chameleon: Scalars['Boolean']['output'];
   createdAt: Scalars['String']['output'];
+  destinationAddress: Scalars['String']['output'];
   id: Scalars['ID']['output'];
   inscriptionFunding?: Maybe<InscriptionFunding>;
-  originAddress: Scalars['String']['output'];
   tokenId: Scalars['Int']['output'];
 };
 
@@ -41,9 +80,10 @@ export type AxolotlFundingPage = {
   totalCount: Scalars['Int']['output'];
 };
 
-export type AxolotlRequest = {
-  claimingAddress: Scalars['String']['input'];
+export type AxolotlOpenEditionRequest = {
+  claimCount?: InputMaybe<Scalars['Int']['input']>;
   collectionId: Scalars['ID']['input'];
+  destinationAddress: Scalars['String']['input'];
   feeLevel?: InputMaybe<FeeLevel>;
   feePerByte?: InputMaybe<Scalars['Int']['input']>;
   network: BitcoinNetwork;
@@ -92,6 +132,15 @@ export enum FeeLevel {
   High = 'HIGH',
   Low = 'LOW',
   Medium = 'MEDIUM'
+}
+
+export enum FundingStatus {
+  Funded = 'FUNDED',
+  Funding = 'FUNDING',
+  Genesis = 'GENESIS',
+  Reveal = 'REVEAL',
+  Unclaimed = 'UNCLAIMED',
+  Unverified = 'UNVERIFIED'
 }
 
 export type InscriptionData = {
@@ -169,7 +218,8 @@ export type KeyValueInput = {
 
 export type Mutation = {
   __typename?: 'Mutation';
-  axolotlFundingAddressRequest: Array<AxolotlFunding>;
+  axolotlFundingClaimRequest: Array<AxolotlFunding>;
+  axolotlFundingOpenEditionRequest: Array<AxolotlFunding>;
   collection: Collection;
   createCollection: Collection;
   createRole: Role;
@@ -185,8 +235,13 @@ export type Mutation = {
 };
 
 
-export type MutationAxolotlFundingAddressRequestArgs = {
-  request: AxolotlRequest;
+export type MutationAxolotlFundingClaimRequestArgs = {
+  request: AxolotlClaimRequest;
+};
+
+
+export type MutationAxolotlFundingOpenEditionRequestArgs = {
+  request: AxolotlOpenEditionRequest;
 };
 
 
@@ -292,6 +347,8 @@ export enum PermissionResource {
 export type Query = {
   __typename?: 'Query';
   appInfo: AppInfo;
+  axolotlAvailableClaimedFundingClaims: Array<AxolotlAvailableClaimedFunding>;
+  axolotlAvailableOpenEditionFundingClaims: Array<AxolotlAvailableOpenEditionFunding>;
   collection: Collection;
   collections: Array<Collection>;
   inscriptionFunding?: Maybe<InscriptionFunding>;
@@ -300,6 +357,16 @@ export type Query = {
   roles: Array<Role>;
   self?: Maybe<Web3User>;
   userByAddress: Web3User;
+};
+
+
+export type QueryAxolotlAvailableClaimedFundingClaimsArgs = {
+  request: AxolotlAvailableClaimedRequest;
+};
+
+
+export type QueryAxolotlAvailableOpenEditionFundingClaimsArgs = {
+  request: AxolotlAvailableOpenEditionRequest;
 };
 
 
@@ -382,6 +449,19 @@ export type Web3User = {
   type: BlockchainNetwork;
 };
 
+export type BindRoleToUSerMutationVariables = Exact<{
+  roleId: Scalars['ID']['input'];
+  address: Scalars['String']['input'];
+}>;
+
+
+export type BindRoleToUSerMutation = { __typename?: 'Mutation', role: { __typename?: 'Role', bindToUser: { __typename?: 'Web3User', allowedActions: Array<{ __typename?: 'Permission', action: PermissionAction, resource: PermissionResource }> } } };
+
+export type CreateRoleMutationVariables = Exact<{ [key: string]: never; }>;
+
+
+export type CreateRoleMutation = { __typename?: 'Mutation', createRole: { __typename?: 'Role', id: string, name: string, userCount: number, permissions: Array<{ __typename?: 'Permission', action: PermissionAction, resource: PermissionResource }> } };
+
 export type CreateCollectionMutationVariables = Exact<{
   input: CollectionInput;
 }>;
@@ -398,11 +478,11 @@ export type UpdateMetadataMutationVariables = Exact<{
 export type UpdateMetadataMutation = { __typename?: 'Mutation', collection: { __typename?: 'Collection', updateMetadata: { __typename?: 'Collection', metadata: Array<{ __typename?: 'KeyValue', key: string, value: string }> } } };
 
 export type AxolotlFundingRequestMutationVariables = Exact<{
-  request: AxolotlRequest;
+  request: AxolotlClaimRequest;
 }>;
 
 
-export type AxolotlFundingRequestMutation = { __typename?: 'Mutation', axolotlFundingAddressRequest: Array<{ __typename?: 'AxolotlFunding', inscriptionFunding?: { __typename?: 'InscriptionFunding', id: string, fundingAddress: string, fundingAmountSats: number, fundingAmountBtc: string } | null }> };
+export type AxolotlFundingRequestMutation = { __typename?: 'Mutation', axolotlFundingClaimRequest: Array<{ __typename?: 'AxolotlFunding', inscriptionFunding?: { __typename?: 'InscriptionFunding', id: string, fundingAddress: string, fundingAmountSats: number, fundingAmountBtc: string } | null }> };
 
 export type BitcoinNonceMutationVariables = Exact<{
   address: Scalars['ID']['input'];
@@ -428,6 +508,34 @@ export type SiweMutationVariables = Exact<{
 export type SiweMutation = { __typename?: 'Mutation', siwe: { __typename?: 'Web3LoginUser', token: string } };
 
 
+export const BindRoleToUSerDocument = gql`
+    mutation BindRoleToUSer($roleId: ID!, $address: String!) {
+  role(id: $roleId) {
+    bindToUser(userAddress: $address) {
+      allowedActions {
+        action
+        resource
+      }
+    }
+  }
+}
+    `;
+export const CreateRoleDocument = gql`
+    mutation CreateRole {
+  createRole(
+    name: "super-admin"
+    permissions: [{action: ADMIN, resource: ALL}, {action: USE, resource: ADMIN}]
+  ) {
+    id
+    name
+    userCount
+    permissions {
+      action
+      resource
+    }
+  }
+}
+    `;
 export const CreateCollectionDocument = gql`
     mutation CreateCollection($input: CollectionInput!) {
   createCollection(input: $input) {
@@ -451,8 +559,8 @@ export const UpdateMetadataDocument = gql`
 }
     `;
 export const AxolotlFundingRequestDocument = gql`
-    mutation AxolotlFundingRequest($request: AxolotlRequest!) {
-  axolotlFundingAddressRequest(request: $request) {
+    mutation AxolotlFundingRequest($request: AxolotlClaimRequest!) {
+  axolotlFundingClaimRequest(request: $request) {
     inscriptionFunding {
       id
       fundingAddress
@@ -504,6 +612,12 @@ const defaultWrapper: SdkFunctionWrapper = (action, _operationName, _operationTy
 
 export function getSdk(client: GraphQLClient, withWrapper: SdkFunctionWrapper = defaultWrapper) {
   return {
+    BindRoleToUSer(variables: BindRoleToUSerMutationVariables, requestHeaders?: GraphQLClientRequestHeaders): Promise<BindRoleToUSerMutation> {
+      return withWrapper((wrappedRequestHeaders) => client.request<BindRoleToUSerMutation>(BindRoleToUSerDocument, variables, {...requestHeaders, ...wrappedRequestHeaders}), 'BindRoleToUSer', 'mutation');
+    },
+    CreateRole(variables?: CreateRoleMutationVariables, requestHeaders?: GraphQLClientRequestHeaders): Promise<CreateRoleMutation> {
+      return withWrapper((wrappedRequestHeaders) => client.request<CreateRoleMutation>(CreateRoleDocument, variables, {...requestHeaders, ...wrappedRequestHeaders}), 'CreateRole', 'mutation');
+    },
     CreateCollection(variables: CreateCollectionMutationVariables, requestHeaders?: GraphQLClientRequestHeaders): Promise<CreateCollectionMutation> {
       return withWrapper((wrappedRequestHeaders) => client.request<CreateCollectionMutation>(CreateCollectionDocument, variables, {...requestHeaders, ...wrappedRequestHeaders}), 'CreateCollection', 'mutation');
     },

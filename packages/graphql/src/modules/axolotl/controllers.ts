@@ -10,11 +10,13 @@ export type TClaimable = {
 
 export async function fetchAllClaimables({
   address,
+  collectionId,
   axolotlAllowanceChainId,
   axolotlAllowanceContractAddress,
   claimsDao,
 }: {
   address: `0x${string}`;
+  collectionId: string;
   axolotlAllowanceChainId: number;
   axolotlAllowanceContractAddress: `0x${string}`;
   claimsDao: ClaimsDao;
@@ -27,12 +29,18 @@ export async function fetchAllClaimables({
       functionName: "allClaimable",
       args: [address],
     }),
-    claimsDao.getAllClaims({
-      address,
+    claimsDao.getAllClaimsForCollectionAddress({
+      claimedAddress: address,
+      collectionId,
       contractAddress: axolotlAllowanceContractAddress,
       chainId: axolotlAllowanceChainId,
     }),
   ]);
+
+  console.log({
+    onChainClaimables,
+    existingClaimables,
+  });
 
   // Find the claimables that are not yet claimed by filtering out any existing claimables that already have a fundingId
   // but first we need to track the index of the claimables before we filter
@@ -45,6 +53,13 @@ export async function fetchAllClaimables({
 
   return destinationAddressesWithIndex.reduce(
     (accumulator, { destinationAddress, index }) => {
+      const fundingClaim = existingClaimables.find(
+        (claimable) =>
+          claimable.index === index &&
+          claimable.destinationAddress === destinationAddress &&
+          claimable.fundingId,
+      );
+
       const existingClaimable = existingClaimables.find(
         (claimable) =>
           claimable.index === index &&
@@ -52,7 +67,14 @@ export async function fetchAllClaimables({
           !claimable.fundingId,
       );
 
-      if (existingClaimable) {
+      if (fundingClaim) {
+        accumulator.claimed.push({
+          destinationAddress,
+          index,
+          observedBlockHeight: fundingClaim.observedBlockHeight,
+        });
+        return accumulator;
+      } else if (existingClaimable) {
         accumulator.verified.push({
           destinationAddress,
           index,
@@ -71,9 +93,11 @@ export async function fetchAllClaimables({
     {
       verified: [] as TClaimable[],
       unverified: [] as TClaimable[],
+      claimed: [] as TClaimable[],
     } as {
       verified: TClaimable[];
       unverified: TClaimable[];
+      claimed: TClaimable[];
     },
   );
 }

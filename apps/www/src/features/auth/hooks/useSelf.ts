@@ -4,7 +4,7 @@ import { useGetSelfQuery } from "./getSelf.generated";
 export const useSelf = ({ skip }: { skip?: boolean } = {}) => {
   const { data, ...rest } = useGetSelfQuery({
     skip,
-    // fetchPolicy: "no-cache",
+    fetchPolicy: "no-cache",
     errorPolicy: "all",
   });
 

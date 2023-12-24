@@ -1,0 +1,10 @@
+mutation BindRoleToUSer($roleId: ID!, $address: String!) {
+  role(id: $roleId) {
+    bindToUser(userAddress: $address) {
+      allowedActions {
+        action
+        resource
+      }
+    }
+  }
+}

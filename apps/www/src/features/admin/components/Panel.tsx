@@ -6,7 +6,7 @@ import Typography from "@mui/material/Typography";
 
 import { useAuth } from "@/features/auth";
 import { canSeeAdminPanel } from "@/features/auth/matchers";
-import { useCollections, TCollection } from "../hooks/useCollections";
+import { useCollections } from "../hooks/useCollections";
 import { CollectionsList } from "./CollectionsList";
 
 const NotAdminPanelContent: FC<{}> = ({}) => (

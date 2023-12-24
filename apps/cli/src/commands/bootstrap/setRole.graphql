@@ -1,0 +1,17 @@
+mutation CreateRole {
+  createRole(
+    name: "super-admin"
+    permissions: [
+      { action: ADMIN, resource: ALL }
+      { action: USE, resource: ADMIN }
+    ]
+  ) {
+    id
+    name
+    userCount
+    permissions {
+      action
+      resource
+    }
+  }
+}

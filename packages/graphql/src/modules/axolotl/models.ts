@@ -227,7 +227,6 @@ export class AxolotlModel implements IAxolotlMeta {
       mimeType: "text/html",
       metadata: {
         tokenId,
-        genesis: false,
         revealedAt,
       },
     };
@@ -256,8 +255,6 @@ export class AxolotlModel implements IAxolotlMeta {
       tip,
       inscriptions: [inscriptionContent],
     });
-
-    console.log({ secKey }, "Created inscription transaction");
 
     const addressModel = new AddressInscriptionModel<IAxolotlMeta>({
       collectionId,

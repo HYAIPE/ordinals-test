@@ -1,12 +1,6 @@
 import { GraphQLClient } from "graphql-request";
-import {
-  getSdk,
-  AxolotlRequest,
-  BitcoinNetwork,
-} from "../../graphql.generated.js";
+import { getSdk, AxolotlClaimRequest } from "../../graphql.generated.js";
 import { RequestConfig } from "graphql-request/build/esm/types.js";
-import { loadWallet, sendBitcoin } from "../../bitcoin.js";
-import { BitcoinNetworkNames } from "@0xflick/inscriptions";
 
 function createClient(
   endpoint: string,
@@ -20,7 +14,7 @@ export async function fundingRequest({
   url,
   token,
 }: {
-  request: AxolotlRequest;
+  request: AxolotlClaimRequest;
   url: string;
   token: string | null;
 }) {
@@ -33,16 +27,16 @@ export async function fundingRequest({
     },
   );
   const sdk = getSdk(client);
-  const { axolotlFundingAddressRequest } = await sdk.AxolotlFundingRequest({
+  const { axolotlFundingClaimRequest } = await sdk.AxolotlFundingRequest({
     request,
   });
 
-  for (const { inscriptionFunding } of axolotlFundingAddressRequest) {
+  for (const { inscriptionFunding } of axolotlFundingClaimRequest) {
     console.log(`Funding address: ${inscriptionFunding.fundingAddress}`);
     console.log(`Funding amount BTC: ${inscriptionFunding.fundingAmountBtc}`);
     console.log(`Funding amount sats: ${inscriptionFunding.fundingAmountSats}`);
     console.log(`Funding address ID: ${inscriptionFunding.id}`);
   }
 
-  return axolotlFundingAddressRequest;
+  return axolotlFundingClaimRequest;
 }

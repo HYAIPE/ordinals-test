@@ -6,7 +6,11 @@ import {
   encodeCursor,
   paginate,
 } from "@0xflick/ordinals-models";
-import { DynamoDBClient, ScanCommand } from "@aws-sdk/client-dynamodb";
+import {
+  DynamoDBClient,
+  PutRequest,
+  ScanCommand,
+} from "@aws-sdk/client-dynamodb";
 import {
   BatchGetCommand,
   BatchWriteCommand,
@@ -15,6 +19,7 @@ import {
   QueryCommand,
   UpdateCommand,
 } from "@aws-sdk/lib-dynamodb";
+import { handleBatchWrite } from "../utils/retryUnprocessedBatchWrite.js";
 
 export interface IDBObservedClaim {
   pk: string;
@@ -27,6 +32,7 @@ export interface IDBObservedClaim {
   Index: number;
   ObservedBlockHeight: number;
   FundingId?: string;
+  ClaimedAddressCollection: string;
 }
 
 function toPk({
@@ -50,11 +56,23 @@ function toPk({
 function toSk({
   contractAddress,
   chainId,
+  collectionId,
 }: {
   contractAddress: string;
   chainId: number;
+  collectionId: string;
 }) {
-  return `CLAIM#${contractAddress}#${chainId}`;
+  return `CLAIM#${contractAddress}#${chainId}#${collectionId}`;
+}
+
+function toClaimsByCollectionAddressPk({
+  collectionId,
+  claimedAddress,
+}: {
+  collectionId: string;
+  claimedAddress: string;
+}) {
+  return `${collectionId}#${claimedAddress}`;
 }
 
 function toDB(input: IObservedClaim): IDBObservedClaim {
@@ -68,6 +86,7 @@ function toDB(input: IObservedClaim): IDBObservedClaim {
     Index: input.index,
     ObservedBlockHeight: input.observedBlockHeight,
     CollectionId: input.collectionId,
+    ClaimedAddressCollection: toClaimsByCollectionAddressPk(input),
     ...(input.fundingId && { FundingId: input.fundingId }),
   };
 }
@@ -121,7 +140,7 @@ export class ClaimsDao {
             index,
             collectionId,
           }),
-          sk: toSk({ contractAddress, chainId }),
+          sk: toSk({ contractAddress, chainId, collectionId }),
         },
       }),
     );
@@ -217,15 +236,17 @@ export class ClaimsDao {
   public async getLastObservedBlockHeight({
     contractAddress,
     chainId,
+    collectionId,
   }: {
     contractAddress: string;
     chainId: number;
+    collectionId: string;
   }) {
     const response = await this.client.send(
       new GetCommand({
         TableName: ClaimsDao.TABLE_NAME,
         Key: {
-          pk: toSk({ contractAddress, chainId }),
+          pk: toSk({ contractAddress, chainId, collectionId }),
           sk: "LAST_OBSERVED_BLOCK_HEIGHT",
         },
         AttributesToGet: ["ObservedBlockHeight"],
@@ -243,6 +264,7 @@ export class ClaimsDao {
     observedContracts: {
       contractAddress: string;
       chainId: number;
+      collectionId: string;
     }[];
   }) {
     const response = await this.client.send(
@@ -254,7 +276,7 @@ export class ClaimsDao {
               sk: "LAST_OBSERVED_BLOCK_HEIGHT",
             })),
             ProjectionExpression:
-              "ObservedBlockHeight, ChainId, ContractAddress",
+              "ObservedBlockHeight, ChainId, ContractAddress, CollectionId",
           },
         },
       }),
@@ -268,10 +290,12 @@ export class ClaimsDao {
         ContractAddress: contractAddress,
         ChainId: chainId,
         ObservedBlockHeight: observedBlockHeight,
+        CollectionId: collectionId,
       }: IDBObservedClaim) => ({
         contractAddress,
         chainId,
         observedBlockHeight,
+        collectionId,
       }),
     );
   }
@@ -286,6 +310,7 @@ export class ClaimsDao {
       {
         contractAddress: `0x${string}`;
         chainId: number;
+        collectionId: string;
         maxBlockHeight: number;
       }
     >();
@@ -296,6 +321,7 @@ export class ClaimsDao {
           contractAddress: oc.contractAddress,
           chainId: oc.chainId,
           maxBlockHeight: oc.observedBlockHeight, // Use observedBlockHeight here initially
+          collectionId: oc.collectionId,
         });
       } else {
         const observedContract = observedContracts.get(key);
@@ -307,41 +333,40 @@ export class ClaimsDao {
         }
       }
     }
-
-    await this.client.send(
-      new BatchWriteCommand({
-        RequestItems: {
-          [ClaimsDao.TABLE_NAME]: [
-            ...observedClaims.map((oc) => ({
-              PutRequest: {
-                Item: toDB(oc),
+    await handleBatchWrite(this.client, {
+      RequestItems: {
+        [ClaimsDao.TABLE_NAME]: [
+          ...observedClaims.map((oc) => ({
+            PutRequest: {
+              Item: toDB(oc),
+            },
+          })),
+          ...Array.from(observedContracts.values()).map((oc) => ({
+            PutRequest: {
+              Item: {
+                pk: toSk(oc),
+                sk: "LAST_OBSERVED_BLOCK_HEIGHT",
+                ContractAddress: oc.contractAddress,
+                ChainId: oc.chainId,
+                ObservedBlockHeight: oc.maxBlockHeight,
               },
-            })),
-            ...Array.from(observedContracts.values()).map((oc) => ({
-              PutRequest: {
-                Item: {
-                  pk: toSk(oc),
-                  sk: "LAST_OBSERVED_BLOCK_HEIGHT",
-                  ContractAddress: oc.contractAddress,
-                  ChainId: oc.chainId,
-                  ObservedBlockHeight: oc.maxBlockHeight,
-                },
-              },
-            })),
-          ],
-        },
-      }),
-    );
+            },
+          })),
+        ],
+      },
+    });
   }
 
   public async updateLastObserved({
     contractAddress,
     chainId,
     observedBlockHeight,
+    collectionId,
   }: {
     contractAddress: string;
     chainId: number;
     observedBlockHeight: number;
+    collectionId: string;
   }) {
     await this.client.send(
       new PutCommand({
@@ -350,6 +375,7 @@ export class ClaimsDao {
           pk: toSk({
             contractAddress,
             chainId,
+            collectionId,
           }),
           sk: "LAST_OBSERVED_BLOCK_HEIGHT",
           ContractAddress: contractAddress,
@@ -359,6 +385,103 @@ export class ClaimsDao {
         ReturnValues: "NONE",
       }),
     );
+  }
+
+  async getAllClaimsForCollectionAddress({
+    collectionId,
+    claimedAddress,
+    contractAddress,
+    chainId,
+  }: {
+    collectionId: string;
+    claimedAddress: string;
+    contractAddress?: `0x${string}`;
+    chainId?: number;
+  }) {
+    const claims: IObservedClaim[] = [];
+    for await (const claim of this.listAllClaimsForCollectionAddress({
+      collectionId,
+      claimedAddress,
+      contractAddress,
+      chainId,
+    })) {
+      claims.push(claim);
+    }
+    return claims;
+  }
+
+  listAllClaimsForCollectionAddress({
+    collectionId,
+    claimedAddress,
+    contractAddress,
+    chainId,
+  }: {
+    collectionId: string;
+    claimedAddress: string;
+    contractAddress?: `0x${string}`;
+    chainId?: number;
+  }) {
+    return paginate((options) =>
+      this.listAllClaimsForCollectionAddressPaginated({
+        ...options,
+        claimedAddress,
+        collectionId,
+        contractAddress,
+        chainId,
+      }),
+    );
+  }
+
+  async listAllClaimsForCollectionAddressPaginated({
+    collectionId,
+    claimedAddress,
+    chainId,
+    contractAddress,
+    limit,
+    cursor,
+  }: {
+    collectionId: string;
+    claimedAddress: string;
+    contractAddress?: `0x${string}`;
+    chainId?: number;
+  } & IPaginationOptions): Promise<IPaginatedResult<IObservedClaim>> {
+    const pagination = decodeCursor(cursor);
+    const result = await this.client.send(
+      new QueryCommand({
+        TableName: ClaimsDao.TABLE_NAME,
+        IndexName: "ClaimsByCollectionAddress",
+        KeyConditionExpression: `ClaimedAddressCollection = :key${
+          contractAddress && chainId ? " AND sk = :sk" : ""
+        }`,
+        ExpressionAttributeValues: {
+          ":key": toClaimsByCollectionAddressPk({
+            collectionId,
+            claimedAddress,
+          }),
+          ...(contractAddress && chainId
+            ? { ":sk": toSk({ contractAddress, chainId, collectionId }) }
+            : {}),
+        },
+        ...(pagination && { ExclusiveStartKey: pagination.lastEvaluatedKey }),
+        ...(limit && { Limit: limit }),
+      }),
+    );
+    const lastEvaluatedKey = result.LastEvaluatedKey;
+    const page = pagination ? pagination.page + 1 : 1;
+    const size = result.Items?.length ?? 0;
+    const count = (pagination ? pagination.count : 0) + size;
+
+    return {
+      items: result.Items?.map((m) => toModel(m as IDBObservedClaim)) ?? [],
+      cursor: encodeCursor({
+        lastEvaluatedKey,
+        page,
+        count,
+      }),
+      page,
+      count,
+      size,
+    };
   }
 
   async getAllClaimsForCollection({ collectionId }: { collectionId: string }) {
@@ -418,65 +541,40 @@ export class ClaimsDao {
     };
   }
 
-  async getAllClaims({
-    address,
-    contractAddress,
-    chainId,
-  }: {
-    address: `0x${string}`;
-    contractAddress: `0x${string}`;
-    chainId: number;
-  }) {
+  async getAllClaims({ address }: { address: `0x${string}` }) {
     const claims: IObservedClaim[] = [];
     for await (const claim of this.listAllClaims({
       address,
-      contractAddress,
-      chainId,
     })) {
       claims.push(claim);
     }
     return claims;
   }
 
-  listAllClaims({
-    address,
-    contractAddress,
-    chainId,
-  }: {
-    address: `0x${string}`;
-    contractAddress: `0x${string}`;
-    chainId: number;
-  }) {
+  listAllClaims({ address }: { address: `0x${string}` }) {
     return paginate((options) =>
       this.listAllClaimsPaginated({
         ...options,
         address,
-        contractAddress,
-        chainId,
       }),
     );
   }
 
   async listAllClaimsPaginated({
     address,
-    contractAddress,
-    chainId,
     limit,
     cursor,
   }: {
     address: `0x${string}`;
-    contractAddress: `0x${string}`;
-    chainId: number;
   } & IPaginationOptions): Promise<IPaginatedResult<IObservedClaim>> {
     const pagination = decodeCursor(cursor);
     const result = await this.client.send(
       new QueryCommand({
         TableName: ClaimsDao.TABLE_NAME,
         IndexName: "ClaimsByAddress",
-        KeyConditionExpression: "ClaimedAddress = :address AND sk = :sk",
+        KeyConditionExpression: "ClaimedAddress = :address",
         ExpressionAttributeValues: {
           ":address": address,
-          ":sk": toSk({ contractAddress, chainId }),
         },
         ...(pagination && { ExclusiveStartKey: pagination.lastEvaluatedKey }),
         ...(limit && { Limit: limit }),

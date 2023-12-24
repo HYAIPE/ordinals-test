@@ -1,5 +1,14 @@
-input AxolotlRequest {
+input AxolotlClaimRequest {
   claimingAddress: String!
+  network: BitcoinNetwork!
+  feeLevel: FeeLevel
+  feePerByte: Int
+  collectionId: ID!
+}
+
+input AxolotlOpenEditionRequest {
+  destinationAddress: String!
+  claimCount: Int
   network: BitcoinNetwork!
   feeLevel: FeeLevel
   feePerByte: Int
@@ -12,7 +21,7 @@ type AxolotlFunding {
 
   tokenId: Int!
   createdAt: String!
-  originAddress: String!
+  destinationAddress: String!
   chameleon: Boolean!
 }
 
@@ -23,8 +32,13 @@ type AxolotlFundingPage {
   cursor: String
 }
 
-input AxolotlAvailableFundingRequest {
+input AxolotlAvailableClaimedRequest {
   claimingAddress: String!
+  collectionId: ID!
+}
+
+input AxolotlAvailableOpenEditionRequest {
+  destinationAddress: String!
   collectionId: ID!
 }
 
@@ -37,19 +51,38 @@ enum FundingStatus {
   REVEAL
 }
 
-type AxolotlAvailableFunding {
+type AxolotlAvailableClaimedFunding {
   id: ID!
   destinationAddress: String!
   claimingAddress: String!
   status: FundingStatus!
   network: BitcoinNetwork
   funding: InscriptionFunding
+  tokenId: Int
+}
+
+type AxolotlAvailableOpenEditionFunding {
+  id: ID!
+  destinationAddress: String!
+  status: FundingStatus!
+  network: BitcoinNetwork
+  funding: InscriptionFunding
+  tokenId: Int!
 }
 
 type Mutation {
   requestFundingAddress(request: InscriptionRequest!): InscriptionFunding!
-  axolotlFundingAddressRequest(request: AxolotlRequest!): [AxolotlFunding!]!
-  axolotlAvailableFundingAddresses(
-    request: AxolotlAvailableFundingRequest!
-  ): [AxolotlAvailableFunding!]!
+  axolotlFundingClaimRequest(request: AxolotlClaimRequest!): [AxolotlFunding!]!
+  axolotlFundingOpenEditionRequest(
+    request: AxolotlOpenEditionRequest!
+  ): [AxolotlFunding!]!
+}
+
+type Query {
+  axolotlAvailableClaimedFundingClaims(
+    request: AxolotlAvailableClaimedRequest!
+  ): [AxolotlAvailableClaimedFunding!]!
+  axolotlAvailableOpenEditionFundingClaims(
+    request: AxolotlAvailableOpenEditionRequest!
+  ): [AxolotlAvailableOpenEditionFunding!]!
 }

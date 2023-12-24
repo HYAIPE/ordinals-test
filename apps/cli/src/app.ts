@@ -13,6 +13,7 @@ import { nonceBitcoin, nonceEthereum } from "./commands/login/nonce.js";
 import { siwe } from "./commands/login/siwe.js";
 import { collectionCreate } from "./commands/collection/create.js";
 import { testOne } from "./commands/test/one.js";
+import { bootstrap } from "./commands/bootstrap/index.js";
 const program = new Command();
 
 program
@@ -160,6 +161,19 @@ apiCommand
     console.log(`Token: ${token}`);
   });
 
+program
+  .command("bootstrap")
+  .option("-u, --url <url>", "api url", "http://localhost:4000")
+  .option("-c, --chain-id <chain-id>", "Ethereum chain id", Number, 11155111)
+  .option("-a, --admin-address <admin-address>", "Admin address")
+  .action(async ({ url, chainId, adminAddress }) => {
+    await bootstrap({
+      url,
+      chainId,
+      adminAddress,
+    });
+  });
+
 const collectionCommand = program.command("collection");
 
 collectionCommand
@@ -210,36 +224,36 @@ testCommand
   .command("mint-one")
   .option("-e, --url <url>", "api url", "http://localhost:4000")
   .option("-c, --chain-id <chain-id>", "Ethereum chain id", Number, 11155111)
-  .option("-a, --claiming-address <claimingAddress>", "Claiming address")
   .option("-n, --network <network>", "Bitcoin network", "regtest")
   .option("-w, --rpcwallet <wallet>", "Bitcoin Wallet name", "default")
   .option("-u, --rpcuser <rpcuser>", "Bitcoin RPC username")
   .option("-p, --rpcpassword <rpcpassword>", "Bitcoin RPC password")
   .option("--bitcoin-data-dir <bitcoinDataDir>", "Bitcoin data directory")
   .option("-s, --script-name <script name>", "Script name", "test")
+  .option("--skip-claim", "Skip claiming")
   .action(
     async ({
       url,
       chainId,
-      claimingAddress,
       network,
       rpcwallet,
       rpcuser,
       rpcpassword,
       scriptName,
       bitcoinDataDir,
+      skipClaim,
     }) => {
       await testOne({
         chainId,
         url,
         name: "test",
-        claimingAddress,
         network,
         rpcpassword,
         rpcuser,
         rpcwallet,
         scriptName,
         bitcoinDataDir,
+        skipClaim,
       });
     },
   );

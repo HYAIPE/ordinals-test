@@ -11,7 +11,6 @@ export async function siwe({ chainId, url }: { chainId: number; url: string }) {
   const provider = new BrowserProvider(frame, chainId);
   const signer = await provider.getSigner();
   const address = await signer.getAddress();
-  console.log(`Address: ${address}`);
   const {
     nonceEthereum: { nonce, messageToSign, pubKey },
   } = await sdk.EthereumNonce({ address, chainId });
@@ -29,7 +28,7 @@ export async function siwe({ chainId, url }: { chainId: number; url: string }) {
     address,
     jwe,
   });
-  
+
   frame.close();
 
   return token;

@@ -63,3 +63,23 @@ cd deploy
 yarn
 yarn deploy:local
 ```
+
+## bootstrap
+
+Assuming you have done everything above you should be able to start the dev backend
+
+```bash
+cd apps/graphql-backend
+yarn start
+```
+
+Fix any errors that pop up.
+
+Once the backend is running, bootstrap an admin user. By default, only the owner of the "ADMIN_ENS" for the EVM chain ID set as default can bootstrap. Probably there should be a local cookie set so that locally anyone can bootstrap.
+
+(with the backend running)
+
+```bash
+cd apps/cli
+yarn cli bootstrap --admin-address "0xbadbeef"
+```

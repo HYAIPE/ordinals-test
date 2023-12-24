@@ -4,6 +4,7 @@ export * from "./claims.js";
 export * from "./factory.js";
 export * from "./doc/index.js";
 export * from "./collection.js";
+export * from "./openEdition.js";
 export * from "./addressInscription.js";
 export * from "./ordinals/index.js";
 export * from "./token.js";

@@ -23,8 +23,6 @@ import { useSelf } from "./useSelf";
 import { graphQlAllowedActionToPermission } from "../transforms/allowedActions";
 import { useGetAppInfoQuery } from "./app.generated";
 
-
-
 function useAuthContext({ autoLogin = false }: { autoLogin?: boolean }) {
   const [stateToken, setStateToken] = useState<string | null>(null);
   const [roleIds, setRoleIds] = useState<string[]>([]);
@@ -94,20 +92,20 @@ function useAuthContext({ autoLogin = false }: { autoLogin?: boolean }) {
     data: user,
     isLoggedIn: userIsLoggedInToGraphql,
     error: selfError,
-  } = useSelf({
-    skip: !isAuthenticated,
-  });
+    refetch: refetchSelf,
+  } = useSelf({});
   useEffect(() => {
     if (userIsLoggedInToGraphql && user?.token) {
       setState("AUTHENTICATED");
       setRoleIds(user.roleIds);
       setStateToken(user.token);
+      refetchSelf();
     } else if (selfError) {
       setState("ANONYMOUS");
       setRoleIds([]);
       setStateToken(null);
     }
-  }, [user, userIsLoggedInToGraphql, selfError]);
+  }, [user, userIsLoggedInToGraphql, selfError, refetchSelf]);
   const signIn = useCallback(() => {
     setState("REQUEST_SIGN_IN");
   }, []);
@@ -235,6 +233,7 @@ function useAuthContext({ autoLogin = false }: { autoLogin?: boolean }) {
           setRoleIds(authUser.roleIds);
           setStateToken(token);
           setState("AUTHENTICATED");
+          refetchSelf();
         } else {
           console.warn(`Unable to parse token for ${address}`);
           // TODO: toast
@@ -250,7 +249,15 @@ function useAuthContext({ autoLogin = false }: { autoLogin?: boolean }) {
         setStateToken(null);
       }
     }
-  }, [address, issuer, nonceData, nonceIsSuccess, tokenData, tokenIsSuccess]);
+  }, [
+    address,
+    issuer,
+    nonceData,
+    nonceIsSuccess,
+    tokenData,
+    tokenIsSuccess,
+    refetchSelf,
+  ]);
   const setToken = useCallback(
     (token: string) => {
       // decode token
@@ -272,7 +279,7 @@ function useAuthContext({ autoLogin = false }: { autoLogin?: boolean }) {
     },
     [address, issuer]
   );
-  return {
+  const result = {
     isAuthenticated,
     isAnonymous,
     isUserRequestingSignIn,
@@ -292,6 +299,7 @@ function useAuthContext({ autoLogin = false }: { autoLogin?: boolean }) {
     ensAvatarIsLoading,
     setToken,
   };
+  return result;
 }
 
 type TContext = ReturnType<typeof useAuthContext>;
