@@ -18,7 +18,7 @@ export async function start() {
       collectionId: collection.id,
       fundingDao,
       fundingDocDao,
-      mempoolBitcoinClient: createMempoolBitcoinClient({ network: "testnet" }),
+      mempoolBitcoinClient: createMempoolBitcoinClient({ network: "regtest" }),
     });
   }
 }

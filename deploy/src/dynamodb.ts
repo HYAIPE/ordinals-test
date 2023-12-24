@@ -162,9 +162,9 @@ export class DynamoDB extends Construct {
       nonKeyAttributes: ["address", "id", "fundingAmountSat"],
     });
     fundingTable.addGlobalSecondaryIndex({
-      indexName: "address-collection-index",
+      indexName: "destination-address-collection-index",
       partitionKey: {
-        name: "address",
+        name: "destinationAddress",
         type: dynamodb.AttributeType.STRING,
       },
       sortKey: {

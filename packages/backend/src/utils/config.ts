@@ -30,7 +30,7 @@ export const dynamoDbSslEnabled = lazySingleton(() => {
 
 export const tableNames = lazySingleton(() => {
   const tableConfig: Record<string, string> = JSON.parse(
-    process.env.TABLE_NAMES || "{}"
+    process.env.TABLE_NAMES || "{}",
   );
   return tableConfig;
 });
@@ -39,7 +39,7 @@ export const regtestMempoolUrl = lazySingleton(() => {
   return process.env.REGTEST_MEMPOOL_URL ?? "http://localhost:80";
 });
 export const testnetMempoolUrl = lazySingleton(() => {
-  return process.env.TESTNET_MEMPOOL_URL ?? "https://mempool.space/testnet";
+  return process.env.TESTNET_MEMPOOL_URL ?? "https://mempool.space";
 });
 export const mainnetMempoolUrl = lazySingleton(() => {
   return process.env.MAINNET_MEMPOOL_URL ?? "https://mempool.space";

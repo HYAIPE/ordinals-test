@@ -1,6 +1,9 @@
 import { ApolloError } from "apollo-server-errors";
 
-export type TReason = "COLLECTION_ALREADY_EXISTS" | "INVALID_METADATA";
+export type TReason =
+  | "COLLECTION_NOT_FOUND"
+  | "COLLECTION_ALREADY_EXISTS"
+  | "INVALID_METADATA";
 
 function reasonToMessage(reason: TReason): string {
   switch (reason) {
@@ -8,6 +11,8 @@ function reasonToMessage(reason: TReason): string {
       return "Collection already exists";
     case "INVALID_METADATA":
       return "Invalid metadata";
+    case "COLLECTION_NOT_FOUND":
+      return "Collection not found";
     default:
       return "Unknown error";
   }
@@ -16,6 +21,6 @@ function reasonToMessage(reason: TReason): string {
 export class CollectionError extends ApolloError {
   constructor(reason: TReason, message?: string) {
     const reasonMessage = reasonToMessage(reason);
-    super(message ? `${reasonMessage}: ${reason}` : reasonMessage);
+    super(message ? `${reasonMessage}: ${message}` : reasonMessage);
   }
 }

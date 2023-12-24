@@ -39,6 +39,7 @@ export type TFundingDb<T extends Record<string, any>> = {
   fundingStatus: string;
   fundingAmountBtc: string;
   fundingAmountSat: number;
+  destinationAddress: string;
 } & T;
 
 export type TFundingCollectionDb<T extends Record<string, any>> = {
@@ -80,7 +81,7 @@ export class FundingDao<
     return results;
   }
 
-  public async *listAllFundingByAddressCollection(
+  public listAllFundingByAddressCollection(
     opts: {
       collectionId: ID_Collection;
       address: string;
@@ -109,9 +110,9 @@ export class FundingDao<
     const result = await this.client.send(
       new QueryCommand({
         TableName: FundingDao.TABLE_NAME,
-        IndexName: "address-collection-index",
+        IndexName: "destination-address-collection-index",
         KeyConditionExpression:
-          "address = :address AND collectionId = :collectionId",
+          "destinationAddress = :address AND collectionId = :collectionId",
         ExpressionAttributeValues: {
           ":address": address,
           ":collectionId": toCollectionId(collectionId),
@@ -415,6 +416,9 @@ export class FundingDao<
         },
       }),
     );
+    if (!db.Item) {
+      return null;
+    }
     return this.fromCollectionDb(
       db.Item as TFundingCollectionDb<CollectionMeta>,
     );
@@ -594,6 +598,7 @@ export class FundingDao<
     address,
     contentIds,
     collectionId,
+    destinationAddress,
     id,
     network,
     fundingStatus,
@@ -619,6 +624,7 @@ export class FundingDao<
       timesChecked,
       fundingAmountBtc,
       fundingAmountSat,
+      destinationAddress,
       ...(typeof lastChecked !== "undefined" && {
         lastChecked: lastChecked.getTime(),
       }),
@@ -685,6 +691,7 @@ export class FundingDao<
     address,
     collectionId,
     contentIds,
+    destinationAddress,
     network,
     fundingStatus,
     fundingTxid,
@@ -706,6 +713,7 @@ export class FundingDao<
       timesChecked,
       fundingAmountBtc,
       fundingAmountSat,
+      destinationAddress,
       ...(typeof lastChecked !== "undefined" && {
         lastChecked: new Date(lastChecked),
       }),

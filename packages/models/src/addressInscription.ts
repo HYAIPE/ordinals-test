@@ -24,6 +24,7 @@ export interface IAddressInscriptionModel<T = Record<string, any>> {
   timesChecked: number;
   fundingAmountBtc: string;
   fundingAmountSat: number;
+  destinationAddress: string;
   meta: T;
 }
 
@@ -35,8 +36,8 @@ export function hashInscriptions(address: string, tapKeys: string[]) {
   return Buffer.from(
     [Address.decode(address).data, ...tapKeys].reduce(
       (memo, tapKey) => xor(Buffer.from(tapKey, "hex"), memo),
-      new Uint8Array(32)
-    )
+      new Uint8Array(32),
+    ),
   ).toString("hex");
 }
 
@@ -47,6 +48,7 @@ export class AddressInscriptionModel<T extends Record<string, any> = {}>
   public network: BitcoinNetworkNames;
   public collectionId?: ID_Collection;
   public contentIds: string[];
+  public destinationAddress: string;
   public fundingTxid?: string;
   public fundingVout?: number;
   public revealTxid?: string;
@@ -66,6 +68,7 @@ export class AddressInscriptionModel<T extends Record<string, any> = {}>
       this._id = toAddressInscriptionId(item.id);
     }
     this.collectionId = item.collectionId;
+    this.destinationAddress = item.destinationAddress;
     this.fundingTxid = item.fundingTxid;
     this.fundingVout = item.fundingVout;
     this.revealTxid = item.revealTxid;
@@ -82,7 +85,7 @@ export class AddressInscriptionModel<T extends Record<string, any> = {}>
   public get id(): ID_AddressInscription {
     if (!this._id) {
       this._id = toAddressInscriptionId(
-        hashInscriptions(this.address, this.contentIds)
+        hashInscriptions(this.address, this.contentIds),
       );
     }
     return this._id;

@@ -1,12 +1,13 @@
 import {
-  MempoolClient,
   createMempoolClient,
   regtestMempoolUrl,
   testnetMempoolUrl,
   mainnetMempoolUrl,
 } from "@0xflick/ordinals-backend";
+import mempoolJS from "@0xflick/mempool.js";
 import { BitcoinNetworkNames } from "@0xflick/ordinals-models";
 
+type MempoolClient = ReturnType<typeof mempoolJS>;
 export interface IBitcoinContext {
   createMempoolBitcoinClient: (opts: {
     network: BitcoinNetworkNames;
@@ -28,7 +29,7 @@ export function createMempoolBitcoinClient({
   network,
 }: {
   network: BitcoinNetworkNames;
-}) {
+}): MempoolClient["bitcoin"] {
   const url = new URL(urlForNetworkName(network));
   const protocol = url.protocol.slice(0, -1);
   if (!["http", "https"].includes(protocol)) {

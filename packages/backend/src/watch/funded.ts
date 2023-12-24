@@ -40,6 +40,7 @@ async function fetchFunding({
   mempoolBitcoinClient: MempoolClient["bitcoin"];
 }) {
   const txs = await mempoolBitcoinClient.addresses.getAddressTxs({ address });
+  logger.info({ txs }, "txs");
   for (const tx of txs) {
     for (let i = 0; i < tx.vout.length; i++) {
       const output = tx.vout[i];
@@ -93,7 +94,7 @@ export function watchForFunded(
     amount: number;
     address: string;
     id: string;
-  }) => void
+  }) => void,
 ) {
   logger.info(`Watching for funded outputs for collection ${collectionId}`);
   const enqueueGenesisFunded = (funding: { address: string; id: string }) => {
@@ -128,25 +129,25 @@ export function watchForFunded(
     startWith(0),
     takeUntil(stop$),
     tap(() =>
-      logger.info(`Polling for new funded inscriptions to fund genesis`)
+      logger.info(`Polling for new funded inscriptions to fund genesis`),
     ),
     switchMap(() =>
       from(
         fundingDao.listAllFundingsByStatus({
           id: collectionId,
           fundingStatus: "funded",
-        })
-      )
+        }),
+      ),
     ),
     tap((funded) => {
       logger.info(
-        `Starting to watch funded ${funded.id} for address ${funded.address} `
+        `Starting to watch funded ${funded.id} for address ${funded.address} `,
       );
     }),
     switchMap((funded) =>
       from([funded]).pipe(
         tap((funding) =>
-          logger.info(`Enqueuing genesis funding ${funding.id}`)
+          logger.info(`Enqueuing genesis funding ${funding.id}`),
         ),
         mergeMap((funded) => {
           return from(enqueueGenesisFunded(funded)).pipe(
@@ -154,7 +155,7 @@ export function watchForFunded(
               logger.error(error, "Error checking funding for", funded.address);
               if (error instanceof NoVoutFound) {
                 logger.info(
-                  `No payment found for ${funded.address} so submitting payment on behalf of ${funded.id}}`
+                  `No payment found for ${funded.address} so submitting payment on behalf of ${funded.id}}`,
                 );
                 const now = new Date();
                 return from(
@@ -167,13 +168,13 @@ export function watchForFunded(
                     } catch (error) {
                       logger.error(
                         error,
-                        "Error updating funding last checked"
+                        "Error updating funding last checked",
                       );
                       throw error;
                     }
                     logger.info(`Updated last checked for ${funded.id}`);
                     throw error;
-                  })
+                  }),
                 );
               }
               logger.error(error, "Error checking funding for", funded.address);
@@ -208,15 +209,15 @@ export function watchForFunded(
                       fundedDb,
                     },
                     "No funding txid or vout found for",
-                    funded.id
+                    funded.id,
                   );
                   throw new Error(
-                    `No funding txid or vout found for ${funded.id}`
+                    `No funding txid or vout found for ${funded.id}`,
                   );
                 }
                 logger.info(
                   { secKey: doc.secKey },
-                  "Generating genesis transaction"
+                  "Generating genesis transaction",
                 );
                 const secKey = new SecretKey(Buffer.from(doc.secKey, "hex"));
                 try {
@@ -239,7 +240,7 @@ export function watchForFunded(
                   try {
                     logger.info(
                       { genesisTx },
-                      `Sending genesis funding ${funded.id} to mempool`
+                      `Sending genesis funding ${funded.id} to mempool`,
                     );
                     const genesisTxid =
                       (await mempoolBitcoinClient.transactions.postTx({
@@ -293,7 +294,7 @@ export function watchForFunded(
                       logger.error(
                         error,
                         "Error updating address funded for",
-                        funded.address
+                        funded.address,
                       );
                       throw error;
                     }
@@ -301,7 +302,7 @@ export function watchForFunded(
                     logger.error(
                       error,
                       "Error sending transaction for",
-                      funded.address
+                      funded.address,
                     );
                     throw error;
                   }
@@ -309,7 +310,7 @@ export function watchForFunded(
                   logger.error(
                     error,
                     "Error generating transaction",
-                    funded.address
+                    funded.address,
                   );
                   throw error;
                 }
@@ -317,15 +318,15 @@ export function watchForFunded(
                 logger.error(
                   error,
                   "Error getting funding for",
-                  funded.address
+                  funded.address,
                 );
                 throw error;
               }
-            })
+            }),
           );
-        })
-      )
-    )
+        }),
+      ),
+    ),
   );
 
   // When $fundings is complete and we have a vout value, we can update the funding with the new txid and vout

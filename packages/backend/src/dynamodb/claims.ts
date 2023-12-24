@@ -267,6 +267,9 @@ export class ClaimsDao {
       collectionId: string;
     }[];
   }) {
+    if (!observedContracts.length) {
+      return [];
+    }
     const response = await this.client.send(
       new BatchGetCommand({
         RequestItems: {

@@ -11,6 +11,9 @@ import {
   isActionOnResource,
 } from "@0xflick/ordinals-rbac-models";
 import { DISALLOWED_META_KEYS } from "@0xflick/ordinals-backend";
+import { createLogger } from "@0xflick/ordinals-backend";
+
+const logger = createLogger({ name: "graphql/collections" });
 
 const canPerformCreateCollection = defaultAdminStrategyAll(
   EResource.COLLECTION,
@@ -42,9 +45,7 @@ export const resolvers: CollectionsModule.Resolvers = {
       info,
     ) => {
       const { fundingDao, requireMutation } = context;
-      await verifyAuthorizedUser(context, canPerformCreateCollection);
       requireMutation(info);
-      // check if collection name already exists
       const collections = await fundingDao.getCollectionByName(name);
       if (collections.length > 0) {
         throw new CollectionError("COLLECTION_ALREADY_EXISTS", name);
@@ -55,6 +56,7 @@ export const resolvers: CollectionsModule.Resolvers = {
           metadata = JSON.parse(meta);
         }
       } catch (e) {
+        logger.warn({ meta }, "Unable to parse metadata");
         throw new CollectionError(
           "INVALID_METADATA",
           "Unable to parse metadata",
@@ -96,6 +98,9 @@ export const resolvers: CollectionsModule.Resolvers = {
     collection: async (_parent, { id }, context) => {
       const { fundingDao } = context;
       const model = await fundingDao.getCollection(id as ID_Collection);
+      if (!model) {
+        throw new CollectionError("COLLECTION_NOT_FOUND", id);
+      }
       return new CollectionModel(model);
     },
   },
@@ -108,6 +113,9 @@ export const resolvers: CollectionsModule.Resolvers = {
     collection: async (_parent, { id }, context) => {
       const { fundingDao } = context;
       const model = await fundingDao.getCollection(id as ID_Collection);
+      if (!model) {
+        throw new CollectionError("COLLECTION_NOT_FOUND", id);
+      }
       return new CollectionModel(model);
     },
   },

@@ -90,12 +90,16 @@ export interface IFundingDao<
   getFunding(id: string): Promise<IAddressInscriptionModel<ItemMeta>>;
   deleteFunding(id: string): Promise<void>;
   createCollection(item: TCollectionModel<CollectionMeta>): Promise<void>;
-  getCollection(id: ID_Collection): Promise<TCollectionModel<CollectionMeta>>;
+  getCollection(
+    id: ID_Collection,
+  ): Promise<TCollectionModel<CollectionMeta> | null>;
   getCollectionByName(
     name: string,
   ): Promise<TCollectionModel<CollectionMeta>[]>;
   getAllCollections(): Promise<TCollectionModel<CollectionMeta>[]>;
-  getAllCollectionPaginated(options?: IPaginationOptions): Promise<IPaginatedResult<TCollectionModel<CollectionMeta>>>
+  getAllCollectionPaginated(
+    options?: IPaginationOptions,
+  ): Promise<IPaginatedResult<TCollectionModel<CollectionMeta>>>;
   deleteCollection(id: ID_Collection): Promise<void>;
   incrementCollectionTotalCount(id: ID_Collection): Promise<number>;
   updateMaxSupply(id: ID_Collection, maxSupply: number): Promise<void>;

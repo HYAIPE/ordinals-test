@@ -20,6 +20,7 @@ import { MempoolModel } from "../bitcoin/models.js";
 import { estimateFeesWithMempool } from "../bitcoin/fees.js";
 import { FeeLevel, InputMaybe } from "../../generated-types/graphql.js";
 import { bitcoinToSats } from "@0xflick/inscriptions";
+import { AxolotlError } from "./errors.js";
 
 const { compile } = handlebars;
 
@@ -194,6 +195,14 @@ export class AxolotlModel implements IAxolotlMeta {
     s3Client: S3Client;
   }) {
     const collection = await incrementingRevealDao.getCollection(collectionId);
+
+    if (!collection) {
+      throw new AxolotlError(
+        `No collection with id ${collectionId}`,
+        "NO_COLLECTION_FOUND",
+      );
+    }
+
     const { config: configStr } = collection.meta ?? {};
     const config: TAxolotlCollectionConfig =
       typeof configStr === "undefined"
@@ -259,6 +268,7 @@ export class AxolotlModel implements IAxolotlMeta {
     const addressModel = new AddressInscriptionModel<IAxolotlMeta>({
       collectionId,
       address: fundingAddress,
+      destinationAddress,
       network,
       contentIds: writableInscriptions.map((inscription) => inscription.tapkey),
       fundingStatus: "funding",

@@ -5,7 +5,7 @@ import { ID_Collection } from "@0xflick/ordinals-models";
 
 function createClient(
   endpoint: string,
-  requestConfig?: RequestConfig
+  requestConfig?: RequestConfig,
 ): GraphQLClient {
   return new GraphQLClient(endpoint, requestConfig);
 }
@@ -29,7 +29,7 @@ export async function collectionCreate({
       headers: {
         authorization: `Bearer ${token}`,
       },
-    }
+    },
   );
   const sdk = getSdk(client);
   const {

@@ -12,7 +12,7 @@ export async function start() {
     await watchForFundings({
       collectionId: collection.id,
       fundingDao,
-      mempoolBitcoinClient: createMempoolBitcoinClient({ network: "testnet" }),
+      mempoolBitcoinClient: createMempoolBitcoinClient({ network: "regtest" }),
     });
   }
 }

@@ -94,6 +94,7 @@ async function createTranscriptionFunding({
 
   const addressModel = new AddressInscriptionModel({
     address: fundingAddress,
+    destinationAddress: address,
     network,
     contentIds: writableInscriptions.map((inscription) => inscription.tapkey),
     fundingStatus: "funding",
