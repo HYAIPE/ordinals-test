@@ -54,8 +54,8 @@ program
         rpcpassword,
         rpcuser,
         rpcwallet,
-        noSend,
         metadataFile,
+        send,
       },
     ) => {
       await mintSingle({
@@ -67,7 +67,7 @@ program
         rpcpassword,
         rpcuser,
         rpcwallet,
-        noSend,
+        noSend: !send,
         metadataFile,
       });
     },

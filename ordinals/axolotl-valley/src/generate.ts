@@ -45,7 +45,7 @@ export function generateTraits(_seed: Uint8Array) {
   };
   const backgroundColor = weightSampleFromWeights(
     weights.backgroundWeights,
-    seedChomper
+    seedChomper,
   );
   const baseColor = weightSampleFromWeights(weights.colorWeights, seedChomper);
   const split = weightSampleFromWeights(weights.splitWeights, seedChomper);
@@ -56,11 +56,11 @@ export function generateTraits(_seed: Uint8Array) {
     const secondaryColorWeights = mapWeightedValuesToRange(
       0,
       255,
-      colorWeightsCopy
+      colorWeightsCopy,
     );
     secondaryColor = weightSampleFromWeights(
       secondaryColorWeights,
-      seedChomper
+      seedChomper,
     ) as BaseColor;
   } else {
     // Eat the alt color
@@ -68,11 +68,11 @@ export function generateTraits(_seed: Uint8Array) {
   }
   const accessory = weightSampleFromWeights(
     weights.accessoryWeights,
-    seedChomper
+    seedChomper,
   );
   const accessoryColor = weightSampleFromWeights(
     weights.accessoryColorWeights,
-    seedChomper
+    seedChomper,
   );
   const tail = weightSampleFromWeights(weights.tailWeights, seedChomper);
   const arm = weightSampleFromWeights(weights.armWeights, seedChomper);
@@ -83,7 +83,7 @@ export function generateTraits(_seed: Uint8Array) {
   const head = weightSampleFromWeights(weights.headWeights, seedChomper);
   const special = weightSampleFromWeights(
     weights.specialFeatureWeights,
-    seedChomper
+    seedChomper,
   );
   // mustache not allowed with face === "Cloud Goggles", "Troll" or "Visor"
   if (["Cloud Goggles", "Troll", "Visor"].includes(face)) {
@@ -167,9 +167,9 @@ export function generateTraits(_seed: Uint8Array) {
   };
 }
 
-export default async function (
+export async function operations(
   _seed: Uint8Array,
-  imageFetcher: IImageFetcher
+  imageFetcher: IImageFetcher,
 ): Promise<{
   metadata: IAttributeMetadata;
   layers: ILayer[];
@@ -196,14 +196,14 @@ export default async function (
       makeBackgroundLayer({ color: backgroundColor }, imageFetcher),
       await makeBaseLayer(
         { color: baseColor, splitColor: secondaryColor },
-        imageFetcher
+        imageFetcher,
       ),
       ...(await makeAccessoriesLayer(
         {
           accessoryType: accessory,
           color: accessoryColor,
         },
-        imageFetcher
+        imageFetcher,
       )),
       ...(await makeArmsLayer(
         {
@@ -211,7 +211,7 @@ export default async function (
           color: baseColor,
           splitColor: secondaryColor,
         },
-        imageFetcher
+        imageFetcher,
       )),
       ...(await makeSpecialOrHeadThingsLayer(
         {
@@ -224,7 +224,7 @@ export default async function (
           splitColor: secondaryColor,
           mustache: mustache === "Mustache",
         },
-        imageFetcher
+        imageFetcher,
       )),
       makeOutlineLayer(imageFetcher),
       ...(await makeTailLayer(
@@ -233,7 +233,7 @@ export default async function (
           splitColor: secondaryColor,
           tailType: tail,
         },
-        imageFetcher
+        imageFetcher,
       )),
     ],
   };

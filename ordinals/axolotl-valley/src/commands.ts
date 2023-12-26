@@ -5,7 +5,7 @@ import { build } from "esbuild";
 import { dirname, resolve } from "path";
 import { fileURLToPath } from "url";
 import cliProgress from "cli-progress";
-import operations, { IAttributeMetadata } from "./generate.js";
+import { operations } from "./generate.js";
 import { Canvas, Image } from "canvas";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -51,13 +51,13 @@ export async function generateAssets(out: string, count: number) {
             "..",
             "web",
             "properties",
-            imagePath.replace(".webp", ".PNG")
-          )
+            imagePath.replace(".webp", ".PNG"),
+          ),
         );
         const img = new Image();
         img.src = imgData as any;
         return img;
-      }
+      },
     );
     await renderCanvas(canvas, layers);
     const outData = canvas.toBuffer("image/png");
@@ -72,8 +72,8 @@ export async function generateAssets(out: string, count: number) {
           name: `#${i}`,
         },
         null,
-        2
-      )
+        2,
+      ),
     );
     bar.increment();
   }
@@ -82,7 +82,7 @@ export async function generateAssets(out: string, count: number) {
 
 export async function generateScript(
   out: string,
-  network?: BitcoinNetworkNames
+  network?: BitcoinNetworkNames,
 ) {
   const additionalOptions = (() => {
     switch (network) {
@@ -92,7 +92,7 @@ export async function generateScript(
             "inscriptions/index.js": resolve(
               __dirname,
               "inscriptions",
-              "mainnet.js"
+              "mainnet.js",
             ),
           },
         };
@@ -102,7 +102,7 @@ export async function generateScript(
             "inscriptions/index.js": resolve(
               __dirname,
               "inscriptions",
-              "testnet.js"
+              "testnet.js",
             ),
           },
         };

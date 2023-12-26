@@ -1,11 +1,7 @@
 {
   "compilerOptions": {
     "target": "es2020",
-    "lib": [
-      "dom",
-      "dom.iterable",
-      "esnext"
-    ],
+    "lib": ["dom", "dom.iterable", "esnext"],
     "allowJs": true,
     "skipLibCheck": true,
     "strict": true,
@@ -23,27 +19,28 @@
       }
     ],
     "paths": {
-      "@/*": [
-        "./src/*"
+      "@/*": ["./src/*"],
+      "@0xflick/ordinals-rbac-models": ["../../packages/rbac-models/src/index"],
+      "@0xflick/axolotl-valley-render": [
+        "../../ordinals/axolotl-valley-render/src/index"
       ],
-      "@0xflick/ordinals-rbac-models": [
-        "../../packages/rbac-models/src/index"
+      "@0xflick/axolotl-valley-web": [
+        "../../ordinals/axolotl-valley-web/src/index"
       ]
     },
     "incremental": true
   },
-  "include": [
-    "next-env.d.ts",
-    "**/*.ts",
-    "**/*.tsx",
-    ".next/types/**/*.ts"
-  ],
-  "exclude": [
-    "node_modules"
-  ],
+  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
+  "exclude": ["node_modules"],
   "references": [
     {
       "path": "../../packages/rbac-models"
+    },
+    {
+      "path": "../../ordinals/axolotl-valley-render"
+    },
+    {
+      "path": "../../ordinals/axolotl-valley-web"
     }
   ]
 }

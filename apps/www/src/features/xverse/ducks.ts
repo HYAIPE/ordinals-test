@@ -1,9 +1,9 @@
 import { createAction, createReducer } from "@reduxjs/toolkit";
-import { AddressPurposes, BitcoinNetwork } from "sats-connect";
+import { AddressPurpose, BitcoinNetwork } from "sats-connect";
 
 export interface INetworkTarget {
   network: BitcoinNetwork["type"];
-  purpose: AddressPurposes;
+  purpose: AddressPurpose;
 }
 
 export enum AsyncStatus {
@@ -29,7 +29,7 @@ export const initialState: XverseState = {
   connectionStatus: AsyncStatus.IDLE,
   currentTarget: {
     network: "Testnet",
-    purpose: AddressPurposes.ORDINALS,
+    purpose: AddressPurpose.Ordinals,
   },
 };
 const connectInit = createAction("xverse/connect");

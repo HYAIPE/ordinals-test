@@ -1,0 +1,18 @@
+query ListAvailableFundings(
+  $openEditionRequest: AxolotlAvailableOpenEditionRequest!
+) {
+  axolotlAvailableOpenEditionFundingClaims(request: $openEditionRequest) {
+    id
+    tokenId
+    destinationAddress
+    status
+    funding {
+      network
+      fundingAmountBtc
+      fundingAmountSats
+      fundingAddress
+      qrSrc
+      network
+    }
+  }
+}

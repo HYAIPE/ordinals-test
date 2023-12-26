@@ -16943,10 +16943,10 @@ safe-stable-stringify@^2.1.0:
   resolved "https://registry.yarnpkg.com/safer-buffer/-/safer-buffer-2.1.2.tgz#44fa161b0187b9549dd84bb91802f9bd8385cd6a"
   integrity sha512-YZo3K82SD7Riyi0E1EQPojLz7kpepnSQI9IyPbHHg1XXXevb5dJI7tpyN2ADxGcQbHG7vcyRHk0cbwqcQriUtg==
 
-sats-connect@^0.2.0:
-  version "0.2.0"
-  resolved "https://registry.yarnpkg.com/sats-connect/-/sats-connect-0.2.0.tgz#9df26f7e5c7747971e6613cf2603c06ac36ce5bf"
-  integrity sha512-PEeqgPmAASPwGnBRmKYAmOey2HRbzW733EOVia067MoDAoai+/Buzx1NzaJ5FXZzpzHbG2YFQDp+43vkFWTQxw==
+sats-connect@^1.1.2:
+  version "1.1.2"
+  resolved "https://registry.yarnpkg.com/sats-connect/-/sats-connect-1.1.2.tgz#576524c1f693f3ca5e304793dd4d151377a436f5"
+  integrity sha512-nJmCV69WgMNGH9H2cTTH/HsO9wEYS7g0AvnCNNgY5fezEJmA6jNpRMP4Xidv/c0xWL1uGOUHPLJEEOSG4NoneQ==
   dependencies:
     jsontokens "^4.0.1"
     process "^0.11.10"

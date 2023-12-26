@@ -1,5 +1,5 @@
 import { FC, useMemo, useState } from "react";
-import { AddressPurposes, BitcoinNetwork } from "sats-connect";
+import { AddressPurpose, BitcoinNetwork } from "sats-connect";
 import Menu from "@mui/material/Menu";
 import Box from "@mui/material/Box";
 import MenuList from "@mui/material/MenuList";
@@ -17,7 +17,7 @@ import Backdrop from "@mui/material/Backdrop";
 
 export interface INetworkPurpose {
   network: BitcoinNetwork["type"];
-  purpose: AddressPurposes;
+  purpose: AddressPurpose;
 }
 const ConnectedDropDownModal: FC<{
   anchorEl: Element | null;
@@ -90,20 +90,20 @@ export const BitcoinSwitchNetworks: FC<{
     return [
       {
         network: "Mainnet" as const,
-        purpose: AddressPurposes.PAYMENT,
+        purpose: AddressPurpose.Payment,
       },
       {
         network: "Mainnet" as const,
-        purpose: AddressPurposes.ORDINALS,
+        purpose: AddressPurpose.Ordinals,
       },
       {
         network: "Testnet" as const,
-        purpose: AddressPurposes.PAYMENT,
+        purpose: AddressPurpose.Payment,
       },
 
       {
         network: "Testnet" as const,
-        purpose: AddressPurposes.ORDINALS,
+        purpose: AddressPurpose.Ordinals,
       },
     ];
   }, []);

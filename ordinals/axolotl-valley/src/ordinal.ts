@@ -1,5 +1,5 @@
 import { renderHtmlCanvas } from "@0xflick/assets";
-import operations, { IAttributeMetadata } from "./generate.js";
+import { operations, IAttributeMetadata } from "./generate.js";
 import inscriptionMappings from "inscriptions/index.js";
 
 declare global {

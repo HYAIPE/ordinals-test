@@ -5,6 +5,9 @@ export async function createCanvas(width: number, height: number) {
     canvas.height = height;
     return canvas;
   }
-  const Canvas = await import("canvas");
-  return new Canvas.Canvas(width, height);
+  if (typeof window === "undefined") {
+    const Canvas = await import("canvas");
+    return new Canvas.Canvas(width, height);
+  }
+  throw new Error("Cannot create canvas");
 }

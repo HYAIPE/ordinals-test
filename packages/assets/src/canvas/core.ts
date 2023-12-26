@@ -35,7 +35,7 @@ export async function composeWithCanvas(
   return async (ctx: CanvasRenderingContext2D) => {
     const canvas = (await createCanvas(
       ctx.canvas.width,
-      ctx.canvas.height
+      ctx.canvas.height,
     )) as HTMLCanvasElement;
     const ctx2 = canvas.getContext("2d");
     ctx2.clearRect(0, 0, canvas.width, canvas.height);
@@ -54,7 +54,7 @@ export async function renderCanvas(canvas: Canvas, layers: ILayer[]) {
 }
 export async function renderHtmlCanvas(
   canvas: HTMLCanvasElement,
-  layers: ILayer[]
+  layers: ILayer[],
 ) {
   const ctx = canvas.getContext("2d");
   ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -71,7 +71,7 @@ export async function renderCanvasCtx(
   left: number,
   width: number,
   height: number,
-  progress?: (current: number, total: number) => void
+  progress?: (current: number, total: number) => void,
 ) {
   ctx.clearRect(top, left, width, height);
   const total = layers.length;
