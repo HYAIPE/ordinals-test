@@ -21,7 +21,7 @@ import Typography from "@mui/material/Typography";
 import LoginIcon from "@mui/icons-material/Login";
 import { Connect as XVerseConnect, useXverse } from "@/features/xverse";
 import { MenuItemConnect as WagmiConnect, useWeb3 } from "@/features/web3";
-import { AddressPurposes, BitcoinNetwork } from "sats-connect";
+import { AddressPurpose, BitcoinNetwork } from "sats-connect";
 import { BitcoinIcon } from "@/components/BitcoinIcon";
 import { MultiChainProvider } from "@/context/multiChain";
 import { ConnectMenuItem as XverseConnectMenuItem } from "@/features/xverse";
@@ -103,7 +103,7 @@ export const SwitchableNetwork: FC<
   PropsWithChildren<{
     title: string;
     initialBitcoinNetwork: BitcoinNetwork["type"];
-    initialBitcoinPurpose: AddressPurposes;
+    initialBitcoinPurpose: AddressPurpose;
     ethereumAutoConnect?: boolean;
   }>
 > = ({

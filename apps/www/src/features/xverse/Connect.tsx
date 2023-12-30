@@ -1,5 +1,5 @@
 import Button from "@mui/material/Button";
-import { AddressPurposes } from "sats-connect";
+import { AddressPurpose } from "sats-connect";
 import { useXverse } from "./Context";
 import { AsyncStatus } from "./ducks";
 import { useCallback, useEffect } from "react";

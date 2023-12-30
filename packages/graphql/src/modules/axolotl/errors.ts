@@ -3,6 +3,7 @@ import { ApolloError } from "apollo-server-errors";
 export enum EReason {
   NO_CLAIM_FOUND = "NO_CLAIM_FOUND",
   NO_COLLECTION_FOUND = "NO_COLLECTION_FOUND",
+  USER_OPEN_EDITION_LIMIT_REACHED = "USER_OPEN_EDITION_LIMIT_REACHED",
 }
 
 export type TReason = keyof typeof EReason;

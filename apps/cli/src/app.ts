@@ -42,6 +42,7 @@ program
   .option("-p, --rpcpassword <rpcpassword>", "Bitcoin RPC password")
   .option("--no-send", "Don't automatically pay")
   .option("-d, --metadata-file <metadata-file>", "Metadata file")
+  .option("--compress", "Compress the file")
   .description("Mint an ordinal")
   .action(
     async (
@@ -56,8 +57,10 @@ program
         rpcwallet,
         metadataFile,
         send,
+        compress,
       },
     ) => {
+      console.log(`Compress ${compress}`);
       await mintSingle({
         file,
         network,
@@ -69,6 +72,7 @@ program
         rpcwallet,
         noSend: !send,
         metadataFile,
+        compress,
       });
     },
   );

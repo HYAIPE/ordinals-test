@@ -4,12 +4,12 @@ import { DefaultProvider } from "@/context/default";
 import Grid2 from "@mui/material/Unstable_Grid2";
 import { SwitchableNetwork } from "@/layouts/SwitchableNetwork";
 import { AdminPanel } from "@/features/admin";
-import { AddressPurposes } from "sats-connect";
+import { AddressPurpose, BitcoinNetworkType } from "sats-connect";
 import { AutoConnect } from "@/features/web3";
 
 export const AdminRoute: FC<{
-  initialBitcoinNetwork: "Mainnet" | "Testnet";
-  initialBitcoinPurpose: AddressPurposes;
+  initialBitcoinNetwork: BitcoinNetworkType;
+  initialBitcoinPurpose: AddressPurpose;
 }> = ({ initialBitcoinNetwork, initialBitcoinPurpose }) => {
   return (
     <DefaultProvider>

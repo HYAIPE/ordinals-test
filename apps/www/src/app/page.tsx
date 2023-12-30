@@ -1,11 +1,11 @@
 import { Home } from "@/routes/Home";
-import { AddressPurposes } from "sats-connect";
+import { AddressPurpose } from "sats-connect";
 
 export default function Page() {
   return (
     <Home
       initialBitcoinNetwork="Testnet"
-      initialBitcoinPurpose={AddressPurposes.ORDINALS}
+      initialBitcoinPurpose={AddressPurpose.Ordinals}
     />
   );
 }

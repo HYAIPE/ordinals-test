@@ -1,5 +1,9 @@
 import { FC, useMemo, useState } from "react";
-import { AddressPurpose, BitcoinNetwork } from "sats-connect";
+import {
+  AddressPurpose,
+  BitcoinNetwork,
+  BitcoinNetworkType,
+} from "sats-connect";
 import Menu from "@mui/material/Menu";
 import Box from "@mui/material/Box";
 import MenuList from "@mui/material/MenuList";
@@ -89,20 +93,20 @@ export const BitcoinSwitchNetworks: FC<{
   const allNetworks = useMemo(() => {
     return [
       {
-        network: "Mainnet" as const,
+        network: BitcoinNetworkType.Mainnet,
         purpose: AddressPurpose.Payment,
       },
       {
-        network: "Mainnet" as const,
+        network: BitcoinNetworkType.Mainnet,
         purpose: AddressPurpose.Ordinals,
       },
       {
-        network: "Testnet" as const,
+        network: BitcoinNetworkType.Testnet,
         purpose: AddressPurpose.Payment,
       },
 
       {
-        network: "Testnet" as const,
+        network: BitcoinNetworkType.Testnet,
         purpose: AddressPurpose.Ordinals,
       },
     ];

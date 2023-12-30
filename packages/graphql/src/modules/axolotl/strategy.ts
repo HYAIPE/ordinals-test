@@ -1,6 +1,9 @@
 import { ID_AddressInscription, ID_Collection } from "@0xflick/ordinals-models";
 import { Context } from "../../context/index.js";
 import { fetchAllClaimables } from "./controllers.js";
+import { AxolotlError } from "./errors.js";
+
+const USER_OPEN_EDITION_LIMIT = 100;
 
 type InscriptionFactoryFn<T extends { id: ID_AddressInscription }> = (
   requests: {
@@ -33,6 +36,13 @@ export async function openEditionStrategy<
     destinationAddress: string;
     index: number;
   }[] = [];
+
+  if (existingFundings.length + claimCount > USER_OPEN_EDITION_LIMIT) {
+    throw new AxolotlError(
+      `User has reached the open edition limit of ${USER_OPEN_EDITION_LIMIT}`,
+      "USER_OPEN_EDITION_LIMIT_REACHED",
+    );
+  }
   for (let i = 0; i < claimCount; i++) {
     claimables.push({
       destinationAddress,

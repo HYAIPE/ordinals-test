@@ -9,6 +9,7 @@ export interface InscriptionFile {
   content: ArrayBuffer;
   mimetype: string;
   metadata?: Record<string, any>;
+  compress?: boolean;
 }
 
 export interface WritableInscription {

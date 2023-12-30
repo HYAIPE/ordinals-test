@@ -3,13 +3,10 @@ import { DefaultProvider } from "@/context/default";
 import Card from "@mui/material/Card";
 import CardContent from "@mui/material/CardContent";
 import Typography from "@mui/material/Typography";
-import CardActions from "@mui/material/CardActions";
 import Grid2 from "@mui/material/Unstable_Grid2/Grid2";
-import { Connect } from "@/features/xverse/Connect";
 import { useXverse } from "@/features/xverse/Context";
-import { AsyncStatus } from "@/features/xverse/ducks";
 import { SwitchableNetwork } from "@/layouts/SwitchableNetwork";
-import { AddressPurposes } from "sats-connect";
+import { AddressPurpose, BitcoinNetworkType } from "sats-connect";
 import CardHeader from "@mui/material/CardHeader";
 import { useAuth } from "@/features/auth";
 import { useWeb3 } from "@/features/web3";
@@ -81,8 +78,8 @@ export default function Profile() {
     <DefaultProvider>
       <SwitchableNetwork
         title="profile"
-        initialBitcoinNetwork="Testnet"
-        initialBitcoinPurpose={AddressPurposes.ORDINALS}
+        initialBitcoinNetwork={BitcoinNetworkType.Testnet}
+        initialBitcoinPurpose={AddressPurpose.Ordinals}
       >
         <Grid2 container spacing={2} maxWidth="lg">
           <Grid2 xs={12} alignContent="center">

@@ -9,7 +9,7 @@ import { Connect } from "@/features/xverse/Connect";
 import { useXverse } from "@/features/xverse/Context";
 import { AsyncStatus } from "@/features/xverse/ducks";
 import { SwitchableNetwork } from "@/layouts/SwitchableNetwork";
-import { AddressPurposes } from "sats-connect";
+import { AddressPurpose, BitcoinNetworkType } from "sats-connect";
 import { FC } from "react";
 
 const TestConnectCard = () => {
@@ -39,8 +39,8 @@ const TestConnectCard = () => {
 };
 
 export const Home: FC<{
-  initialBitcoinNetwork: "Mainnet" | "Testnet";
-  initialBitcoinPurpose: AddressPurposes;
+  initialBitcoinNetwork: BitcoinNetworkType;
+  initialBitcoinPurpose: AddressPurpose;
 }> = ({ initialBitcoinNetwork, initialBitcoinPurpose }) => {
   return (
     <DefaultProvider>

@@ -23,6 +23,7 @@ export async function mintSingle({
   rpcwallet,
   noSend,
   metadataFile,
+  compress,
 }: {
   address: string;
   file: string;
@@ -34,6 +35,7 @@ export async function mintSingle({
   rpcwallet: string;
   noSend: boolean;
   metadataFile?: string;
+  compress?: boolean;
 }) {
   const content = await fs.promises.readFile(file);
   const metadata = metadataFile
@@ -49,6 +51,7 @@ export async function mintSingle({
         content,
         mimeType: (mimeType ?? lookup(file)) || "application/octet-stream",
         ...(metadata ? { metadata: JSON.parse(metadata) } : {}),
+        compress,
       },
     ],
     padding: 546,

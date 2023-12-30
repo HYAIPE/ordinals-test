@@ -1,6 +1,8 @@
 // const buf = buffer;
 // const { Address, Script, Signer, Tap, Tx } = window.tapscript;\
 import cbor from "cbor";
+import { BrotliOptions, brotliCompress, constants } from "zlib";
+import { promisify } from "util";
 import { Address, Script, Signer, Tap, Tx } from "@0xflick/tapscript";
 import * as cryptoUtils from "@0xflick/crypto-utils";
 import {
@@ -23,14 +25,17 @@ import {
   serializedScriptToScriptData,
 } from "./utils.js";
 import { createQR } from "./qrcode.js";
+import { mimetypeInfo } from "./mimetype.js";
 
 const { encode: cborEncode } = cbor;
+const brotliCompressAsync = promisify(brotliCompress);
 
 export interface InscriptionContent {
   isBin?: boolean;
   content: ArrayBuffer;
   mimeType: string;
   metadata?: Record<string, any>;
+  compress?: boolean;
 }
 
 export interface PendingTransaction {
@@ -84,11 +89,12 @@ export async function generateFundingAddress({
     throw new InvalidAddressError(address);
   }
 
-  for (const { content, mimeType, metadata } of inscriptions) {
+  for (const { content, mimeType, metadata, compress } of inscriptions) {
     files.push({
       content,
       mimetype: mimeType,
       metadata,
+      compress,
     });
   }
 
@@ -152,8 +158,37 @@ export async function generateFundingAddress({
   let total_fee = 0;
   const base_size = 160;
 
+  const datas = await Promise.all(
+    files.map(async ({ mimetype, compress, content }) => {
+      if (!compress) {
+        return [false, new Uint8Array(content)] as const;
+      }
+      const brotliCompressOptions = {
+        params: {
+          [constants.BROTLI_PARAM_LGBLOCK]: 24,
+          [constants.BROTLI_PARAM_LGWIN]: 24,
+          [constants.BROTLI_PARAM_QUALITY]: 11,
+          [constants.BROTLI_PARAM_MODE]: constants.BROTLI_MODE_GENERIC,
+          [constants.BROTLI_PARAM_SIZE_HINT]: content.byteLength,
+        },
+      };
+      if (mimetypeInfo[mimetype]) {
+        brotliCompressOptions.params[constants.BROTLI_PARAM_MODE] =
+          mimetypeInfo[mimetype].encoderMode;
+      }
+      const compressedData = await brotliCompressAsync(
+        content,
+        brotliCompressOptions,
+      );
+      if (compressedData.byteLength < content.byteLength) {
+        return [true, new Uint8Array(compressedData)] as const;
+      }
+      return [false, new Uint8Array(content)] as const;
+    }),
+  );
+
   for (let i = 0; i < files.length; i++) {
-    const data = files[i].content;
+    const [compress, data] = datas[i];
     const metadata = files[i].metadata;
     const mimetype = ec.encode(files[i].mimetype);
 
@@ -165,7 +200,6 @@ export async function generateFundingAddress({
         chunks.push(Uint8Array.prototype.slice.call(metadataCbor, i, i + 520));
       }
     }
-    const dataArray = new Uint8Array(data);
     const script: (string | Uint8Array)[] = [
       pubkey,
       "OP_CHECKSIG",
@@ -175,8 +209,9 @@ export async function generateFundingAddress({
       "01",
       mimetype,
       ...chunks.map((chunk) => ["05", chunk]).flat(),
+      ...(compress ? ["09", new Uint8Array([98, 114])] : []),
       "OP_0",
-      dataArray,
+      data,
       "OP_ENDIF",
     ];
 

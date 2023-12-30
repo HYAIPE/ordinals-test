@@ -5,9 +5,8 @@ import MenuItem from "@mui/material/MenuItem";
 import Typography from "@mui/material/Typography";
 import { FC, useCallback } from "react";
 import { useXverse } from "../Context";
-import { AddressPurposes, BitcoinNetwork } from "sats-connect";
 import { BitcoinSwitchNetworks } from "./BitcoinSwitchNetworks";
-import CircularProgress from "@mui/material/CircularProgress";
+
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 
 export const ConnectMenuItem: FC<{}> = () => {

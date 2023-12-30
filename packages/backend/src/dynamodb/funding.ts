@@ -465,7 +465,7 @@ export class FundingDao<
           pk: id,
           sk: "collection",
         },
-        ConditionExpression: "attribute_exists(pk)",
+        ConditionExpression: "attribute_exists(pk) AND totalCount <= maxSupply",
         UpdateExpression: "ADD totalCount :one",
         ExpressionAttributeValues: {
           ":one": 1,
