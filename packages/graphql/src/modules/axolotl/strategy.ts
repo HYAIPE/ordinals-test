@@ -2,19 +2,18 @@ import { ID_AddressInscription, ID_Collection } from "@0xflick/ordinals-models";
 import { Context } from "../../context/index.js";
 import { fetchAllClaimables } from "./controllers.js";
 import { AxolotlError } from "./errors.js";
+import { AxolotlModel } from "./models.js";
 
 const USER_OPEN_EDITION_LIMIT = 100;
 
-type InscriptionFactoryFn<T extends { id: ID_AddressInscription }> = (
+type InscriptionFactoryFn<T extends AxolotlModel> = (
   requests: {
     destinationAddress: string;
     index: number;
   }[],
-) => Promise<T[]>;
+) => Promise<T>;
 
-export async function openEditionStrategy<
-  T extends { id: ID_AddressInscription },
->(
+export async function openEditionStrategy<T extends AxolotlModel>(
   { fundingDao, openEditionClaimsDao }: Context,
   {
     claimCount,
@@ -49,76 +48,78 @@ export async function openEditionStrategy<
       index: existingFundings.length + i,
     });
   }
-  const inscriptionDocs = await inscriptionFactory(claimables);
+  const inscriptionDoc = await inscriptionFactory(claimables);
 
   await openEditionClaimsDao.putBatch(
-    inscriptionDocs.map((doc, index) => {
+    inscriptionDoc.tokenIds.map((_, index) => {
       return {
         collectionId,
         destinationAddress,
-        fundingId: doc.id,
+        fundingId: inscriptionDoc.id,
         index: existingFundings.length + index,
       };
     }),
   );
 
-  return inscriptionDocs.map((doc, index) => ({
-    claimable: {
-      destinationAddress,
-      index: existingFundings.length + index,
-    },
-    inscriptionDoc: doc,
-  }));
+  // return inscriptionDoc.tokenIds.map((_, index) => ({
+  //   claimable: {
+  //     destinationAddress,
+  //     index: existingFundings.length + index,
+  //   },
+  //   inscriptionDoc,
+  // }));
+
+  return inscriptionDoc;
 }
 
-export async function contractAllowanceStrategy<
-  T extends { id: ID_AddressInscription },
->(
-  {
-    axolotlAllowanceChainId,
-    axolotlAllowanceContractAddress,
-    claimsDao,
-  }: Context,
-  {
-    address,
-    collectionId,
-    inscriptionFactory,
-  }: {
-    address: `0x${string}`;
-    collectionId: ID_Collection;
-    inscriptionFactory: InscriptionFactoryFn<T>;
-  },
-) {
-  const { verified: claimables } = await fetchAllClaimables({
-    address,
-    axolotlAllowanceChainId,
-    axolotlAllowanceContractAddress,
-    claimsDao,
-    collectionId,
-  });
+// export async function contractAllowanceStrategy<
+//   T extends { id: ID_AddressInscription },
+// >(
+//   {
+//     axolotlAllowanceChainId,
+//     axolotlAllowanceContractAddress,
+//     claimsDao,
+//   }: Context,
+//   {
+//     address,
+//     collectionId,
+//     inscriptionFactory,
+//   }: {
+//     address: `0x${string}`;
+//     collectionId: ID_Collection;
+//     inscriptionFactory: InscriptionFactoryFn<T>;
+//   },
+// ) {
+//   const { verified: claimables } = await fetchAllClaimables({
+//     address,
+//     axolotlAllowanceChainId,
+//     axolotlAllowanceContractAddress,
+//     claimsDao,
+//     collectionId,
+//   });
 
-  // Now we can create the inscription documents
-  const inscriptionDocs = await inscriptionFactory(claimables);
+//   // Now we can create the inscription documents
+//   const inscriptionDocs = await inscriptionFactory(claimables);
 
-  if (claimables.length === 0) {
-    return [];
-  }
+//   if (claimables.length === 0) {
+//     return [];
+//   }
 
-  // Update the claimables with the fundingIds
-  await claimsDao.batchUpdateFundingIds({
-    observedClaimsWithFundingIds: claimables.map((claimable, docIndex) => ({
-      ...claimable,
-      fundingId: inscriptionDocs[docIndex].id,
-      chainId: axolotlAllowanceChainId,
-      claimedAddress: address,
-      contractAddress: axolotlAllowanceContractAddress,
-      observedBlockHeight: claimable.observedBlockHeight,
-      collectionId,
-    })),
-  });
+//   // Update the claimables with the fundingIds
+//   await claimsDao.batchUpdateFundingIds({
+//     observedClaimsWithFundingIds: claimables.map((claimable, docIndex) => ({
+//       ...claimable,
+//       fundingId: inscriptionDocs[docIndex].id,
+//       chainId: axolotlAllowanceChainId,
+//       claimedAddress: address,
+//       contractAddress: axolotlAllowanceContractAddress,
+//       observedBlockHeight: claimable.observedBlockHeight,
+//       collectionId,
+//     })),
+//   });
 
-  return claimables.map((c, index) => ({
-    claimable: c,
-    inscriptionDoc: inscriptionDocs[index],
-  }));
-}
+//   return claimables.map((c, index) => ({
+//     claimable: c,
+//     inscriptionDoc: inscriptionDocs[index],
+//   }));
+// }

@@ -17,12 +17,22 @@ input AxolotlOpenEditionRequest {
 
 type AxolotlFunding {
   id: ID!
+
   inscriptionFunding: InscriptionFunding
 
-  tokenId: Int!
-  createdAt: String!
+  tokenIds: [Int!]!
+
   destinationAddress: String!
-  chameleon: Boolean!
+}
+
+type AxolotlProblem {
+  code: String!
+  message: String!
+}
+
+type AxolotlOpenEditionResponse {
+  problems: [AxolotlProblem!]
+  funding: AxolotlFunding
 }
 
 type AxolotlFundingPage {
@@ -67,21 +77,21 @@ type AxolotlAvailableOpenEditionFunding {
   status: FundingStatus!
   network: BitcoinNetwork
   funding: InscriptionFunding
-  tokenId: Int!
+  tokenIds: [Int!]!
 }
 
 type Mutation {
-  requestFundingAddress(request: InscriptionRequest!): InscriptionFunding!
-  axolotlFundingClaimRequest(request: AxolotlClaimRequest!): [AxolotlFunding!]!
+  #requestFundingAddress(request: InscriptionRequest!): InscriptionFunding!
+  #axolotlFundingClaimRequest(request: AxolotlClaimRequest!): [AxolotlFunding!]!
   axolotlFundingOpenEditionRequest(
     request: AxolotlOpenEditionRequest!
-  ): [AxolotlFunding!]!
+  ): AxolotlOpenEditionResponse!
 }
 
 type Query {
-  axolotlAvailableClaimedFundingClaims(
-    request: AxolotlAvailableClaimedRequest!
-  ): [AxolotlAvailableClaimedFunding!]!
+  # axolotlAvailableClaimedFundingClaims(
+  #   request: AxolotlAvailableClaimedRequest!
+  # ): [AxolotlAvailableClaimedFunding!]!
   axolotlAvailableOpenEditionFundingClaims(
     request: AxolotlAvailableOpenEditionRequest!
   ): [AxolotlAvailableOpenEditionFunding!]!

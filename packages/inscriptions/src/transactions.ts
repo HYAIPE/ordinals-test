@@ -209,7 +209,7 @@ export async function generateFundingAddress({
       "01",
       mimetype,
       ...chunks.map((chunk) => ["05", chunk]).flat(),
-      ...(compress ? ["09", new Uint8Array([98, 114])] : []),
+      ...(compress ? ["09", ec.encode("br")] : []),
       "OP_0",
       data,
       "OP_ENDIF",

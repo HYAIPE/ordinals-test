@@ -3,12 +3,14 @@ import type * as Types from "../../../generated-types/graphql.js";
 import type * as gm from "@0xflick/graphql-modules";
 export namespace AxolotlModule {
   interface DefinedFields {
-    AxolotlFunding: 'id' | 'inscriptionFunding' | 'tokenId' | 'createdAt' | 'destinationAddress' | 'chameleon';
+    AxolotlFunding: 'id' | 'inscriptionFunding' | 'tokenIds' | 'destinationAddress';
+    AxolotlProblem: 'code' | 'message';
+    AxolotlOpenEditionResponse: 'problems' | 'funding';
     AxolotlFundingPage: 'items' | 'totalCount' | 'page' | 'cursor';
     AxolotlAvailableClaimedFunding: 'id' | 'destinationAddress' | 'claimingAddress' | 'status' | 'network' | 'funding' | 'tokenId';
-    AxolotlAvailableOpenEditionFunding: 'id' | 'destinationAddress' | 'status' | 'network' | 'funding' | 'tokenId';
-    Mutation: 'requestFundingAddress' | 'axolotlFundingClaimRequest' | 'axolotlFundingOpenEditionRequest';
-    Query: 'axolotlAvailableClaimedFundingClaims' | 'axolotlAvailableOpenEditionFundingClaims';
+    AxolotlAvailableOpenEditionFunding: 'id' | 'destinationAddress' | 'status' | 'network' | 'funding' | 'tokenIds';
+    Mutation: 'axolotlFundingOpenEditionRequest';
+    Query: 'axolotlAvailableOpenEditionFundingClaims';
   };
   
   interface DefinedEnumValues {
@@ -28,6 +30,8 @@ export namespace AxolotlModule {
   export type AxolotlOpenEditionRequest = Pick<Types.AxolotlOpenEditionRequest, DefinedInputFields['AxolotlOpenEditionRequest']>;
   export type AxolotlFunding = Pick<Types.AxolotlFunding, DefinedFields['AxolotlFunding']>;
   export type InscriptionFunding = Types.InscriptionFunding;
+  export type AxolotlProblem = Pick<Types.AxolotlProblem, DefinedFields['AxolotlProblem']>;
+  export type AxolotlOpenEditionResponse = Pick<Types.AxolotlOpenEditionResponse, DefinedFields['AxolotlOpenEditionResponse']>;
   export type AxolotlFundingPage = Pick<Types.AxolotlFundingPage, DefinedFields['AxolotlFundingPage']>;
   export type AxolotlAvailableClaimedRequest = Pick<Types.AxolotlAvailableClaimedRequest, DefinedInputFields['AxolotlAvailableClaimedRequest']>;
   export type AxolotlAvailableOpenEditionRequest = Pick<Types.AxolotlAvailableOpenEditionRequest, DefinedInputFields['AxolotlAvailableOpenEditionRequest']>;
@@ -35,10 +39,11 @@ export namespace AxolotlModule {
   export type AxolotlAvailableClaimedFunding = Pick<Types.AxolotlAvailableClaimedFunding, DefinedFields['AxolotlAvailableClaimedFunding']>;
   export type AxolotlAvailableOpenEditionFunding = Pick<Types.AxolotlAvailableOpenEditionFunding, DefinedFields['AxolotlAvailableOpenEditionFunding']>;
   export type Mutation = Pick<Types.Mutation, DefinedFields['Mutation']>;
-  export type InscriptionRequest = Types.InscriptionRequest;
   export type Query = Pick<Types.Query, DefinedFields['Query']>;
   
   export type AxolotlFundingResolvers = Pick<Types.AxolotlFundingResolvers, DefinedFields['AxolotlFunding'] | '__isTypeOf'>;
+  export type AxolotlProblemResolvers = Pick<Types.AxolotlProblemResolvers, DefinedFields['AxolotlProblem'] | '__isTypeOf'>;
+  export type AxolotlOpenEditionResponseResolvers = Pick<Types.AxolotlOpenEditionResponseResolvers, DefinedFields['AxolotlOpenEditionResponse'] | '__isTypeOf'>;
   export type AxolotlFundingPageResolvers = Pick<Types.AxolotlFundingPageResolvers, DefinedFields['AxolotlFundingPage'] | '__isTypeOf'>;
   export type AxolotlAvailableClaimedFundingResolvers = Pick<Types.AxolotlAvailableClaimedFundingResolvers, DefinedFields['AxolotlAvailableClaimedFunding'] | '__isTypeOf'>;
   export type AxolotlAvailableOpenEditionFundingResolvers = Pick<Types.AxolotlAvailableOpenEditionFundingResolvers, DefinedFields['AxolotlAvailableOpenEditionFunding'] | '__isTypeOf'>;
@@ -47,6 +52,8 @@ export namespace AxolotlModule {
   
   export interface Resolvers {
     AxolotlFunding?: AxolotlFundingResolvers;
+    AxolotlProblem?: AxolotlProblemResolvers;
+    AxolotlOpenEditionResponse?: AxolotlOpenEditionResponseResolvers;
     AxolotlFundingPage?: AxolotlFundingPageResolvers;
     AxolotlAvailableClaimedFunding?: AxolotlAvailableClaimedFundingResolvers;
     AxolotlAvailableOpenEditionFunding?: AxolotlAvailableOpenEditionFundingResolvers;
@@ -62,10 +69,18 @@ export namespace AxolotlModule {
       '*'?: gm.Middleware[];
       id?: gm.Middleware[];
       inscriptionFunding?: gm.Middleware[];
-      tokenId?: gm.Middleware[];
-      createdAt?: gm.Middleware[];
+      tokenIds?: gm.Middleware[];
       destinationAddress?: gm.Middleware[];
-      chameleon?: gm.Middleware[];
+    };
+    AxolotlProblem?: {
+      '*'?: gm.Middleware[];
+      code?: gm.Middleware[];
+      message?: gm.Middleware[];
+    };
+    AxolotlOpenEditionResponse?: {
+      '*'?: gm.Middleware[];
+      problems?: gm.Middleware[];
+      funding?: gm.Middleware[];
     };
     AxolotlFundingPage?: {
       '*'?: gm.Middleware[];
@@ -91,17 +106,14 @@ export namespace AxolotlModule {
       status?: gm.Middleware[];
       network?: gm.Middleware[];
       funding?: gm.Middleware[];
-      tokenId?: gm.Middleware[];
+      tokenIds?: gm.Middleware[];
     };
     Mutation?: {
       '*'?: gm.Middleware[];
-      requestFundingAddress?: gm.Middleware[];
-      axolotlFundingClaimRequest?: gm.Middleware[];
       axolotlFundingOpenEditionRequest?: gm.Middleware[];
     };
     Query?: {
       '*'?: gm.Middleware[];
-      axolotlAvailableClaimedFundingClaims?: gm.Middleware[];
       axolotlAvailableOpenEditionFundingClaims?: gm.Middleware[];
     };
   };

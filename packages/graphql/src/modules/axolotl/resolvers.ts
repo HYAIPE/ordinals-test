@@ -135,69 +135,69 @@ async function createTranscriptionFunding({
 }
 export const resolvers: AxolotlModule.Resolvers = {
   Mutation: {
-    axolotlFundingClaimRequest: async (
-      _,
-      {
-        request: {
-          claimingAddress,
-          network,
-          feeLevel,
-          feePerByte,
-          collectionId,
-        },
-      },
-      context,
-    ) => {
-      const inscriptions = await contractAllowanceStrategy(context, {
-        address: claimingAddress as `0x${string}`,
-        collectionId: collectionId as ID_Collection,
-        inscriptionFactory: async (requests) => {
-          return await Promise.all(
-            requests.map(async ({ destinationAddress, index }) => {
-              const {
-                inscriptionBucket,
-                axolotlInscriptionTip,
-                fundingDocDao,
-                createMempoolBitcoinClient,
-              } = context;
-              const axolotlModel = await AxolotlModel.create({
-                collectionId: collectionId as ID_Collection,
-                incrementingRevealDao:
-                  AxolotlModel.createDefaultIncrementingRevealDao(),
-                network: toBitcoinNetworkName(network),
-                mempool: new MempoolModel(
-                  createMempoolBitcoinClient({
-                    network: toBitcoinNetworkName(network),
-                  }),
-                ),
-                destinationAddress,
-                feeLevel,
-                feePerByte,
-                fundingDocDao,
-                inscriptionBucket,
-                tip: axolotlInscriptionTip,
-                s3Client: context.s3Client,
-                claimAddress: claimingAddress,
-                claimIndex: index,
-              });
+    // axolotlFundingClaimRequest: async (
+    //   _,
+    //   {
+    //     request: {
+    //       claimingAddress,
+    //       network,
+    //       feeLevel,
+    //       feePerByte,
+    //       collectionId,
+    //     },
+    //   },
+    //   context,
+    // ) => {
+    //   const inscriptions = await contractAllowanceStrategy(context, {
+    //     address: claimingAddress as `0x${string}`,
+    //     collectionId: collectionId as ID_Collection,
+    //     inscriptionFactory: async (requests) => {
+    //       return await Promise.all(
+    //         requests.map(async ({ destinationAddress, index }) => {
+    //           const {
+    //             inscriptionBucket,
+    //             axolotlInscriptionTip,
+    //             fundingDocDao,
+    //             createMempoolBitcoinClient,
+    //           } = context;
+    //           const axolotlModel = await AxolotlModel.create({
+    //             collectionId: collectionId as ID_Collection,
+    //             incrementingRevealDao:
+    //               AxolotlModel.createDefaultIncrementingRevealDao(),
+    //             network: toBitcoinNetworkName(network),
+    //             mempool: new MempoolModel(
+    //               createMempoolBitcoinClient({
+    //                 network: toBitcoinNetworkName(network),
+    //               }),
+    //             ),
+    //             destinationAddress,
+    //             feeLevel,
+    //             feePerByte,
+    //             fundingDocDao,
+    //             inscriptionBucket,
+    //             tip: axolotlInscriptionTip,
+    //             s3Client: context.s3Client,
+    //             claimAddress: claimingAddress,
+    //             claimIndex: index,
+    //           });
 
-              return axolotlModel;
-            }),
-          );
-        },
-      });
-      if (inscriptions.length === 0) {
-        throw new AxolotlError("No available claims", "NO_CLAIM_FOUND");
-      }
-      return inscriptions.map(({ claimable, inscriptionDoc }) => ({
-        chameleon: inscriptionDoc.chameleon,
-        createdAt: new Date().toISOString(),
-        id: inscriptionDoc.id,
-        destinationAddress: claimable.destinationAddress,
-        tokenId: inscriptionDoc.tokenId,
-        inscriptionFunding: inscriptionDoc.inscriptionFunding,
-      }));
-    },
+    //           return axolotlModel;
+    //         }),
+    //       );
+    //     },
+    //   });
+    //   if (inscriptions.length === 0) {
+    //     throw new AxolotlError("No available claims", "NO_CLAIM_FOUND");
+    //   }
+    //   return inscriptions.map(({ claimable, inscriptionDoc }) => ({
+    //     chameleon: inscriptionDoc.chameleon,
+    //     createdAt: new Date().toISOString(),
+    //     id: inscriptionDoc.id,
+    //     destinationAddress: claimable.destinationAddress,
+    //     tokenId: inscriptionDoc.tokenId,
+    //     inscriptionFunding: inscriptionDoc.inscriptionFunding,
+    //   }));
+    // },
     axolotlFundingOpenEditionRequest: async (
       _,
       {
@@ -217,87 +217,91 @@ export const resolvers: AxolotlModule.Resolvers = {
         destinationAddress: destinationAddress as `0x${string}`,
         collectionId: collectionId as ID_Collection,
         async inscriptionFactory(requests) {
-          return await Promise.all(
-            requests.map(async ({ destinationAddress, index }) => {
-              const {
-                inscriptionBucket,
-                axolotlInscriptionTip,
-                fundingDocDao,
-                createMempoolBitcoinClient,
-              } = context;
-              const axolotlModel = await AxolotlModel.create({
-                collectionId: collectionId as ID_Collection,
-                incrementingRevealDao:
-                  AxolotlModel.createDefaultIncrementingRevealDao(),
+          const {
+            inscriptionBucket,
+            axolotlInscriptionTip,
+            fundingDocDao,
+            createMempoolBitcoinClient,
+          } = context;
+          const axolotlModel = await AxolotlModel.create({
+            collectionId: collectionId as ID_Collection,
+            incrementingRevealDao:
+              AxolotlModel.createDefaultIncrementingRevealDao(),
+            network: toBitcoinNetworkName(network),
+            mempool: new MempoolModel(
+              createMempoolBitcoinClient({
                 network: toBitcoinNetworkName(network),
-                mempool: new MempoolModel(
-                  createMempoolBitcoinClient({
-                    network: toBitcoinNetworkName(network),
-                  }),
-                ),
-                destinationAddress,
-                feeLevel,
-                feePerByte,
-                fundingDocDao,
-                inscriptionBucket,
-                tip: axolotlInscriptionTip,
-                s3Client: context.s3Client,
-                claimIndex: index,
-              });
+              }),
+            ),
+            destinationAddress,
+            feeLevel,
+            feePerByte,
+            fundingDocDao,
+            inscriptionBucket,
+            tip: axolotlInscriptionTip,
+            s3Client: context.s3Client,
+            count: requests.length,
+          });
 
-              return axolotlModel;
-            }),
-          );
+          return axolotlModel;
         },
       });
-      if (inscriptions.length === 0) {
+      if (inscriptions.tokenIds.length === 0) {
         throw new AxolotlError("No available claims", "NO_CLAIM_FOUND");
       }
-      return inscriptions.map(({ claimable, inscriptionDoc }) => ({
-        chameleon: inscriptionDoc.chameleon,
-        createdAt: new Date().toISOString(),
-        id: inscriptionDoc.id,
-        destinationAddress: claimable.destinationAddress,
-        tokenId: inscriptionDoc.tokenId,
-        inscriptionFunding: inscriptionDoc.inscriptionFunding,
-      }));
-    },
-    requestFundingAddress: async (
-      _,
-      {
-        request: {
-          destinationAddress,
-          files: inputFiles,
-          feeLevel,
-          feePerByte,
-          network: inputNetwork,
+      return {
+        problems: inscriptions.problems,
+        funding: {
+          destinationAddress: destinationAddress as `0x${string}`,
+          tokenIds: inscriptions.tokenIds,
+          inscriptionFunding: inscriptions.inscriptionFunding,
         },
-      },
-      {
-        fundingDao,
-        fundingDocDao,
-        inscriptionBucket,
-        inscriptionTip,
-        s3Client,
-        createMempoolBitcoinClient,
-      },
-    ) => {
-      const network = toBitcoinNetworkName(inputNetwork);
-      const inscriptions = inputFiles.map(fileToInscription);
-      return createTranscriptionFunding({
-        address: destinationAddress,
-        inscriptions,
-        feeLevel,
-        feePerByte,
-        network,
-        fundingDao,
-        fundingDocDao,
-        inscriptionBucket,
-        createMempoolBitcoinClient,
-        tip: inscriptionTip,
-        s3Client,
-      });
+      };
+      // return inscriptions.map(({ claimable, inscriptionDoc }) => ({
+      //   // chameleon: inscriptionDoc.chameleon,
+      //   // createdAt: new Date().toISOString(),
+      //   // id: inscriptionDoc.id,
+      //   // destinationAddress: claimable.destinationAddress,
+      //   // tokenId: inscriptionDoc.tokenId,
+      //   // inscriptionFunding: inscriptionDoc.inscriptionFunding,
+      // }));
     },
+    // requestFundingAddress: async (
+    //   _,
+    //   {
+    //     request: {
+    //       destinationAddress,
+    //       files: inputFiles,
+    //       feeLevel,
+    //       feePerByte,
+    //       network: inputNetwork,
+    //     },
+    //   },
+    //   {
+    //     fundingDao,
+    //     fundingDocDao,
+    //     inscriptionBucket,
+    //     inscriptionTip,
+    //     s3Client,
+    //     createMempoolBitcoinClient,
+    //   },
+    // ) => {
+    //   const network = toBitcoinNetworkName(inputNetwork);
+    //   const inscriptions = inputFiles.map(fileToInscription);
+    //   return createTranscriptionFunding({
+    //     address: destinationAddress,
+    //     inscriptions,
+    //     feeLevel,
+    //     feePerByte,
+    //     network,
+    //     fundingDao,
+    //     fundingDocDao,
+    //     inscriptionBucket,
+    //     createMempoolBitcoinClient,
+    //     tip: inscriptionTip,
+    //     s3Client,
+    //   });
+    // },
   },
   Query: {
     axolotlAvailableOpenEditionFundingClaims: async (_, params, context) => {
@@ -312,7 +316,7 @@ export const resolvers: AxolotlModule.Resolvers = {
 
       return fundings.map((funding) => ({
         id: funding.id,
-        tokenId: funding.meta.tokenId,
+        tokenIds: funding.meta.tokenIds,
         destinationAddress: funding.address,
         status: toGraphqlFundingStatus(funding.fundingStatus),
         funding: new InscriptionFundingModel({
@@ -324,79 +328,79 @@ export const resolvers: AxolotlModule.Resolvers = {
         network: toGraphqlBitcoinNetworkName(funding.network),
       }));
     },
-    axolotlAvailableClaimedFundingClaims: async (_, params, context) => {
-      const {
-        request: { claimingAddress, collectionId },
-      } = params;
-      const {
-        claimsDao,
-        axolotlAllowanceChainId,
-        axolotlAllowanceContractAddress,
-        s3Client,
-        inscriptionBucket,
-      } = context;
-      const revealDao = AxolotlModel.createDefaultIncrementingRevealDao();
-      const { verified, unverified } = await fetchAllClaimables({
-        address: claimingAddress as `0x${string}`,
-        axolotlAllowanceChainId,
-        axolotlAllowanceContractAddress,
-        claimsDao,
-        collectionId,
-      });
+    // axolotlAvailableClaimedFundingClaims: async (_, params, context) => {
+    //   const {
+    //     request: { claimingAddress, collectionId },
+    //   } = params;
+    //   const {
+    //     claimsDao,
+    //     axolotlAllowanceChainId,
+    //     axolotlAllowanceContractAddress,
+    //     s3Client,
+    //     inscriptionBucket,
+    //   } = context;
+    //   const revealDao = AxolotlModel.createDefaultIncrementingRevealDao();
+    //   const { verified, unverified } = await fetchAllClaimables({
+    //     address: claimingAddress as `0x${string}`,
+    //     axolotlAllowanceChainId,
+    //     axolotlAllowanceContractAddress,
+    //     claimsDao,
+    //     collectionId,
+    //   });
 
-      const fundings = await revealDao.getAllFundingByAddressCollection({
-        address: claimingAddress as `0x${string}`,
-        collectionId: collectionId as ID_Collection,
-      });
+    //   const fundings = await revealDao.getAllFundingByAddressCollection({
+    //     address: claimingAddress as `0x${string}`,
+    //     collectionId: collectionId as ID_Collection,
+    //   });
 
-      // using the claiming address and index, match funding addresses to existing claimables
-      const result: (Omit<AxolotlAvailableClaimedFunding, "funding"> & {
-        funding?: Maybe<ResolversTypes["InscriptionFunding"]>;
-      })[] = [];
-      for (const claimable of verified) {
-        const funding = fundings.find(
-          (funding) =>
-            funding.address === claimable.destinationAddress &&
-            claimable.index === funding.meta.claimIndex &&
-            claimingAddress === funding.meta.claimAddress,
-        );
-        if (funding) {
-          funding.fundingStatus;
-          result.push({
-            tokenId: funding.meta.tokenId,
-            claimingAddress,
-            destinationAddress: funding.address,
-            network: toGraphqlBitcoinNetworkName(funding.network),
-            id: funding.id,
-            status: toGraphqlFundingStatus(funding.fundingStatus),
-            // we can also attach the funding model here
-            funding: new InscriptionFundingModel({
-              id: funding.id,
-              s3Client,
-              bucket: inscriptionBucket,
-              fundingAddress: funding.address,
-            }),
-          });
-        } else {
-          result.push({
-            claimingAddress,
-            destinationAddress: claimable.destinationAddress,
-            id: `${claimable.destinationAddress}-${claimable.index}`,
-            status: "UNCLAIMED",
-          });
-        }
-      }
-      // These are claims that the backend has not processed yet
-      for (const unverifiedClaim of unverified) {
-        result.push({
-          claimingAddress,
-          destinationAddress: unverifiedClaim.destinationAddress,
-          id: `unverified-${unverifiedClaim.destinationAddress}-${unverifiedClaim.index}`,
-          status: "UNVERIFIED",
-        });
-      }
+    //   // using the claiming address and index, match funding addresses to existing claimables
+    //   const result: (Omit<AxolotlAvailableClaimedFunding, "funding"> & {
+    //     funding?: Maybe<ResolversTypes["InscriptionFunding"]>;
+    //   })[] = [];
+    //   for (const claimable of verified) {
+    //     const funding = fundings.find(
+    //       (funding) =>
+    //         funding.address === claimable.destinationAddress &&
+    //         claimable.index === funding.meta.claimIndex &&
+    //         claimingAddress === funding.meta.claimAddress,
+    //     );
+    //     if (funding) {
+    //       funding.fundingStatus;
+    //       result.push({
+    //         tokenId: funding.meta.tokenId,
+    //         claimingAddress,
+    //         destinationAddress: funding.address,
+    //         network: toGraphqlBitcoinNetworkName(funding.network),
+    //         id: funding.id,
+    //         status: toGraphqlFundingStatus(funding.fundingStatus),
+    //         // we can also attach the funding model here
+    //         funding: new InscriptionFundingModel({
+    //           id: funding.id,
+    //           s3Client,
+    //           bucket: inscriptionBucket,
+    //           fundingAddress: funding.address,
+    //         }),
+    //       });
+    //     } else {
+    //       result.push({
+    //         claimingAddress,
+    //         destinationAddress: claimable.destinationAddress,
+    //         id: `${claimable.destinationAddress}-${claimable.index}`,
+    //         status: "UNCLAIMED",
+    //       });
+    //     }
+    //   }
+    //   // These are claims that the backend has not processed yet
+    //   for (const unverifiedClaim of unverified) {
+    //     result.push({
+    //       claimingAddress,
+    //       destinationAddress: unverifiedClaim.destinationAddress,
+    //       id: `unverified-${unverifiedClaim.destinationAddress}-${unverifiedClaim.index}`,
+    //       status: "UNVERIFIED",
+    //     });
+    //   }
 
-      return result;
-    },
+    //   return result;
+    // },
   },
 };

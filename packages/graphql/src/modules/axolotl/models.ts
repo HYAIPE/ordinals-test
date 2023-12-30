@@ -13,23 +13,30 @@ import {
   IFundingDocDao,
   createDynamoDbFundingDao,
   createInscriptionTransaction,
+  createLogger,
 } from "@0xflick/ordinals-backend";
 import handlebars from "handlebars";
 import { minify } from "html-minifier-terser";
 import { MempoolModel } from "../bitcoin/models.js";
 import { estimateFeesWithMempool } from "../bitcoin/fees.js";
-import { FeeLevel, InputMaybe } from "../../generated-types/graphql.js";
+import {
+  AxolotlProblem,
+  FeeLevel,
+  InputMaybe,
+} from "../../generated-types/graphql.js";
 import { bitcoinToSats } from "@0xflick/inscriptions";
 import { AxolotlError } from "./errors.js";
 
 const { compile } = handlebars;
 
+const logger = createLogger({ name: "graphql/axolotl/models" });
+
 export interface IAxolotlMeta {
-  tokenId: number;
-  chameleon: boolean;
+  tokenIds: number[];
   revealedAt: number;
-  claimIndex?: number;
-  claimAddress?: string;
+  // claimIndex?: number;
+  // claimAddress?: string;
+  claimedCount: number;
 }
 
 export interface IAxolotlCollectionConfigNetwork {
@@ -60,38 +67,41 @@ export class AxolotlModel implements IAxolotlMeta {
   public readonly inscriptionTransaction: InscriptionTransactionModel;
   public readonly inscriptionDocument: TInscriptionDoc;
   public readonly addressInscription: AddressInscriptionModel<IAxolotlMeta>;
-
+  public readonly problems?: AxolotlProblem[];
   constructor({
     inscriptionDocument,
     inscriptionFunding,
     inscriptionTransaction,
     addressInscription,
+    problems,
   }: {
     inscriptionFunding: InscriptionFundingModel;
     inscriptionTransaction: InscriptionTransactionModel;
     inscriptionDocument: TInscriptionDoc;
     addressInscription: AddressInscriptionModel<IAxolotlMeta>;
+    problems?: AxolotlProblem[];
   }) {
     this.inscriptionFunding = inscriptionFunding;
     this.inscriptionTransaction = inscriptionTransaction;
     this.inscriptionDocument = inscriptionDocument;
     this.addressInscription = addressInscription;
+    this.problems = problems;
   }
 
   public get id() {
     return this.addressInscription.id;
   }
 
-  public get tokenId() {
-    return this.addressInscription.meta.tokenId;
-  }
-
-  public get chameleon() {
-    return this.addressInscription.meta.chameleon;
+  public get tokenIds() {
+    return this.addressInscription.meta.tokenIds;
   }
 
   public get revealedAt() {
     return this.addressInscription.meta.revealedAt;
+  }
+
+  public get claimedCount() {
+    return this.addressInscription.meta.claimedCount;
   }
 
   public static htmlTemplate() {
@@ -176,9 +186,8 @@ export class AxolotlModel implements IAxolotlMeta {
     inscriptionBucket,
     feeLevel,
     tip,
-    claimAddress,
-    claimIndex,
     s3Client,
+    count,
   }: {
     collectionId: ID_Collection;
     incrementingRevealDao: TAxolotlFundingDao;
@@ -190,9 +199,8 @@ export class AxolotlModel implements IAxolotlMeta {
     feeLevel?: InputMaybe<FeeLevel>;
     inscriptionBucket: string;
     tip: number;
-    claimAddress?: string;
-    claimIndex?: number;
     s3Client: S3Client;
+    count: number;
   }) {
     const collection = await incrementingRevealDao.getCollection(collectionId);
 
@@ -222,23 +230,50 @@ export class AxolotlModel implements IAxolotlMeta {
     const tipHeight = await mempool.tipHeight();
     const revealedAt = tipHeight + revealBlockDelta;
 
-    const tokenId = await incrementingRevealDao.incrementCollectionTotalCount(
-      collectionId,
-    );
-    const htmlContent = await AxolotlModel.promiseMinifiedHtml({
-      genesis: false,
-      scriptUrl,
-      tokenId,
-      revealedAt,
-    });
-    const inscriptionContent: InscriptionContent = {
-      content: Buffer.from(htmlContent, "utf8"),
-      mimeType: "text/html",
-      metadata: {
-        tokenId,
-        revealedAt,
-      },
-    };
+    const problems: AxolotlProblem[] = [];
+
+    const inscriptionContents: InscriptionContent[] = [];
+    const tokenIds: number[] = [];
+    for (let i = 0; i < count; i++) {
+      try {
+        const tokenId =
+          await incrementingRevealDao.incrementCollectionTotalCount(
+            collectionId,
+          );
+        tokenIds.push(tokenId);
+        const htmlContent = await AxolotlModel.promiseMinifiedHtml({
+          genesis: false,
+          scriptUrl,
+          tokenId,
+          revealedAt,
+        });
+        const inscriptionContent: InscriptionContent = {
+          content: Buffer.from(htmlContent, "utf8"),
+          mimeType: "text/html",
+          compress: true,
+          metadata: {
+            tokenId,
+            revealedAt,
+          },
+        };
+        inscriptionContents.push(inscriptionContent);
+      } catch (e) {
+        logger.error(e, "Failed to create inscription content");
+        // We go ahead and continue, since this probably happened because we hit the max supply
+        problems.push({
+          code: "UNABLE_TO_CLAIM",
+          message: "Unable to claim",
+        });
+      }
+    }
+
+    if (inscriptionContents.length === 0) {
+      throw new AxolotlError(
+        `No inscriptions created`,
+        "UNABLE_TO_CLAIM_ANY_MORE",
+      );
+    }
+
     const finalFee = await estimateFeesWithMempool({
       mempoolBitcoinClient: mempool,
       feePerByte,
@@ -262,7 +297,7 @@ export class AxolotlModel implements IAxolotlMeta {
       feeRate: finalFee,
       network,
       tip,
-      inscriptions: [inscriptionContent],
+      inscriptions: inscriptionContents,
     });
 
     const addressModel = new AddressInscriptionModel<IAxolotlMeta>({
@@ -276,13 +311,12 @@ export class AxolotlModel implements IAxolotlMeta {
       fundingAmountBtc,
       fundingAmountSat: Number(bitcoinToSats(fundingAmountBtc)),
       meta: {
-        chameleon: false,
+        tokenIds,
+        claimedCount: count,
         revealedAt,
-        tokenId,
-        claimAddress,
-        claimIndex,
       },
     });
+
     const doc: TInscriptionDoc = {
       id: addressModel.id,
       fundingAddress,
@@ -331,6 +365,7 @@ export class AxolotlModel implements IAxolotlMeta {
       inscriptionFunding: inscriptionFundingModel,
       inscriptionTransaction: inscriptionTransactionModel,
       addressInscription: addressModel,
+      problems,
     });
   }
 }
