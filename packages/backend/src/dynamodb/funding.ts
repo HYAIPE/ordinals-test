@@ -40,6 +40,8 @@ export type TFundingDb<T extends Record<string, any>> = {
   fundingAmountBtc: string;
   fundingAmountSat: number;
   destinationAddress: string;
+  tipAmountSat?: number;
+  tipAmountDestination?: string;
 } & T;
 
 export type TFundingCollectionDb<T extends Record<string, any>> = {
@@ -71,8 +73,8 @@ export class FundingDao<
   }
 
   public async getAllFundingByAddressCollection(opts: {
-    collectionId: ID_Collection;
-    address: string;
+    collectionId?: ID_Collection;
+    address?: string;
   }): Promise<IAddressInscriptionModel<ItemMeta>[]> {
     const results: IAddressInscriptionModel<ItemMeta>[] = [];
     for await (const item of this.listAllFundingByAddressCollection(opts)) {
@@ -83,8 +85,8 @@ export class FundingDao<
 
   public listAllFundingByAddressCollection(
     opts: {
-      collectionId: ID_Collection;
-      address: string;
+      collectionId?: ID_Collection;
+      address?: string;
     } & IPaginationOptions,
   ): AsyncGenerator<IAddressInscriptionModel<ItemMeta>, any, unknown> {
     return paginate((options) =>
@@ -101,21 +103,32 @@ export class FundingDao<
     cursor,
     limit,
   }: {
-    collectionId: ID_Collection;
-    address: string;
+    collectionId?: ID_Collection;
+    address?: string;
   } & IPaginationOptions): Promise<
     IPaginatedResult<IAddressInscriptionModel<ItemMeta>>
   > {
     const pagination = decodeCursor(cursor);
+    const keyConditionExpression =
+      collectionId && address
+        ? "destinationAddress = :address AND collectionId = :collectionId"
+        : collectionId
+        ? "collectionId = :collectionId"
+        : address
+        ? "destinationAddress = :address"
+        : undefined;
     const result = await this.client.send(
-      new QueryCommand({
+      new ScanCommand({
         TableName: FundingDao.TABLE_NAME,
         IndexName: "destination-address-collection-index",
-        KeyConditionExpression:
-          "destinationAddress = :address AND collectionId = :collectionId",
+        FilterExpression: keyConditionExpression,
         ExpressionAttributeValues: {
-          ":address": address,
-          ":collectionId": toCollectionId(collectionId),
+          ...(address && {
+            ":address": address,
+          }),
+          ...(collectionId && {
+            ":collectionId": toCollectionId(collectionId),
+          }),
         },
         ...(pagination && { ExclusiveStartKey: pagination.lastEvaluatedKey }),
         ...(limit && { Limit: limit }),
@@ -611,6 +624,8 @@ export class FundingDao<
     timesChecked,
     fundingAmountBtc,
     fundingAmountSat,
+    tipAmountDestination,
+    tipAmountSat,
   }: IAddressInscriptionModel<T>): TFundingDb<T> {
     return {
       pk: id,
@@ -627,6 +642,10 @@ export class FundingDao<
       destinationAddress,
       ...(typeof lastChecked !== "undefined" && {
         lastChecked: lastChecked.getTime(),
+      }),
+      ...(typeof tipAmountSat !== "undefined" && { tipAmountSat }),
+      ...(typeof tipAmountDestination !== "undefined" && {
+        tipAmountDestination,
       }),
       ...(typeof fundingTxid !== "undefined" && { fundingTxid }),
       ...(typeof fundingVout !== "undefined" && { fundingVout }),
@@ -702,6 +721,8 @@ export class FundingDao<
     lastChecked,
     fundingAmountBtc,
     fundingAmountSat,
+    tipAmountDestination,
+    tipAmountSat,
     ...meta
   }: TFundingDb<T>): IAddressInscriptionModel<T> {
     return {
@@ -724,6 +745,10 @@ export class FundingDao<
       ...(typeof collectionId !== "undefined"
         ? { collectionId: toCollectionId(collectionId) }
         : {}),
+      ...(typeof tipAmountSat !== "undefined" && { tipAmountSat }),
+      ...(typeof tipAmountDestination !== "undefined" && {
+        tipAmountDestination,
+      }),
       meta: excludePrimaryKeys(meta) as T,
     };
   }

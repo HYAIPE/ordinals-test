@@ -21,7 +21,7 @@ export const MintRoute: FC<{
   return (
     <DefaultProvider>
       <SwitchableNetwork
-        title="mint"
+        title="bitflick"
         initialBitcoinNetwork={initialBitcoinNetwork}
         initialBitcoinPurpose={initialBitcoinPurpose}
         ethereumAutoConnect={false}

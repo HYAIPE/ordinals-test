@@ -12,7 +12,6 @@ import { useXverse } from "@/features/xverse";
 export const PaymentModal: FC<{
   open: boolean;
   handleClose: () => void;
-  handleConfirm: () => void;
   qrSrc?: string;
   paymentAddress?: string;
   paymentAmount?: string;
@@ -20,7 +19,6 @@ export const PaymentModal: FC<{
 }> = ({
   open,
   handleClose,
-  handleConfirm,
   qrSrc,
   paymentAddress,
   paymentAmount,
@@ -88,7 +86,6 @@ export const PaymentModal: FC<{
           </Typography>
         </CardContent>
         <CardActionArea
-          onClick={handleConfirm}
           sx={{
             textAlign: "center",
             py: 2,

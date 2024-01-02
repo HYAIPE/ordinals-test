@@ -14,6 +14,13 @@ export const axolotlInscriptionTip = lazySingleton(() => {
   return Number.isInteger(envNum) ? envNum : 0;
 });
 
+export const axolotlInscriptionTipDestination = lazySingleton(() => {
+  if (!process.env.AXOLOTL_INSCRIPTION_TIP_DESTINATION) {
+    throw new Error("AXOLOTL_INSCRIPTION_TIP_DESTINATION not set");
+  }
+  return process.env.AXOLOTL_INSCRIPTION_TIP_DESTINATION;
+});
+
 export const axolotlAllowanceContractAddress = lazySingleton(() => {
   if (!process.env.AXOLOTL_ALLOWANCE_CONTRACT_ADDRESS) {
     throw new Error("AXOLOTL_ALLOWANCE_CONTRACT_ADDRESS not set");
@@ -90,6 +97,7 @@ export interface IConfigContext {
   inscriptionBucket: string;
   inscriptionTip: number;
   axolotlInscriptionTip: number;
+  axolotlInscriptionTipDestination: string;
   axolotlAllowanceContractAddress: `0x${string}`;
   axolotlAllowanceChainId: number;
   bitcoinRegtestMempoolEndpoint: string;
@@ -120,6 +128,9 @@ export function createConfigContext(): IConfigContext {
     },
     get axolotlAllowanceChainId() {
       return axolotlAllowanceChainId.get();
+    },
+    get axolotlInscriptionTipDestination() {
+      return axolotlInscriptionTipDestination.get();
     },
     get axolotlAllowanceContractAddress() {
       return axolotlAllowanceContractAddress.get();

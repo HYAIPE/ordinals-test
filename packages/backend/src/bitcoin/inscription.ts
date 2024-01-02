@@ -45,14 +45,15 @@ export async function createInscriptionTransaction({
     privKey,
     feeRate,
     tip,
+    padding: 546,
   });
 
   return {
     id: toAddressInscriptionId(
       hashInscriptions(
         fundingAddress,
-        inscriptionsToWrite.map((i) => i.tapkey)
-      )
+        inscriptionsToWrite.map((i) => i.tapkey),
+      ),
     ),
     files,
     fundingAddress,

@@ -1,5 +1,5 @@
 import { MintRoute } from "@/routes/Mint";
-import { AddressPurpose } from "sats-connect";
+import { AddressPurpose, BitcoinNetworkType } from "sats-connect";
 
 export default function Page({
   params: { collectionId, destinationAddress },
@@ -8,7 +8,7 @@ export default function Page({
 }) {
   return (
     <MintRoute
-      initialBitcoinNetwork="Testnet"
+      initialBitcoinNetwork={BitcoinNetworkType.Testnet}
       initialBitcoinPurpose={AddressPurpose.Payment}
       collectionId={collectionId}
       destinationAddress={destinationAddress}

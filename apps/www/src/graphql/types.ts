@@ -43,12 +43,12 @@ export type AxolotlAvailableOpenEditionFunding = {
   id: Scalars['ID']['output'];
   network?: Maybe<BitcoinNetwork>;
   status: FundingStatus;
-  tokenId: Scalars['Int']['output'];
+  tokenIds: Array<Scalars['Int']['output']>;
 };
 
 export type AxolotlAvailableOpenEditionRequest = {
   collectionId: Scalars['ID']['input'];
-  destinationAddress: Scalars['String']['input'];
+  destinationAddress?: InputMaybe<Scalars['String']['input']>;
 };
 
 export type AxolotlClaimRequest = {
@@ -59,14 +59,23 @@ export type AxolotlClaimRequest = {
   network: BitcoinNetwork;
 };
 
+export type AxolotlFeeEstimate = {
+  __typename?: 'AxolotlFeeEstimate';
+  feePerByte: Scalars['Int']['output'];
+  tipPerTokenBtc: Scalars['String']['output'];
+  tipPerTokenSats: Scalars['Int']['output'];
+  totalFeeBtc: Scalars['String']['output'];
+  totalFeeSats: Scalars['Int']['output'];
+  totalInscriptionBtc: Scalars['String']['output'];
+  totalInscriptionSats: Scalars['Int']['output'];
+};
+
 export type AxolotlFunding = {
   __typename?: 'AxolotlFunding';
-  chameleon: Scalars['Boolean']['output'];
-  createdAt: Scalars['String']['output'];
   destinationAddress: Scalars['String']['output'];
   id: Scalars['ID']['output'];
   inscriptionFunding?: Maybe<InscriptionFunding>;
-  tokenId: Scalars['Int']['output'];
+  tokenIds: Array<Scalars['Int']['output']>;
 };
 
 export type AxolotlFundingPage = {
@@ -84,6 +93,18 @@ export type AxolotlOpenEditionRequest = {
   feeLevel?: InputMaybe<FeeLevel>;
   feePerByte?: InputMaybe<Scalars['Int']['input']>;
   network: BitcoinNetwork;
+};
+
+export type AxolotlOpenEditionResponse = {
+  __typename?: 'AxolotlOpenEditionResponse';
+  data?: Maybe<AxolotlFunding>;
+  problems?: Maybe<Array<AxolotlProblem>>;
+};
+
+export type AxolotlProblem = {
+  __typename?: 'AxolotlProblem';
+  code: Scalars['String']['output'];
+  message: Scalars['String']['output'];
 };
 
 export enum BitcoinNetwork {
@@ -135,9 +156,7 @@ export enum FundingStatus {
   Funded = 'FUNDED',
   Funding = 'FUNDING',
   Genesis = 'GENESIS',
-  Reveal = 'REVEAL',
-  Unclaimed = 'UNCLAIMED',
-  Unverified = 'UNVERIFIED'
+  Revealed = 'REVEALED'
 }
 
 export type InscriptionData = {
@@ -164,7 +183,7 @@ export type InscriptionFunding = {
   network: BitcoinNetwork;
   qrSrc: Scalars['String']['output'];
   qrValue: Scalars['String']['output'];
-  s3Object: S3Object;
+  status: FundingStatus;
 };
 
 
@@ -189,7 +208,6 @@ export type InscriptionTransaction = {
   inscriptions: Array<InscriptionTransactionContent>;
   overhead: Scalars['Int']['output'];
   padding: Scalars['Int']['output'];
-  privateKey: Scalars['String']['output'];
 };
 
 export type InscriptionTransactionContent = {
@@ -215,25 +233,18 @@ export type KeyValueInput = {
 
 export type Mutation = {
   __typename?: 'Mutation';
-  axolotlFundingClaimRequest: Array<AxolotlFunding>;
-  axolotlFundingOpenEditionRequest: Array<AxolotlFunding>;
+  axolotlFundingOpenEditionRequest: AxolotlOpenEditionResponse;
   collection: Collection;
   createCollection: Collection;
   createRole: Role;
   deleteCollection: Scalars['Boolean']['output'];
   nonceBitcoin: Nonce;
   nonceEthereum: Nonce;
-  requestFundingAddress: InscriptionFunding;
   role: Role;
   signOutBitcoin: Scalars['Boolean']['output'];
   signOutEthereum: Scalars['Boolean']['output'];
   siwb: Web3LoginUser;
   siwe: Web3LoginUser;
-};
-
-
-export type MutationAxolotlFundingClaimRequestArgs = {
-  request: AxolotlClaimRequest;
 };
 
 
@@ -271,11 +282,6 @@ export type MutationNonceBitcoinArgs = {
 export type MutationNonceEthereumArgs = {
   address: Scalars['ID']['input'];
   chainId: Scalars['Int']['input'];
-};
-
-
-export type MutationRequestFundingAddressArgs = {
-  request: InscriptionRequest;
 };
 
 
@@ -344,10 +350,11 @@ export enum PermissionResource {
 export type Query = {
   __typename?: 'Query';
   appInfo: AppInfo;
-  axolotlAvailableClaimedFundingClaims: Array<AxolotlAvailableClaimedFunding>;
   axolotlAvailableOpenEditionFundingClaims: Array<AxolotlAvailableOpenEditionFunding>;
+  axolotlEstimateFee: AxolotlFeeEstimate;
   collection: Collection;
   collections: Array<Collection>;
+  currentBitcoinFees: Scalars['Int']['output'];
   inscriptionFunding?: Maybe<InscriptionFunding>;
   inscriptionTransaction?: Maybe<InscriptionTransaction>;
   role?: Maybe<Role>;
@@ -357,18 +364,28 @@ export type Query = {
 };
 
 
-export type QueryAxolotlAvailableClaimedFundingClaimsArgs = {
-  request: AxolotlAvailableClaimedRequest;
-};
-
-
 export type QueryAxolotlAvailableOpenEditionFundingClaimsArgs = {
   request: AxolotlAvailableOpenEditionRequest;
 };
 
 
+export type QueryAxolotlEstimateFeeArgs = {
+  count?: InputMaybe<Scalars['Int']['input']>;
+  feeLevel?: InputMaybe<FeeLevel>;
+  feePerByte?: InputMaybe<Scalars['Int']['input']>;
+  network: BitcoinNetwork;
+};
+
+
 export type QueryCollectionArgs = {
   id: Scalars['ID']['input'];
+};
+
+
+export type QueryCurrentBitcoinFeesArgs = {
+  feePerByte?: InputMaybe<Scalars['Int']['input']>;
+  network: BitcoinNetwork;
+  speed?: InputMaybe<FeeLevel>;
 };
 
 
@@ -422,12 +439,6 @@ export type RoleRemovePermissionsArgs = {
 
 export type RoleUnbindFromUserArgs = {
   userAddress: Scalars['String']['input'];
-};
-
-export type S3Object = {
-  __typename?: 'S3Object';
-  bucket: Scalars['String']['output'];
-  key: Scalars['String']['output'];
 };
 
 export type Web3LoginUser = {

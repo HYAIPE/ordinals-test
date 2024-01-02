@@ -2,6 +2,7 @@ import { bitcoinToSats } from "@0xflick/inscriptions";
 import { InscriptionTransactionModel } from "../inscriptionTransaction/models.js";
 import { InscriptionFundingModule } from "./generated-types/module-types.js";
 import { getFundingModel } from "./controllers.js";
+import { toGraphqlFundingStatus } from "../axolotl/transforms.js";
 
 export const resolvers: InscriptionFundingModule.Resolvers = {
   Query: {
@@ -41,6 +42,10 @@ export const resolvers: InscriptionFundingModule.Resolvers = {
     },
     qrSrc: async (p) => {
       return (await p.getQrSrc({})).src;
+    },
+    status: async (p, _, { fundingDao }) => {
+      const funding = await fundingDao.getFunding(p.id);
+      return toGraphqlFundingStatus(funding.fundingStatus);
     },
   },
 };

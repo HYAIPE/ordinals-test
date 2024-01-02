@@ -1,0 +1,7 @@
+query FetchFundingStatus($id: ID!) {
+  inscriptionFunding(id: $id) {
+    id
+    network
+    status
+  }
+}

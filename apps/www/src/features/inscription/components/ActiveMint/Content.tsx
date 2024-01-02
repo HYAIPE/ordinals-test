@@ -7,7 +7,7 @@ import ListItemAvatar from "@mui/material/ListItemAvatar";
 import IconButton from "@mui/material/IconButton";
 import FileUploadIcon from "@mui/icons-material/FileUpload";
 import { ListAvailableFundingsQueryData } from "./types";
-import { AvatarUnrevealed } from "./AvatarUnrevealed";
+import { AvatarUnrevealed } from "../AvatarUnrevealed";
 import { PaymentModal } from "../PaymentModal";
 
 export const Content: FC<{

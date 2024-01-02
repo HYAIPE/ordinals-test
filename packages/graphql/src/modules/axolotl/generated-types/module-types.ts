@@ -5,16 +5,13 @@ export namespace AxolotlModule {
   interface DefinedFields {
     AxolotlFunding: 'id' | 'inscriptionFunding' | 'tokenIds' | 'destinationAddress';
     AxolotlProblem: 'code' | 'message';
-    AxolotlOpenEditionResponse: 'problems' | 'funding';
+    AxolotlOpenEditionResponse: 'problems' | 'data';
     AxolotlFundingPage: 'items' | 'totalCount' | 'page' | 'cursor';
     AxolotlAvailableClaimedFunding: 'id' | 'destinationAddress' | 'claimingAddress' | 'status' | 'network' | 'funding' | 'tokenId';
     AxolotlAvailableOpenEditionFunding: 'id' | 'destinationAddress' | 'status' | 'network' | 'funding' | 'tokenIds';
+    AxolotlFeeEstimate: 'tipPerTokenSats' | 'tipPerTokenBtc' | 'totalInscriptionSats' | 'totalInscriptionBtc' | 'totalFeeSats' | 'totalFeeBtc' | 'feePerByte';
     Mutation: 'axolotlFundingOpenEditionRequest';
-    Query: 'axolotlAvailableOpenEditionFundingClaims';
-  };
-  
-  interface DefinedEnumValues {
-    FundingStatus: 'UNVERIFIED' | 'UNCLAIMED' | 'FUNDING' | 'FUNDED' | 'GENESIS' | 'REVEAL';
+    Query: 'axolotlAvailableOpenEditionFundingClaims' | 'axolotlEstimateFee';
   };
   
   interface DefinedInputFields {
@@ -35,9 +32,10 @@ export namespace AxolotlModule {
   export type AxolotlFundingPage = Pick<Types.AxolotlFundingPage, DefinedFields['AxolotlFundingPage']>;
   export type AxolotlAvailableClaimedRequest = Pick<Types.AxolotlAvailableClaimedRequest, DefinedInputFields['AxolotlAvailableClaimedRequest']>;
   export type AxolotlAvailableOpenEditionRequest = Pick<Types.AxolotlAvailableOpenEditionRequest, DefinedInputFields['AxolotlAvailableOpenEditionRequest']>;
-  export type FundingStatus = DefinedEnumValues['FundingStatus'];
   export type AxolotlAvailableClaimedFunding = Pick<Types.AxolotlAvailableClaimedFunding, DefinedFields['AxolotlAvailableClaimedFunding']>;
+  export type FundingStatus = Types.FundingStatus;
   export type AxolotlAvailableOpenEditionFunding = Pick<Types.AxolotlAvailableOpenEditionFunding, DefinedFields['AxolotlAvailableOpenEditionFunding']>;
+  export type AxolotlFeeEstimate = Pick<Types.AxolotlFeeEstimate, DefinedFields['AxolotlFeeEstimate']>;
   export type Mutation = Pick<Types.Mutation, DefinedFields['Mutation']>;
   export type Query = Pick<Types.Query, DefinedFields['Query']>;
   
@@ -47,6 +45,7 @@ export namespace AxolotlModule {
   export type AxolotlFundingPageResolvers = Pick<Types.AxolotlFundingPageResolvers, DefinedFields['AxolotlFundingPage'] | '__isTypeOf'>;
   export type AxolotlAvailableClaimedFundingResolvers = Pick<Types.AxolotlAvailableClaimedFundingResolvers, DefinedFields['AxolotlAvailableClaimedFunding'] | '__isTypeOf'>;
   export type AxolotlAvailableOpenEditionFundingResolvers = Pick<Types.AxolotlAvailableOpenEditionFundingResolvers, DefinedFields['AxolotlAvailableOpenEditionFunding'] | '__isTypeOf'>;
+  export type AxolotlFeeEstimateResolvers = Pick<Types.AxolotlFeeEstimateResolvers, DefinedFields['AxolotlFeeEstimate'] | '__isTypeOf'>;
   export type MutationResolvers = Pick<Types.MutationResolvers, DefinedFields['Mutation']>;
   export type QueryResolvers = Pick<Types.QueryResolvers, DefinedFields['Query']>;
   
@@ -57,6 +56,7 @@ export namespace AxolotlModule {
     AxolotlFundingPage?: AxolotlFundingPageResolvers;
     AxolotlAvailableClaimedFunding?: AxolotlAvailableClaimedFundingResolvers;
     AxolotlAvailableOpenEditionFunding?: AxolotlAvailableOpenEditionFundingResolvers;
+    AxolotlFeeEstimate?: AxolotlFeeEstimateResolvers;
     Mutation?: MutationResolvers;
     Query?: QueryResolvers;
   };
@@ -80,7 +80,7 @@ export namespace AxolotlModule {
     AxolotlOpenEditionResponse?: {
       '*'?: gm.Middleware[];
       problems?: gm.Middleware[];
-      funding?: gm.Middleware[];
+      data?: gm.Middleware[];
     };
     AxolotlFundingPage?: {
       '*'?: gm.Middleware[];
@@ -108,6 +108,16 @@ export namespace AxolotlModule {
       funding?: gm.Middleware[];
       tokenIds?: gm.Middleware[];
     };
+    AxolotlFeeEstimate?: {
+      '*'?: gm.Middleware[];
+      tipPerTokenSats?: gm.Middleware[];
+      tipPerTokenBtc?: gm.Middleware[];
+      totalInscriptionSats?: gm.Middleware[];
+      totalInscriptionBtc?: gm.Middleware[];
+      totalFeeSats?: gm.Middleware[];
+      totalFeeBtc?: gm.Middleware[];
+      feePerByte?: gm.Middleware[];
+    };
     Mutation?: {
       '*'?: gm.Middleware[];
       axolotlFundingOpenEditionRequest?: gm.Middleware[];
@@ -115,6 +125,7 @@ export namespace AxolotlModule {
     Query?: {
       '*'?: gm.Middleware[];
       axolotlAvailableOpenEditionFundingClaims?: gm.Middleware[];
+      axolotlEstimateFee?: gm.Middleware[];
     };
   };
 }

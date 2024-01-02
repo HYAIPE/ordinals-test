@@ -7,7 +7,7 @@ export function toAddressInscriptionId(id: string): ID_AddressInscription {
   return id as ID_AddressInscription;
 }
 
-export type TFundingStatus = "funding" | "funded" | "genesis" | "reveal";
+export type TFundingStatus = "funding" | "funded" | "genesis" | "revealed";
 
 export interface IAddressInscriptionModel<T = Record<string, any>> {
   address: string;
@@ -25,6 +25,8 @@ export interface IAddressInscriptionModel<T = Record<string, any>> {
   fundingAmountBtc: string;
   fundingAmountSat: number;
   destinationAddress: string;
+  tipAmountSat?: number;
+  tipAmountDestination?: string;
   meta: T;
 }
 
@@ -58,6 +60,8 @@ export class AddressInscriptionModel<T extends Record<string, any> = {}>
   public timesChecked: number;
   public fundingAmountBtc: string;
   public fundingAmountSat: number;
+  public tipAmountSat?: number;
+  public tipAmountDestination?: string;
   public meta: T;
 
   constructor(item: Omit<IAddressInscriptionModel<T>, "id"> & { id?: string }) {
@@ -78,6 +82,8 @@ export class AddressInscriptionModel<T extends Record<string, any> = {}>
     this.timesChecked = item.timesChecked;
     this.fundingAmountBtc = item.fundingAmountBtc;
     this.fundingAmountSat = item.fundingAmountSat;
+    this.tipAmountSat = item.tipAmountSat;
+    this.tipAmountDestination = item.tipAmountDestination;
     this.meta = item.meta;
   }
 

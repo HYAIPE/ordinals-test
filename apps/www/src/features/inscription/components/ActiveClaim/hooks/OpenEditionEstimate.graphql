@@ -1,0 +1,21 @@
+query OpenEditionEstimate(
+  $network: BitcoinNetwork!
+  $feeLevel: FeeLevel
+  $feePerByte: Int
+  $count: Int!
+) {
+  axolotlEstimateFee(
+    network: $network
+    feeLevel: $feeLevel
+    feePerByte: $feePerByte
+    count: $count
+  ) {
+    tipPerTokenSats
+    tipPerTokenBtc
+    totalInscriptionSats
+    totalInscriptionBtc
+    totalFeeSats
+    totalFeeBtc
+    feePerByte
+  }
+}

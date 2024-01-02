@@ -1,0 +1,7 @@
+type Query {
+  currentBitcoinFees(
+    network: BitcoinNetwork!
+    speed: FeeLevel
+    feePerByte: Int
+  ): Int!
+}

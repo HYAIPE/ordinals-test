@@ -3,7 +3,7 @@ query ListAvailableFundings(
 ) {
   axolotlAvailableOpenEditionFundingClaims(request: $openEditionRequest) {
     id
-    tokenId
+    tokenIds
     destinationAddress
     status
     funding {

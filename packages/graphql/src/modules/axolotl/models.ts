@@ -24,7 +24,7 @@ import {
   FeeLevel,
   InputMaybe,
 } from "../../generated-types/graphql.js";
-import { bitcoinToSats } from "@0xflick/inscriptions";
+import { bitcoinToSats, satsToBitcoin } from "@0xflick/inscriptions";
 import { AxolotlError } from "./errors.js";
 
 const { compile } = handlebars;
@@ -175,6 +175,65 @@ export class AxolotlModel implements IAxolotlMeta {
     return dao;
   }
 
+  public static async estimateFees({
+    mempool,
+    feePerByte,
+    feeLevel,
+    count,
+    tipPerToken,
+  }: {
+    count: number;
+    network: BitcoinNetworkNames;
+    feePerByte?: InputMaybe<number>;
+    feeLevel?: InputMaybe<FeeLevel>;
+    mempool: MempoolModel;
+    tipPerToken: number;
+  }) {
+    const feeRate = await estimateFeesWithMempool({
+      mempoolBitcoinClient: mempool,
+      feePerByte,
+      feeLevel,
+    });
+    const inscriptionContents: InscriptionContent[] = [];
+    const htmlContent = await AxolotlModel.promiseMinifiedHtml({
+      genesis: false,
+      scriptUrl:
+        "/content/349873249857324985723948572394875324985732948573249857",
+      tokenId: 100,
+      revealedAt: 1111111,
+    });
+    const inscriptionContent: InscriptionContent = {
+      content: Buffer.from(htmlContent, "utf8"),
+      mimeType: "text/html",
+      compress: true,
+      metadata: {
+        tokenId: 100,
+        revealedAt: 1111111,
+      },
+    };
+    for (let i = 0; i < count; i++) {
+      inscriptionContents.push(inscriptionContent);
+    }
+
+    const { fundingAmountBtc, totalFee } = await createInscriptionTransaction({
+      address: "tb1pm0r7x8q0rl8tmz8mcv0ezxsv7en3qk7a0ksvj2mf5r8rw2aaflmqr78439",
+      feeRate,
+      network: "testnet",
+      tip: tipPerToken * count,
+      inscriptions: inscriptionContents,
+    });
+    const totalInscriptionSats = Number(bitcoinToSats(fundingAmountBtc));
+    return {
+      tipPerTokenSats: tipPerToken,
+      tipPerTokenBtc: satsToBitcoin(BigInt(tipPerToken)),
+      totalInscriptionSats,
+      totalInscriptionBtc: fundingAmountBtc,
+      totalFeeSats: totalFee,
+      totalFeeBtc: satsToBitcoin(BigInt(totalFee)),
+      feePerByte: feeRate,
+    };
+  }
+
   public static async create({
     collectionId,
     incrementingRevealDao,
@@ -186,6 +245,7 @@ export class AxolotlModel implements IAxolotlMeta {
     inscriptionBucket,
     feeLevel,
     tip,
+    tipDestination,
     s3Client,
     count,
   }: {
@@ -199,6 +259,7 @@ export class AxolotlModel implements IAxolotlMeta {
     feeLevel?: InputMaybe<FeeLevel>;
     inscriptionBucket: string;
     tip: number;
+    tipDestination: string;
     s3Client: S3Client;
     count: number;
   }) {
@@ -296,7 +357,7 @@ export class AxolotlModel implements IAxolotlMeta {
       address: destinationAddress,
       feeRate: finalFee,
       network,
-      tip,
+      tip: tip * inscriptionContents.length,
       inscriptions: inscriptionContents,
     });
 
@@ -310,6 +371,8 @@ export class AxolotlModel implements IAxolotlMeta {
       timesChecked: 0,
       fundingAmountBtc,
       fundingAmountSat: Number(bitcoinToSats(fundingAmountBtc)),
+      tipAmountSat: tip * inscriptionContents.length,
+      tipAmountDestination: tipDestination,
       meta: {
         tokenIds,
         claimedCount: count,

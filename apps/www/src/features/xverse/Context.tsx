@@ -72,7 +72,7 @@ function useXverseContext(opts: {
       : state.paymentAddress;
 
   const connect = useCallback(
-    async (opts: Omit<GetAddressPayload, "network" | "purposes">) => {
+    (opts: Omit<GetAddressPayload, "network" | "purposes">) => {
       actions.connectInit();
       try {
         const getAddressPayload: GetAddressPayload = {
@@ -82,34 +82,43 @@ function useXverseContext(opts: {
           purposes: [AddressPurpose.Ordinals, AddressPurpose.Payment],
           ...opts,
         };
-        console.log("getAddressPayload", getAddressPayload);
-        await getAddress({
-          payload: getAddressPayload,
-          onFinish(response) {
-            let paymentAddress = "";
-            let paymentPublicKey = "";
-            let ordinalsAddress = "";
-            let ordinalsPublicKey = "";
-            for (const address of response.addresses) {
-              if (address.purpose === "payment") {
-                paymentAddress = address.address;
-                paymentPublicKey = address.publicKey;
-              } else if (address.purpose === "ordinals") {
-                ordinalsAddress = address.address;
-                ordinalsPublicKey = address.publicKey;
+        return new Promise<{
+          paymentAddress: string;
+          paymentPublicKey: string;
+          ordinalsAddress: string;
+          ordinalsPublicKey: string;
+        }>((resolve, reject) =>
+          getAddress({
+            payload: getAddressPayload,
+            onFinish(response) {
+              let paymentAddress = "";
+              let paymentPublicKey = "";
+              let ordinalsAddress = "";
+              let ordinalsPublicKey = "";
+              for (const address of response.addresses) {
+                if (address.purpose === "payment") {
+                  paymentAddress = address.address;
+                  paymentPublicKey = address.publicKey;
+                } else if (address.purpose === "ordinals") {
+                  ordinalsAddress = address.address;
+                  ordinalsPublicKey = address.publicKey;
+                }
               }
-            }
-            actions.connectFulfilled({
-              paymentAddress,
-              paymentPublicKey,
-              ordinalsAddress,
-              ordinalsPublicKey,
-            });
-          },
-          onCancel() {
-            actions.connectRejected("User canceled");
-          },
-        });
+              const r = {
+                paymentAddress,
+                paymentPublicKey,
+                ordinalsAddress,
+                ordinalsPublicKey,
+              };
+              actions.connectFulfilled(r);
+              resolve(r);
+            },
+            onCancel() {
+              actions.connectRejected("User canceled");
+              reject(new Error("User canceled"));
+            },
+          })
+        );
       } catch (error: unknown) {
         if (error instanceof Error) {
           actions.connectRejected(error.message);

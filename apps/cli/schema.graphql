@@ -101,7 +101,6 @@ type InscriptionTransaction {
   initTapKey: String!
   initLeaf: String!
   initCBlock: String!
-  privateKey: String!
 }
 
 type InscriptionTransactionContent {
@@ -140,15 +139,16 @@ input InscriptionRequest {
   feePerByte: Int
 }
 
-type S3Object {
-  bucket: String!
-  key: String!
+enum FundingStatus {
+  FUNDING
+  FUNDED
+  GENESIS
+  REVEALED
 }
 
 type InscriptionFunding {
   id: ID!
 
-  s3Object: S3Object!
   fundingAmountBtc: String!
   fundingAmountSats: Int!
   fundingAddress: String!
@@ -156,6 +156,7 @@ type InscriptionFunding {
   qrValue: String!
   qrSrc: String!
   inscriptionTransaction: InscriptionTransaction!
+  status: FundingStatus!
 
   inscriptionContent(tapKey: String!): InscriptionData!
 }
@@ -211,6 +212,14 @@ enum BlockchainNetwork {
   ETHEREUM
 }
 
+type Query {
+  currentBitcoinFees(
+    network: BitcoinNetwork!
+    speed: FeeLevel
+    feePerByte: Int
+  ): Int!
+}
+
 type BitcoinScriptItem {
   text: String
   base64: String
@@ -250,7 +259,7 @@ type AxolotlProblem {
 
 type AxolotlOpenEditionResponse {
   problems: [AxolotlProblem!]
-  funding: AxolotlFunding
+  data: AxolotlFunding
 }
 
 type AxolotlFundingPage {
@@ -266,17 +275,8 @@ input AxolotlAvailableClaimedRequest {
 }
 
 input AxolotlAvailableOpenEditionRequest {
-  destinationAddress: String!
+  destinationAddress: String
   collectionId: ID!
-}
-
-enum FundingStatus {
-  UNVERIFIED
-  UNCLAIMED
-  FUNDING
-  FUNDED
-  GENESIS
-  REVEAL
 }
 
 type AxolotlAvailableClaimedFunding {
@@ -298,6 +298,16 @@ type AxolotlAvailableOpenEditionFunding {
   tokenIds: [Int!]!
 }
 
+type AxolotlFeeEstimate {
+  tipPerTokenSats: Int!
+  tipPerTokenBtc: String!
+  totalInscriptionSats: Int!
+  totalInscriptionBtc: String!
+  totalFeeSats: Int!
+  totalFeeBtc: String!
+  feePerByte: Int!
+}
+
 type Mutation {
   #requestFundingAddress(request: InscriptionRequest!): InscriptionFunding!
   #axolotlFundingClaimRequest(request: AxolotlClaimRequest!): [AxolotlFunding!]!
@@ -313,6 +323,12 @@ type Query {
   axolotlAvailableOpenEditionFundingClaims(
     request: AxolotlAvailableOpenEditionRequest!
   ): [AxolotlAvailableOpenEditionFunding!]!
+  axolotlEstimateFee(
+    network: BitcoinNetwork!
+    feeLevel: FeeLevel
+    feePerByte: Int
+    count: Int
+  ): AxolotlFeeEstimate!
 }
 
 type Mutation {

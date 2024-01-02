@@ -1,0 +1,11 @@
+query FetchFunding($id: ID!) {
+  inscriptionFunding(id: $id) {
+    id
+    qrSrc
+    network
+    fundingAmountBtc
+    fundingAmountSats
+    fundingAddress
+    status
+  }
+}

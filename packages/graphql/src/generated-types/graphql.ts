@@ -59,7 +59,7 @@ export type AxolotlAvailableOpenEditionFunding = {
 
 export type AxolotlAvailableOpenEditionRequest = {
   collectionId: Scalars['ID']['input'];
-  destinationAddress: Scalars['String']['input'];
+  destinationAddress?: InputMaybe<Scalars['String']['input']>;
 };
 
 export type AxolotlClaimRequest = {
@@ -68,6 +68,17 @@ export type AxolotlClaimRequest = {
   feeLevel?: InputMaybe<FeeLevel>;
   feePerByte?: InputMaybe<Scalars['Int']['input']>;
   network: BitcoinNetwork;
+};
+
+export type AxolotlFeeEstimate = {
+  __typename?: 'AxolotlFeeEstimate';
+  feePerByte: Scalars['Int']['output'];
+  tipPerTokenBtc: Scalars['String']['output'];
+  tipPerTokenSats: Scalars['Int']['output'];
+  totalFeeBtc: Scalars['String']['output'];
+  totalFeeSats: Scalars['Int']['output'];
+  totalInscriptionBtc: Scalars['String']['output'];
+  totalInscriptionSats: Scalars['Int']['output'];
 };
 
 export type AxolotlFunding = {
@@ -97,7 +108,7 @@ export type AxolotlOpenEditionRequest = {
 
 export type AxolotlOpenEditionResponse = {
   __typename?: 'AxolotlOpenEditionResponse';
-  funding?: Maybe<AxolotlFunding>;
+  data?: Maybe<AxolotlFunding>;
   problems?: Maybe<Array<AxolotlProblem>>;
 };
 
@@ -153,9 +164,7 @@ export type FundingStatus =
   | 'FUNDED'
   | 'FUNDING'
   | 'GENESIS'
-  | 'REVEAL'
-  | 'UNCLAIMED'
-  | 'UNVERIFIED';
+  | 'REVEALED';
 
 export type InscriptionData = {
   __typename?: 'InscriptionData';
@@ -181,7 +190,7 @@ export type InscriptionFunding = {
   network: BitcoinNetwork;
   qrSrc: Scalars['String']['output'];
   qrValue: Scalars['String']['output'];
-  s3Object: S3Object;
+  status: FundingStatus;
 };
 
 
@@ -206,7 +215,6 @@ export type InscriptionTransaction = {
   inscriptions: Array<InscriptionTransactionContent>;
   overhead: Scalars['Int']['output'];
   padding: Scalars['Int']['output'];
-  privateKey: Scalars['String']['output'];
 };
 
 export type InscriptionTransactionContent = {
@@ -348,8 +356,10 @@ export type Query = {
   __typename?: 'Query';
   appInfo: AppInfo;
   axolotlAvailableOpenEditionFundingClaims: Array<AxolotlAvailableOpenEditionFunding>;
+  axolotlEstimateFee: AxolotlFeeEstimate;
   collection: Collection;
   collections: Array<Collection>;
+  currentBitcoinFees: Scalars['Int']['output'];
   inscriptionFunding?: Maybe<InscriptionFunding>;
   inscriptionTransaction?: Maybe<InscriptionTransaction>;
   role?: Maybe<Role>;
@@ -364,8 +374,23 @@ export type QueryAxolotlAvailableOpenEditionFundingClaimsArgs = {
 };
 
 
+export type QueryAxolotlEstimateFeeArgs = {
+  count?: InputMaybe<Scalars['Int']['input']>;
+  feeLevel?: InputMaybe<FeeLevel>;
+  feePerByte?: InputMaybe<Scalars['Int']['input']>;
+  network: BitcoinNetwork;
+};
+
+
 export type QueryCollectionArgs = {
   id: Scalars['ID']['input'];
+};
+
+
+export type QueryCurrentBitcoinFeesArgs = {
+  feePerByte?: InputMaybe<Scalars['Int']['input']>;
+  network: BitcoinNetwork;
+  speed?: InputMaybe<FeeLevel>;
 };
 
 
@@ -419,12 +444,6 @@ export type RoleRemovePermissionsArgs = {
 
 export type RoleUnbindFromUserArgs = {
   userAddress: Scalars['String']['input'];
-};
-
-export type S3Object = {
-  __typename?: 'S3Object';
-  bucket: Scalars['String']['output'];
-  key: Scalars['String']['output'];
 };
 
 export type Web3LoginUser = {
@@ -520,10 +539,11 @@ export type ResolversTypes = {
   AxolotlAvailableOpenEditionFunding: ResolverTypeWrapper<Omit<AxolotlAvailableOpenEditionFunding, 'funding'> & { funding?: Maybe<ResolversTypes['InscriptionFunding']> }>;
   AxolotlAvailableOpenEditionRequest: AxolotlAvailableOpenEditionRequest;
   AxolotlClaimRequest: AxolotlClaimRequest;
+  AxolotlFeeEstimate: ResolverTypeWrapper<AxolotlFeeEstimate>;
   AxolotlFunding: ResolverTypeWrapper<Omit<AxolotlFunding, 'inscriptionFunding'> & { inscriptionFunding?: Maybe<ResolversTypes['InscriptionFunding']> }>;
   AxolotlFundingPage: ResolverTypeWrapper<Omit<AxolotlFundingPage, 'items'> & { items?: Maybe<Array<Maybe<ResolversTypes['AxolotlFunding']>>> }>;
   AxolotlOpenEditionRequest: AxolotlOpenEditionRequest;
-  AxolotlOpenEditionResponse: ResolverTypeWrapper<Omit<AxolotlOpenEditionResponse, 'funding'> & { funding?: Maybe<ResolversTypes['AxolotlFunding']> }>;
+  AxolotlOpenEditionResponse: ResolverTypeWrapper<Omit<AxolotlOpenEditionResponse, 'data'> & { data?: Maybe<ResolversTypes['AxolotlFunding']> }>;
   AxolotlProblem: ResolverTypeWrapper<AxolotlProblem>;
   BitcoinNetwork: BitcoinNetwork;
   BitcoinScriptItem: ResolverTypeWrapper<BitcoinScriptItem>;
@@ -551,7 +571,6 @@ export type ResolversTypes = {
   PermissionResource: PermissionResource;
   Query: ResolverTypeWrapper<{}>;
   Role: ResolverTypeWrapper<RoleModel>;
-  S3Object: ResolverTypeWrapper<S3Object>;
   String: ResolverTypeWrapper<Scalars['String']['output']>;
   Web3LoginUser: ResolverTypeWrapper<Web3LoginUserModel>;
   Web3User: ResolverTypeWrapper<Web3UserModel>;
@@ -565,10 +584,11 @@ export type ResolversParentTypes = {
   AxolotlAvailableOpenEditionFunding: Omit<AxolotlAvailableOpenEditionFunding, 'funding'> & { funding?: Maybe<ResolversParentTypes['InscriptionFunding']> };
   AxolotlAvailableOpenEditionRequest: AxolotlAvailableOpenEditionRequest;
   AxolotlClaimRequest: AxolotlClaimRequest;
+  AxolotlFeeEstimate: AxolotlFeeEstimate;
   AxolotlFunding: Omit<AxolotlFunding, 'inscriptionFunding'> & { inscriptionFunding?: Maybe<ResolversParentTypes['InscriptionFunding']> };
   AxolotlFundingPage: Omit<AxolotlFundingPage, 'items'> & { items?: Maybe<Array<Maybe<ResolversParentTypes['AxolotlFunding']>>> };
   AxolotlOpenEditionRequest: AxolotlOpenEditionRequest;
-  AxolotlOpenEditionResponse: Omit<AxolotlOpenEditionResponse, 'funding'> & { funding?: Maybe<ResolversParentTypes['AxolotlFunding']> };
+  AxolotlOpenEditionResponse: Omit<AxolotlOpenEditionResponse, 'data'> & { data?: Maybe<ResolversParentTypes['AxolotlFunding']> };
   AxolotlProblem: AxolotlProblem;
   BitcoinScriptItem: BitcoinScriptItem;
   Boolean: Scalars['Boolean']['output'];
@@ -590,7 +610,6 @@ export type ResolversParentTypes = {
   PermissionInput: PermissionInput;
   Query: {};
   Role: RoleModel;
-  S3Object: S3Object;
   String: Scalars['String']['output'];
   Web3LoginUser: Web3LoginUserModel;
   Web3User: Web3UserModel;
@@ -623,6 +642,17 @@ export type AxolotlAvailableOpenEditionFundingResolvers<ContextType = Context, P
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 };
 
+export type AxolotlFeeEstimateResolvers<ContextType = Context, ParentType extends ResolversParentTypes['AxolotlFeeEstimate'] = ResolversParentTypes['AxolotlFeeEstimate']> = {
+  feePerByte?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  tipPerTokenBtc?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  tipPerTokenSats?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  totalFeeBtc?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  totalFeeSats?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  totalInscriptionBtc?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
+  totalInscriptionSats?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+};
+
 export type AxolotlFundingResolvers<ContextType = Context, ParentType extends ResolversParentTypes['AxolotlFunding'] = ResolversParentTypes['AxolotlFunding']> = {
   destinationAddress?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
@@ -640,7 +670,7 @@ export type AxolotlFundingPageResolvers<ContextType = Context, ParentType extend
 };
 
 export type AxolotlOpenEditionResponseResolvers<ContextType = Context, ParentType extends ResolversParentTypes['AxolotlOpenEditionResponse'] = ResolversParentTypes['AxolotlOpenEditionResponse']> = {
-  funding?: Resolver<Maybe<ResolversTypes['AxolotlFunding']>, ParentType, ContextType>;
+  data?: Resolver<Maybe<ResolversTypes['AxolotlFunding']>, ParentType, ContextType>;
   problems?: Resolver<Maybe<Array<ResolversTypes['AxolotlProblem']>>, ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 };
@@ -684,7 +714,7 @@ export type InscriptionFundingResolvers<ContextType = Context, ParentType extend
   network?: Resolver<ResolversTypes['BitcoinNetwork'], ParentType, ContextType>;
   qrSrc?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   qrValue?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
-  s3Object?: Resolver<ResolversTypes['S3Object'], ParentType, ContextType>;
+  status?: Resolver<ResolversTypes['FundingStatus'], ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 };
 
@@ -696,7 +726,6 @@ export type InscriptionTransactionResolvers<ContextType = Context, ParentType ex
   inscriptions?: Resolver<Array<ResolversTypes['InscriptionTransactionContent']>, ParentType, ContextType>;
   overhead?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
   padding?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
-  privateKey?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 };
 
@@ -754,8 +783,10 @@ export type PermissionResolvers<ContextType = Context, ParentType extends Resolv
 export type QueryResolvers<ContextType = Context, ParentType extends ResolversParentTypes['Query'] = ResolversParentTypes['Query']> = {
   appInfo?: Resolver<ResolversTypes['AppInfo'], ParentType, ContextType>;
   axolotlAvailableOpenEditionFundingClaims?: Resolver<Array<ResolversTypes['AxolotlAvailableOpenEditionFunding']>, ParentType, ContextType, RequireFields<QueryAxolotlAvailableOpenEditionFundingClaimsArgs, 'request'>>;
+  axolotlEstimateFee?: Resolver<ResolversTypes['AxolotlFeeEstimate'], ParentType, ContextType, RequireFields<QueryAxolotlEstimateFeeArgs, 'network'>>;
   collection?: Resolver<ResolversTypes['Collection'], ParentType, ContextType, RequireFields<QueryCollectionArgs, 'id'>>;
   collections?: Resolver<Array<ResolversTypes['Collection']>, ParentType, ContextType>;
+  currentBitcoinFees?: Resolver<ResolversTypes['Int'], ParentType, ContextType, RequireFields<QueryCurrentBitcoinFeesArgs, 'network'>>;
   inscriptionFunding?: Resolver<Maybe<ResolversTypes['InscriptionFunding']>, ParentType, ContextType, RequireFields<QueryInscriptionFundingArgs, 'id'>>;
   inscriptionTransaction?: Resolver<Maybe<ResolversTypes['InscriptionTransaction']>, ParentType, ContextType, RequireFields<QueryInscriptionTransactionArgs, 'id'>>;
   role?: Resolver<Maybe<ResolversTypes['Role']>, ParentType, ContextType, RequireFields<QueryRoleArgs, 'id'>>;
@@ -774,12 +805,6 @@ export type RoleResolvers<ContextType = Context, ParentType extends ResolversPar
   removePermissions?: Resolver<ResolversTypes['Role'], ParentType, ContextType, RequireFields<RoleRemovePermissionsArgs, 'permissions'>>;
   unbindFromUser?: Resolver<ResolversTypes['Web3User'], ParentType, ContextType, RequireFields<RoleUnbindFromUserArgs, 'userAddress'>>;
   userCount?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
-  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
-};
-
-export type S3ObjectResolvers<ContextType = Context, ParentType extends ResolversParentTypes['S3Object'] = ResolversParentTypes['S3Object']> = {
-  bucket?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
-  key?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 };
 
@@ -803,6 +828,7 @@ export type Resolvers<ContextType = Context> = {
   AppInfo?: AppInfoResolvers<ContextType>;
   AxolotlAvailableClaimedFunding?: AxolotlAvailableClaimedFundingResolvers<ContextType>;
   AxolotlAvailableOpenEditionFunding?: AxolotlAvailableOpenEditionFundingResolvers<ContextType>;
+  AxolotlFeeEstimate?: AxolotlFeeEstimateResolvers<ContextType>;
   AxolotlFunding?: AxolotlFundingResolvers<ContextType>;
   AxolotlFundingPage?: AxolotlFundingPageResolvers<ContextType>;
   AxolotlOpenEditionResponse?: AxolotlOpenEditionResponseResolvers<ContextType>;
@@ -819,7 +845,6 @@ export type Resolvers<ContextType = Context> = {
   Permission?: PermissionResolvers<ContextType>;
   Query?: QueryResolvers<ContextType>;
   Role?: RoleResolvers<ContextType>;
-  S3Object?: S3ObjectResolvers<ContextType>;
   Web3LoginUser?: Web3LoginUserResolvers<ContextType>;
   Web3User?: Web3UserResolvers<ContextType>;
 };

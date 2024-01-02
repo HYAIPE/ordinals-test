@@ -86,7 +86,7 @@ export function watchForFundings(
     address: string;
     id: string;
     fundingAmountSat: number;
-  }) => void
+  }) => void,
 ) {
   logger.info(`Watching for fundings for collection ${collectionId}`);
   const enqueueFunding = (funding: {
@@ -127,17 +127,24 @@ export function watchForFundings(
         fundingDao.listAllFundingsByStatus({
           id: collectionId,
           fundingStatus: "funding",
-        })
-      )
+        }),
+      ),
     ),
     tap((funding) => {
       logger.info(
-        `Starting to watch funding ${funding.id} for address ${funding.address} `
+        `Starting to watch funding ${funding.id} for address ${funding.address} `,
       );
     }),
-    switchMap((funding) =>
+    mergeMap((funding) =>
       from([funding]).pipe(
-        tap((funding) => logger.info(`Enqueuing funding ${funding.id}`)),
+        tap((funding) =>
+          logger.info(
+            {
+              timesChecked: funding.timesChecked,
+            },
+            `Enqueuing funding ${funding.id}`,
+          ),
+        ),
         mergeMap((funding) => {
           return from(enqueueFunding(funding)).pipe(
             catchError((error) => {
@@ -153,22 +160,22 @@ export function watchForFundings(
                     .catch((error) => {
                       logger.error(
                         error,
-                        "Error updating funding last checked"
+                        "Error updating funding last checked",
                       );
                       throw error;
                     })
                     .then(() => {
                       logger.info(
-                        `Updated last checked for ${funding.address}`
+                        `Updated last checked for ${funding.address}`,
                       );
                       throw error;
-                    })
+                    }),
                 );
               }
               logger.error(
                 error,
                 "Error checking funding for",
-                funding.address
+                funding.address,
               );
               throw error;
             }),
@@ -178,11 +185,11 @@ export function watchForFundings(
               delay(error, retryCount) {
                 return timer(customBackoff(retryCount));
               },
-            })
+            }),
           );
-        })
-      )
-    )
+        }),
+      ),
+    ),
   );
 
   // When $fundings is complete and we have a vout value, we can update the funding with the new txid and vout
@@ -195,11 +202,11 @@ export function watchForFundings(
     }
     try {
       logger.info(
-        `Funding ${funding.id} for ${funding.address} found!  Paid ${funding.fundedAmount} for a request of: ${funding.fundingAmountSat}`
+        `Funding ${funding.id} for ${funding.address} found!  Paid ${funding.fundedAmount} for a request of: ${funding.fundingAmountSat}`,
       );
       if (funding.fundedAmount < funding.fundingAmountSat) {
         logger.warn(
-          `Funding ${funding.id} for ${funding.address} is underfunded`
+          `Funding ${funding.id} for ${funding.address} is underfunded`,
         );
       } else {
         await fundingDao.addressFunded({

@@ -1,12 +1,13 @@
-type S3Object {
-  bucket: String!
-  key: String!
+enum FundingStatus {
+  FUNDING
+  FUNDED
+  GENESIS
+  REVEALED
 }
 
 type InscriptionFunding {
   id: ID!
 
-  s3Object: S3Object!
   fundingAmountBtc: String!
   fundingAmountSats: Int!
   fundingAddress: String!
@@ -14,6 +15,7 @@ type InscriptionFunding {
   qrValue: String!
   qrSrc: String!
   inscriptionTransaction: InscriptionTransaction!
+  status: FundingStatus!
 
   inscriptionContent(tapKey: String!): InscriptionData!
 }

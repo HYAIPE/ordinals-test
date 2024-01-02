@@ -9,7 +9,7 @@ import { UnableToGetS3ObjectError } from "../../errors/s3.js";
 import { toDataURL, QRCodeToDataURLOptions } from "qrcode";
 
 export class InscriptionFundingModel {
-  private id: string;
+  public id: string;
   private readonly fundingAddress: string;
   private document?: TInscriptionDoc;
   private readonly bucket: string;

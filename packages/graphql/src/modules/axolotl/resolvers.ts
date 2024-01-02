@@ -10,7 +10,7 @@ import {
   toBitcoinNetworkName,
   toGraphqlBitcoinNetworkName,
 } from "../bitcoin/transforms.js";
-import { fileToInscription, toGraphqlFundingStatus } from "./transforms.js";
+import { toGraphqlFundingStatus } from "./transforms.js";
 import { estimateFeesWithMempool } from "../bitcoin/fees.js";
 import { InscriptionFundingModel } from "../inscriptionFunding/models.js";
 import {
@@ -21,18 +21,11 @@ import {
   InscriptionContent,
 } from "@0xflick/ordinals-models";
 import { AxolotlModel } from "../axolotl/models.js";
-import {
-  AxolotlAvailableClaimedFunding,
-  FeeLevel,
-  InputMaybe,
-  Maybe,
-  ResolversTypes,
-} from "../../generated-types/graphql.js";
+import { FeeLevel, InputMaybe } from "../../generated-types/graphql.js";
 import { MempoolModel } from "../bitcoin/models.js";
-import { contractAllowanceStrategy, openEditionStrategy } from "./strategy.js";
+import { openEditionStrategy } from "./strategy.js";
 import { bitcoinToSats } from "@0xflick/inscriptions";
 import { AxolotlError } from "./errors.js";
-import { fetchAllClaimables } from "./controllers.js";
 
 async function createTranscriptionFunding({
   address,
@@ -220,6 +213,7 @@ export const resolvers: AxolotlModule.Resolvers = {
           const {
             inscriptionBucket,
             axolotlInscriptionTip,
+            axolotlInscriptionTipDestination,
             fundingDocDao,
             createMempoolBitcoinClient,
           } = context;
@@ -239,6 +233,7 @@ export const resolvers: AxolotlModule.Resolvers = {
             fundingDocDao,
             inscriptionBucket,
             tip: axolotlInscriptionTip,
+            tipDestination: axolotlInscriptionTipDestination,
             s3Client: context.s3Client,
             count: requests.length,
           });
@@ -251,20 +246,13 @@ export const resolvers: AxolotlModule.Resolvers = {
       }
       return {
         problems: inscriptions.problems,
-        funding: {
+        data: {
+          id: inscriptions.id,
           destinationAddress: destinationAddress as `0x${string}`,
           tokenIds: inscriptions.tokenIds,
           inscriptionFunding: inscriptions.inscriptionFunding,
         },
       };
-      // return inscriptions.map(({ claimable, inscriptionDoc }) => ({
-      //   // chameleon: inscriptionDoc.chameleon,
-      //   // createdAt: new Date().toISOString(),
-      //   // id: inscriptionDoc.id,
-      //   // destinationAddress: claimable.destinationAddress,
-      //   // tokenId: inscriptionDoc.tokenId,
-      //   // inscriptionFunding: inscriptionDoc.inscriptionFunding,
-      // }));
     },
     // requestFundingAddress: async (
     //   _,
@@ -304,6 +292,23 @@ export const resolvers: AxolotlModule.Resolvers = {
     // },
   },
   Query: {
+    axolotlEstimateFee: async (
+      _,
+      { network, feeLevel, feePerByte, count },
+      { createMempoolBitcoinClient, axolotlInscriptionTip },
+    ) => {
+      const client = createMempoolBitcoinClient({
+        network: toBitcoinNetworkName(network),
+      });
+      return AxolotlModel.estimateFees({
+        count: count ?? 1,
+        mempool: new MempoolModel(client),
+        feeLevel,
+        feePerByte,
+        network: toBitcoinNetworkName(network),
+        tipPerToken: axolotlInscriptionTip,
+      });
+    },
     axolotlAvailableOpenEditionFundingClaims: async (_, params, context) => {
       const {
         request: { collectionId, destinationAddress },

@@ -233,8 +233,7 @@ export function watchForFunded(
                     txid: funded.txid,
                     vout: funded.vout,
                     tip: doc.tip,
-                    // add tip here
-                    // tippingAddress
+                    tippingAddress: fundedDb.tipAmountDestination,
                   });
 
                   try {
@@ -249,27 +248,6 @@ export function watchForFunded(
 
                     try {
                       logger.info(`Genesis funding ${funded.id} is funded!`);
-
-                      // for (const inscription of doc.writableInscriptions) {
-                      //   const [txid, vout, amount] = await waitForInscriptionFunding(
-                      //     inscription,
-                      //     doc.network
-                      //   );
-                      //   const genesisTx = await generateRevealTransaction({
-                      //     address: funded.address,
-                      //     amount,
-                      //     inscription,
-                      //     secKey,
-                      //     txid,
-                      //     vout,
-                      //   });
-                      //   logger.info(
-                      //     {
-                      //       genesisTx,
-                      //     },
-                      //     `reveal transaction for ${inscription.inscriptionAddress}`
-                      //   );
-                      // }
 
                       await fundingDao.genesisFunded({
                         genesisTxid,

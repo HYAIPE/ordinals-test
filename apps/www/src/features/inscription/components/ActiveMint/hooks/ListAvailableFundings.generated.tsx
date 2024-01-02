@@ -8,14 +8,14 @@ export type ListAvailableFundingsQueryVariables = Types.Exact<{
 }>;
 
 
-export type ListAvailableFundingsQuery = { __typename?: 'Query', axolotlAvailableOpenEditionFundingClaims: Array<{ __typename?: 'AxolotlAvailableOpenEditionFunding', id: string, tokenId: number, destinationAddress: string, status: Types.FundingStatus, funding?: { __typename?: 'InscriptionFunding', network: Types.BitcoinNetwork, fundingAmountBtc: string, fundingAmountSats: number, fundingAddress: string, qrSrc: string } | null }> };
+export type ListAvailableFundingsQuery = { __typename?: 'Query', axolotlAvailableOpenEditionFundingClaims: Array<{ __typename?: 'AxolotlAvailableOpenEditionFunding', id: string, tokenIds: Array<number>, destinationAddress: string, status: Types.FundingStatus, funding?: { __typename?: 'InscriptionFunding', network: Types.BitcoinNetwork, fundingAmountBtc: string, fundingAmountSats: number, fundingAddress: string, qrSrc: string } | null }> };
 
 
 export const ListAvailableFundingsDocument = gql`
     query ListAvailableFundings($openEditionRequest: AxolotlAvailableOpenEditionRequest!) {
   axolotlAvailableOpenEditionFundingClaims(request: $openEditionRequest) {
     id
-    tokenId
+    tokenIds
     destinationAddress
     status
     funding {

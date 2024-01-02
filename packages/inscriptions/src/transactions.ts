@@ -278,7 +278,7 @@ export async function generateFundingAddress({
     qrValue: qr_value,
     qrSrc: await createQR(qr_value),
     files,
-    totalFee: total_fees,
+    totalFee: total_fee,
     inscriptionsToWrite,
     overhead,
     padding,

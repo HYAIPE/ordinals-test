@@ -32,7 +32,7 @@ type AxolotlProblem {
 
 type AxolotlOpenEditionResponse {
   problems: [AxolotlProblem!]
-  funding: AxolotlFunding
+  data: AxolotlFunding
 }
 
 type AxolotlFundingPage {
@@ -48,17 +48,8 @@ input AxolotlAvailableClaimedRequest {
 }
 
 input AxolotlAvailableOpenEditionRequest {
-  destinationAddress: String!
+  destinationAddress: String
   collectionId: ID!
-}
-
-enum FundingStatus {
-  UNVERIFIED
-  UNCLAIMED
-  FUNDING
-  FUNDED
-  GENESIS
-  REVEAL
 }
 
 type AxolotlAvailableClaimedFunding {
@@ -80,6 +71,16 @@ type AxolotlAvailableOpenEditionFunding {
   tokenIds: [Int!]!
 }
 
+type AxolotlFeeEstimate {
+  tipPerTokenSats: Int!
+  tipPerTokenBtc: String!
+  totalInscriptionSats: Int!
+  totalInscriptionBtc: String!
+  totalFeeSats: Int!
+  totalFeeBtc: String!
+  feePerByte: Int!
+}
+
 type Mutation {
   #requestFundingAddress(request: InscriptionRequest!): InscriptionFunding!
   #axolotlFundingClaimRequest(request: AxolotlClaimRequest!): [AxolotlFunding!]!
@@ -95,4 +96,10 @@ type Query {
   axolotlAvailableOpenEditionFundingClaims(
     request: AxolotlAvailableOpenEditionRequest!
   ): [AxolotlAvailableOpenEditionFunding!]!
+  axolotlEstimateFee(
+    network: BitcoinNetwork!
+    feeLevel: FeeLevel
+    feePerByte: Int
+    count: Int
+  ): AxolotlFeeEstimate!
 }

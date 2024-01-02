@@ -10,7 +10,7 @@ function randomUint8ArrayOfLength(length: number) {
 }
 
 export const AvatarUnrevealed: FC<{
-  size?: "small";
+  size?: "small" | "large";
   refreshInterval?: number;
   urlPrefix?: string;
 }> = ({
@@ -19,7 +19,7 @@ export const AvatarUnrevealed: FC<{
   urlPrefix = "/axolotl-content/",
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const width = size === "small" ? 64 : 128,
+  const width = size === "small" ? 64 : 256,
     height = width;
   useEffect(() => {
     const offscreenCanvas = document.createElement("canvas");
@@ -27,11 +27,15 @@ export const AvatarUnrevealed: FC<{
     offscreenCanvas.height = 569;
     const render = async () => {
       const seedBytes: Uint8Array = randomUint8ArrayOfLength(32);
-      const { layers } = await operations(seedBytes, async (imagePath) => {
-        console.log(imagePath);
+      const { layers } = await operations(seedBytes, (imagePath) => {
         const img = new Image();
         img.src = `${urlPrefix}${imagePath}`;
-        return img;
+        return new Promise((resolve, reject) => {
+          img.onload = () => {
+            resolve(img);
+          };
+          img.onerror = reject;
+        });
       });
       if (!offscreenCanvas) {
         return;
