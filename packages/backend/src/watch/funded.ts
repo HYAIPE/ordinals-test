@@ -11,15 +11,13 @@ import {
   startWith,
   timer,
 } from "rxjs";
-import { KeyPair, SecretKey } from "@0xflick/crypto-utils";
+import { SecretKey } from "@0xflick/crypto-utils";
 import Queue from "p-queue";
 import { IFundingDao, IFundingDocDao } from "../dao/funding.js";
 import { MempoolClient, createLogger } from "../index.js";
 import { ID_Collection } from "@0xflick/ordinals-models";
 import {
   generateGenesisTransaction,
-  generateRevealTransaction,
-  waitForInscriptionFunding,
 } from "@0xflick/inscriptions";
 
 const logger = createLogger({ name: "watch/genesis" });

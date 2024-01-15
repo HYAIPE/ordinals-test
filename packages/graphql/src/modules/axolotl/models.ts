@@ -183,7 +183,6 @@ export class AxolotlModel implements IAxolotlMeta {
     tipPerToken,
   }: {
     count: number;
-    network: BitcoinNetworkNames;
     feePerByte?: InputMaybe<number>;
     feeLevel?: InputMaybe<FeeLevel>;
     mempool: MempoolModel;

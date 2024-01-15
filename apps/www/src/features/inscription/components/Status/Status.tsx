@@ -1,18 +1,18 @@
-import { FC, useCallback } from "react";
-import { useXverse } from "@/features/xverse";
-import { PaymentModal } from "../PaymentModal";
+import { FC, ReactNode, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Card from "@mui/material/Card";
 import CardHeader from "@mui/material/CardHeader";
 import CardContent from "@mui/material/CardContent";
 import CircularProgress from "@mui/material/CircularProgress";
-import { Qr } from "../Qr";
-import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
-import CardActionArea from "@mui/material/CardActionArea";
-import Button from "@mui/material/Button";
-import { useFetchFundingQuery } from "./FetchFunding.generated";
-import { AddressPurpose, BitcoinNetworkType } from "sats-connect";
+import Box from "@mui/material/Box";
+import LinearProgress from "@mui/material/LinearProgress";
+import CheckIcon from "@mui/icons-material/CheckOutlined";
+import WaitingIcon from "@mui/icons-material/HourglassEmptyOutlined";
+import { useFetchFundingStatusQuery } from "./FetchFundingStatus.generated";
+import { Field } from "@/components/Field";
+import { FundingStatus } from "@/graphql/types";
+import { AppLink } from "@/components/AppLink";
 
 const Loading: FC = () => {
   return (
@@ -32,72 +32,49 @@ const Loading: FC = () => {
   );
 };
 
-export const Pay: FC<{
+const Row: FC<{
+  label: string;
+  status: ReactNode;
+  inProgress: boolean;
+  success: boolean;
+}> = ({ label, status, inProgress, success }) => {
+  return (
+    <Box
+      sx={{
+        display: "flex",
+        flexDirection: "row",
+        alignItems: "center",
+        mb: 2,
+      }}
+    >
+      <Box width={16} height={16} sx={{ mr: 1 }}>
+        {inProgress ? <CircularProgress size={16} /> : null}
+        {success ? <CheckIcon fontSize="small" /> : null}
+        {!(inProgress || success) ? <WaitingIcon /> : null}
+      </Box>
+
+      <Field
+        label={
+          <Typography variant="body1" fontWeight="bold">
+            {label}
+          </Typography>
+        }
+        value={status}
+      />
+    </Box>
+  );
+};
+
+export const Status: FC<{
   fundingId: string;
-  network: BitcoinNetworkType;
-}> = ({ fundingId, network }) => {
-  const {
-    sendBtc,
-    isConnected,
-    connect,
-    state: { currentTarget },
-    networkSelect,
-  } = useXverse();
+}> = ({ fundingId }) => {
   const router = useRouter();
-  const { data, loading } = useFetchFundingQuery({
+  const { data, loading } = useFetchFundingStatusQuery({
     variables: {
       id: fundingId,
     },
+    pollInterval: 1000,
   });
-
-  const sendXverse = useCallback(() => {
-    if (
-      data?.inscriptionFunding?.fundingAmountSats &&
-      (!isConnected ||
-        currentTarget.purpose !== AddressPurpose.Payment ||
-        currentTarget.network !== network)
-    ) {
-      networkSelect({
-        network: currentTarget.network,
-        purpose: AddressPurpose.Payment,
-      });
-      connect({
-        message: "Please connect your wallet to continue",
-      }).then(({ paymentAddress }) => {
-        if (paymentAddress) {
-          sendBtc({
-            paymentAddress,
-            paymentAmountSats: data?.inscriptionFunding?.fundingAmountSats!,
-          }).then(() => {
-            router.push(`/status/${fundingId}`);
-          });
-        }
-      });
-    } else if (
-      data?.inscriptionFunding?.fundingAmountSats &&
-      data?.inscriptionFunding?.fundingAddress &&
-      isConnected
-    ) {
-      sendBtc({
-        paymentAddress: data?.inscriptionFunding?.fundingAddress,
-        paymentAmountSats: data?.inscriptionFunding?.fundingAmountSats,
-      }).then(() => {
-        router.push(`/status/${fundingId}`);
-      });
-    }
-  }, [
-    data?.inscriptionFunding?.fundingAmountSats,
-    data?.inscriptionFunding?.fundingAddress,
-    isConnected,
-    currentTarget.purpose,
-    currentTarget.network,
-    network,
-    networkSelect,
-    connect,
-    sendBtc,
-    router,
-    fundingId,
-  ]);
 
   if (!data || loading) {
     return <Loading />;
@@ -108,11 +85,33 @@ export const Pay: FC<{
     return <Loading />;
   }
 
-  const { qrSrc, fundingAddress, fundingAmountBtc } = inscriptionData;
+  const {
+    status,
+    fundingGenesisTxId,
+    fundingRevealTxIds,
+    fundingTxId,
+    fundingGenesisTxUrl,
+    fundingRevealTxUrls,
+    fundingTxUrl,
+    inscriptionTransaction,
+  } = inscriptionData;
+  const revealCount = inscriptionTransaction.count;
+  const fundedSuccess = [
+    FundingStatus.Funded,
+    FundingStatus.Genesis,
+    FundingStatus.Revealed,
+  ].includes(status);
+  const fundedInProgress = status === FundingStatus.Funding;
+  const genesisSuccess = [
+    FundingStatus.Genesis,
+    FundingStatus.Revealed,
+  ].includes(status);
+  const genesisInProgress = status === FundingStatus.Funded;
+  const revealInProgress = status === FundingStatus.Genesis;
   return (
     <Card
       sx={{
-        width: 400,
+        width: "100%",
         bgcolor: "background.paper",
         border: "2px solid #000",
         boxShadow: 24,
@@ -120,7 +119,7 @@ export const Pay: FC<{
       }}
     >
       <CardHeader
-        title="payment request"
+        title="inscription status"
         titleTypographyProps={{
           variant: "h6",
         }}
@@ -129,27 +128,75 @@ export const Pay: FC<{
         }}
       />
       <CardContent>
-        <Qr qrSrc={qrSrc ?? ""} />
-        <Typography variant="body1" sx={{ mb: 1, mt: 2 }} textAlign="center">
-          send {fundingAmountBtc} BTC to:
-        </Typography>
-        <Typography variant="body1" sx={{ mb: 1 }} noWrap textAlign="center">
-          {fundingAddress}
-        </Typography>
+        <Row
+          label="funding tx"
+          status={
+            fundedInProgress ? (
+              <LinearProgress />
+            ) : fundingTxUrl ? (
+              <AppLink
+                href={fundingTxUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                noWrap
+              >
+                {fundingTxId}
+              </AppLink>
+            ) : (
+              fundingTxId
+            )
+          }
+          inProgress={fundedInProgress}
+          success={fundedSuccess}
+        />
+        <Row
+          label="genesis tx"
+          status={
+            genesisInProgress ? (
+              <LinearProgress />
+            ) : fundingGenesisTxUrl ? (
+              <AppLink
+                href={fundingGenesisTxUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                noWrap
+              >
+                {fundingGenesisTxId}
+              </AppLink>
+            ) : (
+              fundingGenesisTxId
+            )
+          }
+          inProgress={genesisInProgress}
+          success={genesisSuccess}
+        />
+        {new Array(revealCount).fill(null, 0, revealCount).map((_, index) => {
+          return (
+            <Row
+              key={fundingRevealTxIds?.[index] ?? index}
+              label="reveal tx"
+              status={
+                revealInProgress ? (
+                  <LinearProgress />
+                ) : fundingRevealTxUrls?.[index] ? (
+                  <AppLink
+                    href={fundingRevealTxUrls[index]}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    noWrap
+                  >
+                    {fundingRevealTxIds?.[index]}
+                  </AppLink>
+                ) : (
+                  fundingRevealTxIds?.[index]
+                )
+              }
+              inProgress={revealInProgress && !fundingRevealTxIds?.[index]}
+              success={!!fundingRevealTxIds?.[index]}
+            />
+          );
+        })}
       </CardContent>
-      <CardActionArea
-        sx={{
-          textAlign: "center",
-          py: 2,
-        }}
-      >
-        <Typography variant="body1" sx={{ mb: 1, mr: 2 }} component="span">
-          pay with
-        </Typography>
-        <Button variant="contained" onClick={sendXverse}>
-          Xverse
-        </Button>
-      </CardActionArea>
     </Card>
   );
 };

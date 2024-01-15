@@ -13,6 +13,7 @@ export async function start() {
       collectionId: collection.id,
       fundingDao,
       mempoolBitcoinClient: createMempoolBitcoinClient({ network: "regtest" }),
+      pollInterval: 5000,
     });
   }
 }

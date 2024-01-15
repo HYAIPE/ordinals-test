@@ -37,7 +37,7 @@ export function createMempoolBitcoinClient({
   }
   return createMempoolClient({
     network,
-    hostname: url.hostname,
+    hostname: url.host,
     protocol: protocol as "http" | "https",
   }).bitcoin;
 }

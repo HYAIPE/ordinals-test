@@ -101,6 +101,8 @@ type InscriptionTransaction {
   initTapKey: String!
   initLeaf: String!
   initCBlock: String!
+
+  count: Int!
 }
 
 type InscriptionTransactionContent {
@@ -157,6 +159,12 @@ type InscriptionFunding {
   qrSrc: String!
   inscriptionTransaction: InscriptionTransaction!
   status: FundingStatus!
+  fundingTxId: String
+  fundingTxUrl: String
+  fundingGenesisTxId: String
+  fundingGenesisTxUrl: String
+  fundingRevealTxIds: [String!]
+  fundingRevealTxUrls: [String!]
 
   inscriptionContent(tapKey: String!): InscriptionData!
 }

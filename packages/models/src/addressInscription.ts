@@ -17,7 +17,7 @@ export interface IAddressInscriptionModel<T = Record<string, any>> {
   contentIds: string[];
   fundingTxid?: string;
   fundingVout?: number;
-  revealTxid?: string;
+  revealTxids?: string[];
   genesisTxid?: string;
   fundingStatus: TFundingStatus;
   lastChecked?: Date;
@@ -53,7 +53,7 @@ export class AddressInscriptionModel<T extends Record<string, any> = {}>
   public destinationAddress: string;
   public fundingTxid?: string;
   public fundingVout?: number;
-  public revealTxid?: string;
+  public revealTxids?: string[];
   public genesisTxid?: string;
   public fundingStatus: TFundingStatus;
   public lastChecked?: Date;
@@ -75,7 +75,7 @@ export class AddressInscriptionModel<T extends Record<string, any> = {}>
     this.destinationAddress = item.destinationAddress;
     this.fundingTxid = item.fundingTxid;
     this.fundingVout = item.fundingVout;
-    this.revealTxid = item.revealTxid;
+    this.revealTxids = item.revealTxids;
     this.genesisTxid = item.genesisTxid;
     this.fundingStatus = item.fundingStatus;
     this.lastChecked = item.lastChecked;

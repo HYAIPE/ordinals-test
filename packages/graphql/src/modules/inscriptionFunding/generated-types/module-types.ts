@@ -3,7 +3,7 @@ import type * as Types from "../../../generated-types/graphql.js";
 import type * as gm from "@0xflick/graphql-modules";
 export namespace InscriptionFundingModule {
   interface DefinedFields {
-    InscriptionFunding: 'id' | 'fundingAmountBtc' | 'fundingAmountSats' | 'fundingAddress' | 'network' | 'qrValue' | 'qrSrc' | 'inscriptionTransaction' | 'status' | 'inscriptionContent';
+    InscriptionFunding: 'id' | 'fundingAmountBtc' | 'fundingAmountSats' | 'fundingAddress' | 'network' | 'qrValue' | 'qrSrc' | 'inscriptionTransaction' | 'status' | 'fundingTxId' | 'fundingTxUrl' | 'fundingGenesisTxId' | 'fundingGenesisTxUrl' | 'fundingRevealTxIds' | 'fundingRevealTxUrls' | 'inscriptionContent';
     Query: 'inscriptionFunding';
   };
   
@@ -41,6 +41,12 @@ export namespace InscriptionFundingModule {
       qrSrc?: gm.Middleware[];
       inscriptionTransaction?: gm.Middleware[];
       status?: gm.Middleware[];
+      fundingTxId?: gm.Middleware[];
+      fundingTxUrl?: gm.Middleware[];
+      fundingGenesisTxId?: gm.Middleware[];
+      fundingGenesisTxUrl?: gm.Middleware[];
+      fundingRevealTxIds?: gm.Middleware[];
+      fundingRevealTxUrls?: gm.Middleware[];
       inscriptionContent?: gm.Middleware[];
     };
     Query?: {

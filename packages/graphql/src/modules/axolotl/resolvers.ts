@@ -94,6 +94,7 @@ async function createTranscriptionFunding({
     timesChecked: 0,
     fundingAmountBtc,
     fundingAmountSat: Number(bitcoinToSats(fundingAmountBtc)),
+    revealTxids: [],
     meta: {},
   });
   const doc: TInscriptionDoc = {
@@ -224,7 +225,7 @@ export const resolvers: AxolotlModule.Resolvers = {
             network: toBitcoinNetworkName(network),
             mempool: new MempoolModel(
               createMempoolBitcoinClient({
-                network: toBitcoinNetworkName(network),
+                network: toBitcoinNetworkName("REGTEST"),
               }),
             ),
             destinationAddress,
@@ -298,14 +299,14 @@ export const resolvers: AxolotlModule.Resolvers = {
       { createMempoolBitcoinClient, axolotlInscriptionTip },
     ) => {
       const client = createMempoolBitcoinClient({
-        network: toBitcoinNetworkName(network),
+        // using "REGTEST" actually means we are using the local mempool instance
+        network: toBitcoinNetworkName("REGTEST"),
       });
       return AxolotlModel.estimateFees({
         count: count ?? 1,
         mempool: new MempoolModel(client),
         feeLevel,
         feePerByte,
-        network: toBitcoinNetworkName(network),
         tipPerToken: axolotlInscriptionTip,
       });
     },

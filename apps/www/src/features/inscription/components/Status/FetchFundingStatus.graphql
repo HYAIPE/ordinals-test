@@ -3,5 +3,14 @@ query FetchFundingStatus($id: ID!) {
     id
     network
     status
+    fundingTxId
+    fundingTxUrl
+    fundingGenesisTxId
+    fundingGenesisTxUrl
+    fundingRevealTxIds
+    fundingRevealTxUrls
+    inscriptionTransaction {
+      count
+    }
   }
 }

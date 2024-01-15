@@ -59,6 +59,8 @@ export async function start() {
     plugins: [ApolloServerPluginLandingPageGraphQLPlayground],
   });
 
-  const { url } = await apolloServer.listen();
+  const { url } = await apolloServer.listen({
+    port: 4000,
+  });
   console.log(`🚀 Server ready at ${url}`);
 }

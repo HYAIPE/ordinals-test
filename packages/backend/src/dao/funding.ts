@@ -86,6 +86,7 @@ export interface IFundingDao<
     fundingVout: number;
   }): Promise<void>;
   genesisFunded(item: { id: string; genesisTxid: string }): Promise<void>;
+  revealsFunded(item: { id: string; revealTxids: string[] }): Promise<void>;
   revealFunded(item: { id: string; revealTxid: string }): Promise<void>;
   getFunding(id: string): Promise<IAddressInscriptionModel<ItemMeta>>;
   deleteFunding(id: string): Promise<void>;

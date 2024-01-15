@@ -21,7 +21,7 @@ export const StartRoute: FC<{
         ethereumAutoConnect={false}
       >
         <AutoConnect>
-          <Grid2 container spacing={2}>
+          <Grid2 container spacing={2} sx={{ mt: 10 }}>
             <Grid2 xs={12} sm={12} md={12}>
               <Flow
                 collectionId={collectionId}

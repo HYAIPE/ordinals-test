@@ -6,4 +6,6 @@ type InscriptionTransaction {
   initTapKey: String!
   initLeaf: String!
   initCBlock: String!
+
+  count: Int!
 }

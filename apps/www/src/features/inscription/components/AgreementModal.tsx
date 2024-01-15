@@ -22,7 +22,7 @@ export const AgreementModal: FC<{
       <CardMedia component={NextImage} height="372" image={RUG} alt="" />
       <CardContent>
         <Typography variant="body2" color="text.secondary">
-          before inscribing you agree this is a rug.
+          before minting you agree this is a rug.
         </Typography>
       </CardContent>
       <CardActions>

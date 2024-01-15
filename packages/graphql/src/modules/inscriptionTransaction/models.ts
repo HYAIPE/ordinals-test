@@ -51,4 +51,8 @@ export class InscriptionTransactionModel {
   public get qrSrc() {
     return this.inscriptionFunding.getQrSrc({});
   }
+
+  public get count() {
+    return this.inscriptions.then((inscriptions) => inscriptions.length);
+  }
 }

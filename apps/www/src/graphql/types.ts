@@ -177,6 +177,12 @@ export type InscriptionFunding = {
   fundingAddress: Scalars['String']['output'];
   fundingAmountBtc: Scalars['String']['output'];
   fundingAmountSats: Scalars['Int']['output'];
+  fundingGenesisTxId?: Maybe<Scalars['String']['output']>;
+  fundingGenesisTxUrl?: Maybe<Scalars['String']['output']>;
+  fundingRevealTxIds?: Maybe<Array<Scalars['String']['output']>>;
+  fundingRevealTxUrls?: Maybe<Array<Scalars['String']['output']>>;
+  fundingTxId?: Maybe<Scalars['String']['output']>;
+  fundingTxUrl?: Maybe<Scalars['String']['output']>;
   id: Scalars['ID']['output'];
   inscriptionContent: InscriptionData;
   inscriptionTransaction: InscriptionTransaction;
@@ -201,6 +207,7 @@ export type InscriptionRequest = {
 
 export type InscriptionTransaction = {
   __typename?: 'InscriptionTransaction';
+  count: Scalars['Int']['output'];
   initCBlock: Scalars['String']['output'];
   initLeaf: Scalars['String']['output'];
   initScript: Array<BitcoinScriptItem>;

@@ -184,6 +184,12 @@ export type InscriptionFunding = {
   fundingAddress: Scalars['String']['output'];
   fundingAmountBtc: Scalars['String']['output'];
   fundingAmountSats: Scalars['Int']['output'];
+  fundingGenesisTxId?: Maybe<Scalars['String']['output']>;
+  fundingGenesisTxUrl?: Maybe<Scalars['String']['output']>;
+  fundingRevealTxIds?: Maybe<Array<Scalars['String']['output']>>;
+  fundingRevealTxUrls?: Maybe<Array<Scalars['String']['output']>>;
+  fundingTxId?: Maybe<Scalars['String']['output']>;
+  fundingTxUrl?: Maybe<Scalars['String']['output']>;
   id: Scalars['ID']['output'];
   inscriptionContent: InscriptionData;
   inscriptionTransaction: InscriptionTransaction;
@@ -208,6 +214,7 @@ export type InscriptionRequest = {
 
 export type InscriptionTransaction = {
   __typename?: 'InscriptionTransaction';
+  count: Scalars['Int']['output'];
   initCBlock: Scalars['String']['output'];
   initLeaf: Scalars['String']['output'];
   initScript: Array<BitcoinScriptItem>;
@@ -708,6 +715,12 @@ export type InscriptionFundingResolvers<ContextType = Context, ParentType extend
   fundingAddress?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   fundingAmountBtc?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   fundingAmountSats?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
+  fundingGenesisTxId?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  fundingGenesisTxUrl?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  fundingRevealTxIds?: Resolver<Maybe<Array<ResolversTypes['String']>>, ParentType, ContextType>;
+  fundingRevealTxUrls?: Resolver<Maybe<Array<ResolversTypes['String']>>, ParentType, ContextType>;
+  fundingTxId?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  fundingTxUrl?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
   inscriptionContent?: Resolver<ResolversTypes['InscriptionData'], ParentType, ContextType, RequireFields<InscriptionFundingInscriptionContentArgs, 'tapKey'>>;
   inscriptionTransaction?: Resolver<ResolversTypes['InscriptionTransaction'], ParentType, ContextType>;
@@ -719,6 +732,7 @@ export type InscriptionFundingResolvers<ContextType = Context, ParentType extend
 };
 
 export type InscriptionTransactionResolvers<ContextType = Context, ParentType extends ResolversParentTypes['InscriptionTransaction'] = ResolversParentTypes['InscriptionTransaction']> = {
+  count?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
   initCBlock?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   initLeaf?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   initScript?: Resolver<Array<ResolversTypes['BitcoinScriptItem']>, ParentType, ContextType>;

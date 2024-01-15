@@ -6,7 +6,7 @@
   "license": "MIT",
   "dependencies": {
     "@0xflick/crypto-utils": "^1.10.3-0xflick.0",
-    "@0xflick/mempool.js": "^2.3.1",
+    "@0xflick/mempool.js": "^2.3.3",
     "@aws-sdk/client-dynamodb": "^3.359.0",
     "@aws-sdk/client-s3": "^3.363.0",
     "@aws-sdk/lib-dynamodb": "^3.359.0",

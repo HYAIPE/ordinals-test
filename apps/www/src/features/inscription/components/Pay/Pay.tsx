@@ -1,6 +1,6 @@
-import { FC, useCallback } from "react";
+import { FC, useCallback, useEffect, useState } from "react";
 import { useXverse } from "@/features/xverse";
-import { PaymentModal } from "../PaymentModal";
+import Snackbar from "@mui/material/Snackbar";
 import { useRouter } from "next/navigation";
 import Card from "@mui/material/Card";
 import CardHeader from "@mui/material/CardHeader";
@@ -13,6 +13,7 @@ import CardActionArea from "@mui/material/CardActionArea";
 import Button from "@mui/material/Button";
 import { useFetchFundingQuery } from "./FetchFunding.generated";
 import { AddressPurpose, BitcoinNetworkType } from "sats-connect";
+import { CopyToClipboard } from "@/components/CopyToClipboard";
 
 const Loading: FC = () => {
   return (
@@ -36,6 +37,13 @@ export const Pay: FC<{
   fundingId: string;
   network: BitcoinNetworkType;
 }> = ({ fundingId, network }) => {
+  const [doSend, setDoSend] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | undefined>(
+    undefined
+  );
+  const [successMessage, setSuccessMessage] = useState<string | undefined>(
+    undefined
+  );
   const {
     sendBtc,
     isConnected,
@@ -50,6 +58,35 @@ export const Pay: FC<{
     },
   });
 
+  useEffect(() => {
+    if (
+      doSend &&
+      data?.inscriptionFunding?.fundingAddress &&
+      data?.inscriptionFunding?.fundingAmountSats
+    ) {
+      setDoSend(false);
+      sendBtc({
+        paymentAddress: data?.inscriptionFunding?.fundingAddress,
+        paymentAmountSats: data?.inscriptionFunding?.fundingAmountSats,
+      })
+        .then(() => {
+          setSuccessMessage("Payment sent");
+          setTimeout(() => {
+            router.push(`/${network.toLowerCase()}/status/${fundingId}`);
+          }, 2000);
+        })
+        .catch((e) => {
+          console.error(e);
+          setErrorMessage(e.message);
+        });
+    }
+  }, [
+    doSend,
+    data?.inscriptionFunding?.fundingAddress,
+    data?.inscriptionFunding?.fundingAmountSats,
+    sendBtc,
+  ]);
+
   const sendXverse = useCallback(() => {
     if (
       data?.inscriptionFunding?.fundingAmountSats &&
@@ -63,27 +100,23 @@ export const Pay: FC<{
       });
       connect({
         message: "Please connect your wallet to continue",
-      }).then(({ paymentAddress }) => {
-        if (paymentAddress) {
-          sendBtc({
-            paymentAddress,
-            paymentAmountSats: data?.inscriptionFunding?.fundingAmountSats!,
-          }).then(() => {
-            router.push(`/status/${fundingId}`);
-          });
-        }
-      });
+      })
+        .then(({ paymentAddress }) => {
+          console.log("paymentAddress", paymentAddress);
+          if (paymentAddress) {
+            setDoSend(true);
+          }
+        })
+        .catch((e) => {
+          console.error(e);
+          setErrorMessage(e.message);
+        });
     } else if (
       data?.inscriptionFunding?.fundingAmountSats &&
       data?.inscriptionFunding?.fundingAddress &&
       isConnected
     ) {
-      sendBtc({
-        paymentAddress: data?.inscriptionFunding?.fundingAddress,
-        paymentAmountSats: data?.inscriptionFunding?.fundingAmountSats,
-      }).then(() => {
-        router.push(`/status/${fundingId}`);
-      });
+      setDoSend(true);
     }
   }, [
     data?.inscriptionFunding?.fundingAmountSats,
@@ -110,47 +143,71 @@ export const Pay: FC<{
 
   const { qrSrc, fundingAddress, fundingAmountBtc } = inscriptionData;
   return (
-    <Card
-      sx={{
-        width: 400,
-        bgcolor: "background.paper",
-        border: "2px solid #000",
-        boxShadow: 24,
-        p: 4,
-      }}
-    >
-      <CardHeader
-        id="modal-btc-payment-title"
-        title="payment request"
-        titleTypographyProps={{
-          variant: "h6",
-        }}
-        sx={{
-          textAlign: "center",
-        }}
+    <>
+      <Snackbar
+        open={!!errorMessage}
+        onClose={() => setErrorMessage(undefined)}
+        autoHideDuration={2000}
+        message={errorMessage}
+        ContentProps={{ sx: { backgroundColor: "red" } }}
       />
-      <CardContent>
-        <Qr qrSrc={qrSrc ?? ""} />
-        <Typography variant="body1" sx={{ mb: 1, mt: 2 }} textAlign="center">
-          send {fundingAmountBtc} BTC to:
-        </Typography>
-        <Typography variant="body1" sx={{ mb: 1 }} noWrap textAlign="center">
-          {fundingAddress}
-        </Typography>
-      </CardContent>
-      <CardActionArea
+      <Snackbar
+        open={!!successMessage}
+        onClose={() => setSuccessMessage(undefined)}
+        autoHideDuration={2000}
+        message={successMessage}
+      />
+      <Card
         sx={{
-          textAlign: "center",
-          py: 2,
+          width: "100%",
+          bgcolor: "background.paper",
+          border: "2px solid #000",
+          boxShadow: 24,
+          p: 4,
         }}
       >
-        <Typography variant="body1" sx={{ mb: 1, mr: 2 }} component="span">
-          pay with
-        </Typography>
-        <Button variant="contained" onClick={sendXverse}>
-          Xverse
-        </Button>
-      </CardActionArea>
-    </Card>
+        <CardHeader
+          id="modal-btc-payment-title"
+          title="payment request"
+          titleTypographyProps={{
+            variant: "h6",
+          }}
+          sx={{
+            textAlign: "center",
+          }}
+        />
+        <CardContent>
+          <Qr qrSrc={qrSrc ?? ""} />
+
+          <Typography variant="body1" sx={{ mb: 1, mt: 2 }} textAlign="center">
+            send {fundingAmountBtc} BTC to:
+          </Typography>
+          <CopyToClipboard text={fundingAddress ?? ""} sx={{ mt: 1 }}>
+            <Typography
+              component="span"
+              variant="body1"
+              sx={{ mb: 1 }}
+              noWrap
+              textAlign="center"
+            >
+              {fundingAddress}
+            </Typography>
+          </CopyToClipboard>
+        </CardContent>
+        <CardActionArea
+          sx={{
+            textAlign: "center",
+            py: 2,
+          }}
+        >
+          <Typography variant="body1" sx={{ mb: 1, mr: 2 }} component="span">
+            pay with
+          </Typography>
+          <Button variant="contained" onClick={sendXverse}>
+            Xverse
+          </Button>
+        </CardActionArea>
+      </Card>
+    </>
   );
 };

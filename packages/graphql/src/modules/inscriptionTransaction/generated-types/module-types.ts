@@ -3,7 +3,7 @@ import type * as Types from "../../../generated-types/graphql.js";
 import type * as gm from "@0xflick/graphql-modules";
 export namespace InscriptionTransactionModule {
   interface DefinedFields {
-    InscriptionTransaction: 'inscriptions' | 'overhead' | 'padding' | 'initScript' | 'initTapKey' | 'initLeaf' | 'initCBlock';
+    InscriptionTransaction: 'inscriptions' | 'overhead' | 'padding' | 'initScript' | 'initTapKey' | 'initLeaf' | 'initCBlock' | 'count';
   };
   
   export type InscriptionTransaction = Pick<Types.InscriptionTransaction, DefinedFields['InscriptionTransaction']>;
@@ -29,6 +29,7 @@ export namespace InscriptionTransactionModule {
       initTapKey?: gm.Middleware[];
       initLeaf?: gm.Middleware[];
       initCBlock?: gm.Middleware[];
+      count?: gm.Middleware[];
     };
   };
 }

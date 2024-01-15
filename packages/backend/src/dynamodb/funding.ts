@@ -32,7 +32,7 @@ export type TFundingDb<T extends Record<string, any>> = {
   collectionId?: string;
   fundingTxid?: string;
   fundingVout?: number;
-  revealTxid?: string;
+  revealTxids?: string[];
   genesisTxid?: string;
   lastChecked?: number;
   timesChecked: number;
@@ -374,10 +374,36 @@ export class FundingDao<
         },
         ConditionExpression: "attribute_exists(pk)",
         UpdateExpression:
-          "SET genesisTxid = :genesisTxid, fundingStatus = :fundingStatus",
+          "SET genesisTxid = :genesisTxid, fundingStatus = :fundingStatus, revealTxids = :revealTxids",
         ExpressionAttributeValues: {
           ":genesisTxid": genesisTxid,
           ":fundingStatus": "genesis",
+          ":revealTxids": [],
+        },
+      }),
+    );
+  }
+
+  public async revealsFunded({
+    id,
+    revealTxids,
+  }: {
+    id: string;
+    revealTxids: string[];
+  }) {
+    await this.client.send(
+      new UpdateCommand({
+        TableName: FundingDao.TABLE_NAME,
+        Key: {
+          pk: id,
+          sk: "funding",
+        },
+        ConditionExpression: "attribute_exists(pk)",
+        UpdateExpression:
+          "SET revealTxids = :revealTxids, fundingStatus = :fundingStatus",
+        ExpressionAttributeValues: {
+          ":revealTxids": revealTxids,
+          ":fundingStatus": "revealed",
         },
       }),
     );
@@ -399,9 +425,24 @@ export class FundingDao<
         },
         ConditionExpression: "attribute_exists(pk)",
         UpdateExpression:
-          "SET revealTxid = :revealTxid, fundingStatus = :fundingStatus",
+          "SET revealTxids = list_append(revealTxids, :revealTxid)",
         ExpressionAttributeValues: {
-          ":revealTxid": revealTxid,
+          ":revealTxid": [revealTxid],
+        },
+      }),
+    );
+    // Update state if and only if contentIds.length === revealTxids.length
+    await this.client.send(
+      new UpdateCommand({
+        TableName: FundingDao.TABLE_NAME,
+        Key: {
+          pk: id,
+          sk: "funding",
+        },
+        ConditionExpression:
+          "attribute_exists(pk) AND size(revealTxids) = size(contentIds)",
+        UpdateExpression: "SET fundingStatus = :fundingStatus",
+        ExpressionAttributeValues: {
           ":fundingStatus": "revealed",
         },
       }),
@@ -618,7 +659,7 @@ export class FundingDao<
     fundingTxid,
     fundingVout,
     genesisTxid,
-    revealTxid,
+    revealTxids,
     meta,
     lastChecked,
     timesChecked,
@@ -650,7 +691,7 @@ export class FundingDao<
       ...(typeof fundingTxid !== "undefined" && { fundingTxid }),
       ...(typeof fundingVout !== "undefined" && { fundingVout }),
       ...(typeof genesisTxid !== "undefined" && { genesisTxid }),
-      ...(typeof revealTxid !== "undefined" && { revealTxid }),
+      ...(typeof revealTxids !== "undefined" && { revealTxids }),
       ...(typeof meta !== "undefined"
         ? // remove undefined values
           Array.from(Object.entries(meta)).reduce((memo, [key, value]) => {
@@ -716,7 +757,7 @@ export class FundingDao<
     fundingTxid,
     fundingVout,
     genesisTxid,
-    revealTxid,
+    revealTxids,
     timesChecked,
     lastChecked,
     fundingAmountBtc,
@@ -741,7 +782,7 @@ export class FundingDao<
       ...(typeof fundingTxid !== "undefined" && { fundingTxid }),
       ...(typeof fundingVout !== "undefined" && { fundingVout }),
       ...(typeof genesisTxid !== "undefined" && { genesisTxid }),
-      ...(typeof revealTxid !== "undefined" && { revealTxid }),
+      ...(typeof revealTxids !== "undefined" && { revealTxids }),
       ...(typeof collectionId !== "undefined"
         ? { collectionId: toCollectionId(collectionId) }
         : {}),

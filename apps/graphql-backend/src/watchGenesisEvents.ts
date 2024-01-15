@@ -19,6 +19,7 @@ export async function start() {
       fundingDao,
       fundingDocDao,
       mempoolBitcoinClient: createMempoolBitcoinClient({ network: "regtest" }),
+      pollInterval: 5000,
     });
   }
 }

@@ -11,7 +11,7 @@ import LoginIcon from "@mui/icons-material/Login";
 import LogoutIcon from "@mui/icons-material/Logout";
 import ProfileIcon from "@mui/icons-material/AccountCircle";
 import CopyIcon from "@mui/icons-material/FileCopyOutlined";
-import { WrappedLink } from "@/components/WrappedLink";
+import { AppLink } from "@/components/AppLink";
 import { useAuth } from "@/features/auth";
 
 interface IProps {
@@ -114,7 +114,7 @@ export const ConnectedDropDownModal: FC<IProps> = ({
               </MenuItem>
             )}
             {isLoggedIn && (
-              <MenuItem component={WrappedLink} href="/profile">
+              <MenuItem component={AppLink} href="/profile">
                 <ListItemIcon>
                   <ProfileIcon />
                 </ListItemIcon>

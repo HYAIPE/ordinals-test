@@ -5,12 +5,14 @@
   "license": "MIT",
   "type": "module",
   "scripts": {
-    "deploy:local": "AWS_REGION=us-east-1 cdklocal deploy --outputs-file outputs.json && node ./scripts/generateTableNamesEnv.mjs"
+    "deploy:local": "AWS_REGION=us-east-1 cdklocal deploy --outputs-file outputs.json && node ./scripts/generateTableNamesEnv.mjs",
+    "deploy": "cdk deploy"
   },
   "dependencies": {
     "aws-cdk-lib": "^2.85.0",
     "cdk": "^2.85.0",
-    "constructs": "^10.2.57"
+    "constructs": "^10.2.57",
+    "handlebars": "^4.7.8"
   },
   "devDependencies": {
     "@types/node": "^20.3.1"

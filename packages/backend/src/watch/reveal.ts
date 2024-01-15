@@ -11,6 +11,8 @@ import {
   timer,
   map,
   of,
+  reduce,
+  takeLast,
 } from "rxjs";
 import { SecretKey } from "@0xflick/crypto-utils";
 import Queue from "p-queue";
@@ -79,14 +81,15 @@ export function watchForGenesis(
     fundingDao,
     fundingDocDao,
     mempoolBitcoinClient,
+    pollInterval = 60000,
   }: {
     collectionId: ID_Collection;
     fundingDao: IFundingDao;
     fundingDocDao: IFundingDocDao;
     mempoolBitcoinClient: MempoolClient["bitcoin"];
+    pollInterval?: number;
   },
   notifier?: (genesis: {
-    txid: string;
     address: string;
     network: string;
     id: ID_AddressInscription;
@@ -94,7 +97,7 @@ export function watchForGenesis(
     contentIds: string[];
     fundingTxid?: string | undefined;
     fundingVout?: number | undefined;
-    revealTxid?: string | undefined;
+    revealTxids?: string[] | undefined;
     genesisTxid?: string | undefined;
     fundingStatus: TFundingStatus;
     lastChecked?: Date | undefined;
@@ -102,7 +105,7 @@ export function watchForGenesis(
     fundingAmountBtc: string;
     fundingAmountSat: number;
     meta: {};
-  }) => void
+  }) => void,
 ) {
   logger.info(`Watching for funded genesis for collection ${collectionId}`);
   const enqueueGenesisFunded = (funding: { address: string }) => {
@@ -126,25 +129,23 @@ export function watchForGenesis(
   const stop$ = new Subject();
 
   // 1. Periodically check for new fundings and add new fundings to the queue
-  const pollForGenesisFunded$ = interval(
-    60000 /* e.g., every 60 seconds */
-  ).pipe(
+  const pollForGenesisFunded$ = interval(pollInterval).pipe(
     startWith(0),
     takeUntil(stop$),
     tap(() =>
-      logger.info(`Polling for new funded inscriptions to fund genesis`)
+      logger.info(`Polling for new funded inscriptions to fund reveal`),
     ),
     switchMap(() =>
       from(
         fundingDao.listAllFundingsByStatus({
           id: collectionId,
           fundingStatus: "genesis",
-        })
-      )
+        }),
+      ),
     ),
     tap((funded) => {
       logger.info(
-        `Starting to watch funded ${funded.id} for address ${funded.address} `
+        `Starting to watch genesis ${funded.id} for address ${funded.address} `,
       );
     }),
     tap((funding) => logger.info(`Enqueuing reveal funding ${funding.id}`)),
@@ -162,16 +163,16 @@ export function watchForGenesis(
             funded,
             doc,
           }));
-        })
+        }),
       );
     }),
-    switchMap((inscriptions) =>
+    mergeMap((inscriptions) =>
       from(inscriptions).pipe(
         mergeMap(({ inscription, funded, doc }) =>
           from(
             enqueueGenesisFunded({
               address: inscription.inscriptionAddress,
-            })
+            }),
           ).pipe(
             retry({
               delay(error, retryCount) {
@@ -188,10 +189,10 @@ export function watchForGenesis(
                 doc,
                 mempoolResponse,
               };
-            })
-          )
-        )
-      )
+            }),
+          ),
+        ),
+      ),
     ),
     // tap((funding) => {
     //   logger.info(`Revealing ${funding.inscription.inscriptionAddress}`);
@@ -206,40 +207,35 @@ export function watchForGenesis(
           secKey: new SecretKey(Buffer.from(doc.secKey, "hex")),
           txid,
           vout,
-        })
+        }),
       ).pipe(
-        mergeMap((genesisTx) => {
+        mergeMap((revealTx) => {
           return from(
             mempoolBitcoinClient.transactions.postTx({
-              txhex: genesisTx,
-            }) as Promise<string>
+              txhex: revealTx,
+            }) as Promise<string>,
           ).pipe(
             tap((txid) => {
-              logger.info(`Genesis transaction ${txid} sent`);
-            })
+              logger.info(`Reveal transaction ${txid} sent`);
+            }),
           );
         }),
-        mergeMap(async (txid) => {
+        tap(async (revealTxid) => {
           await fundingDao.revealFunded({
             id: funded.id,
-            revealTxid: txid,
+            revealTxid,
           });
-          return {
-            ...funded,
-            txid,
-          };
-        })
+        }),
+        map(() => {
+          return funded;
+        }),
       );
-    })
+    }),
   );
   // When $fundings is complete and we have a vout value, we can update the funding with the new txid and vout
   // This assumes the checkFundings observable emits individual funding results.
   pollForGenesisFunded$.subscribe(async (reveal) => {
     logger.info(`Reveal ${reveal.id} is funded!`);
-    await fundingDao.revealFunded({
-      id: reveal.id,
-      revealTxid: reveal.txid,
-    });
     notifier?.(reveal);
   });
 
