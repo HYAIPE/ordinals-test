@@ -10,15 +10,13 @@ BLOCKCHAIN_DATA={{blockchain_data}}
 
 # extract node
 cd $NODE_FOLDER
-tar xzf $NODE_ARCHIVE
-rm $NODE_ARCHIVE
+tar -xJf $NODE_ARCHIVE
 mv node*/bin/* /usr/local/bin
 rm -rf node-*
 
 # extract bitcoin
 cd $BITCOIN_FOLDER
 tar xzf $BITCOIN_ARCHIVE
-rm $BITCOIN_ARCHIVE
 mv bitcoin*/bin/* /usr/local/bin
 rm -rf bitcoin-*
 

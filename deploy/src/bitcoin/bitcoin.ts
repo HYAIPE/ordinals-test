@@ -106,13 +106,6 @@ function createPrivateVpc(scope: Construct, network: Network) {
       ec2.Port.tcp(18333),
       "allow p2p",
     );
-
-    // Allow inbound access to port 18332 but only from the VPC
-    securityGroup.addIngressRule(
-      ec2.Peer.ipv4(vpc.vpcCidrBlock),
-      ec2.Port.tcp(18332),
-      "allow rpc",
-    );
   }
   return { vpc, securityGroup };
 }
@@ -123,7 +116,7 @@ function createLifecycleLambda(
   role: iam.IRole,
 ) {
   const outFile = path.join(__dirname, "../../dist/lifecycle-lambda/index.js");
-  const code = buildSync({
+  buildSync({
     entryPoints: [
       path.join(
         __dirname,
@@ -328,6 +321,14 @@ export class Bitcoin extends Construct {
     const { vpc, securityGroup } = createPrivateVpc(this, network);
 
     // Create an Application Load Balancer
+    const albSecurityGroup = new ec2.SecurityGroup(
+      this,
+      `BitcoinALBSecurityGroup-${network}`,
+      {
+        vpc,
+        description: "Bitcoin ALB security group.",
+      },
+    );
     const alb = new elbv2.ApplicationLoadBalancer(
       this,
       `BitcoinALB-${network}`,
@@ -335,6 +336,21 @@ export class Bitcoin extends Construct {
         vpc,
         internetFacing: true,
       },
+    );
+    alb.addSecurityGroup(albSecurityGroup);
+
+    // Allow inbound access to port 18332 but only from the VPC\
+    // Seems to get added automatically
+    // securityGroup.addIngressRule(
+    //   ec2.Peer.securityGroupId(albSecurityGroup.securityGroupId),
+    //   network === "testnet" ? ec2.Port.tcp(18332) : ec2.Port.tcp(8332),
+    //   "allow rpc",
+    // );
+    // health check
+    securityGroup.addIngressRule(
+      ec2.Peer.securityGroupId(albSecurityGroup.securityGroupId),
+      ec2.Port.tcp(8080),
+      "allow health check",
     );
 
     blockchainDataBucket.grantRead(role);
@@ -483,27 +499,33 @@ export class Bitcoin extends Construct {
     const healthCheckScript = new s3a.Asset(this, "HealthCheckScript", {
       path: path.join(__dirname, "../../bitcoin", network, "healthcheck.mjs"),
     });
+    const healthCheckScriptPath = userData.addS3DownloadCommand({
+      bucket: healthCheckScript.bucket,
+      bucketKey: healthCheckScript.s3ObjectKey,
+    });
+    healthCheckScript.grantRead(role);
 
     asg.addUserData(
       `/opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl -a fetch-config -m ec2 -s -c file:/opt/amazon-cloudwatch-agent.json`,
     );
     if (network === "testnet") {
       asg.addUserData(
-        `runuser -l  ec2-user -c 'node ${healthCheckScript} & bitcoind -testnet -datadir=/home/ec2-user/.bitcoin 2>> /home/ec2-user/bitcoin.stderr.log 1>> /home/ec2-user/bitcoin.stdout.log'`,
+        `runuser -l  ec2-user -c 'node ${healthCheckScriptPath} & bitcoind -testnet -datadir=/home/ec2-user/.bitcoin 2>> /home/ec2-user/bitcoin.stderr.log 1>> /home/ec2-user/bitcoin.stdout.log'`,
       );
     }
 
     // Attach the ASG to the ALB
     listener.addTargets(`BitcoinTarget-${network}`, {
-      port: 18332,
+      port: network === "testnet" ? 18332 : 8332,
       targets: [asg],
       protocol: elbv2.ApplicationProtocol.HTTP,
       healthCheck: {
         enabled: true,
         port: "8080",
-        healthyHttpCodes: "200-499",
+        healthyHttpCodes: "200",
         unhealthyThresholdCount: 2,
         timeout: cdk.Duration.seconds(15),
+        healthyThresholdCount: 3,
       },
     });
 
