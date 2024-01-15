@@ -9,8 +9,9 @@
     "deploy": "cdk deploy"
   },
   "dependencies": {
-    "aws-cdk-lib": "^2.85.0",
-    "cdk": "^2.85.0",
+    "aws-cdk-lib": "^2.121.1",
+    "cdk": "^2.121.1",
+    "construct": "^1.0.0",
     "constructs": "^10.2.57",
     "handlebars": "^4.7.8"
   },

@@ -1,0 +1,6 @@
+creation_rules:
+  - path_regex: secrets/testnet/.*
+    key_groups:
+      - kms:
+          - arn: arn:aws:kms:us-east-2:167146046754:key/42d63d0c-0f8e-493f-ac73-91c83da1341e
+            role: arn:aws:iam::167146046754:role/sopsAdmin

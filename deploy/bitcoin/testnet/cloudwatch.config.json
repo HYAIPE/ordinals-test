@@ -1,0 +1,23 @@
+{
+  "agent": {
+    "run_as_user": "root"
+  },
+  "logs": {
+    "logs_collected": {
+      "files": {
+        "collect_list": [
+          {
+            "file_path": "/home/ec2-user/bitcoin.stderr.log",
+            "log_group_name": "bitcoin-testnet-stderr-log",
+            "log_stream_name": "{instance_id}"
+          },
+          {
+            "file_path": "/home/ec2-user/bitcoin.stdout.log",
+            "log_group_name": "bitcoin-testnet-stdout-log",
+            "log_stream_name": "{instance_id}"
+          }
+        ]
+      }
+    }
+  }
+}

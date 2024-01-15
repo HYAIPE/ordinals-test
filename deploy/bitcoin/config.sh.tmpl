@@ -1,0 +1,31 @@
+#!/bin/bash
+
+NODE_ARCHIVE={{node_archive}}
+NODE_FOLDER=dirname $NODE_ARCHIVE
+BITCOIN_ARCHIVE={{bitcoin_archive}}
+BITCOIN_FOLDER=dirname $BITCOIN_ARCHIVE
+DATA_DIR_S3={{data_dir_s3}}
+DATA_DIR={{data_dir}}
+BLOCKCHAIN_DATA={{blockchain_data}}
+
+# extract node
+cd $NODE_FOLDER
+tar xzf $NODE_ARCHIVE
+rm $NODE_ARCHIVE
+mv node*/bin/* /usr/local/bin
+rm -rf node-*
+
+# extract bitcoin
+cd $BITCOIN_FOLDER
+tar xzf $BITCOIN_ARCHIVE
+rm $BITCOIN_ARCHIVE
+mv bitcoin*/bin/* /usr/local/bin
+rm -rf bitcoin-*
+
+# extract data dir and conf from s3
+mkdir -p $DATA_DIR
+cd $DATA_DIR
+aws s3 cp $DATA_DIR_S3 - | tar xzf -
+
+# assign ownership to ec2-user
+chown -R ec2-user:ec2-user $BLOCKCHAIN_DATA

@@ -1,6 +1,11 @@
 import { Construct } from "constructs";
 import * as cdk from "aws-cdk-lib";
-import { Bitcoin, BitcoinExeStorage, BitcoinStorage } from "./bitcoin.js";
+import {
+  Bitcoin,
+  BitcoinExeStorage,
+  BitcoinStorage,
+  NodeExeStorage,
+} from "./bitcoin.js";
 import path from "path";
 import { fileURLToPath } from "url";
 
@@ -52,8 +57,16 @@ export class BitcoinStack extends cdk.Stack {
       localArchivePath,
     });
 
+    const nodeExeStorage = new NodeExeStorage(this, "NodeExeStorage", {
+      localArchivePath: path.join(
+        __dirname,
+        "../../bitcoin/node-v20.9.0-linux-arm64.tar.xz",
+      ),
+    });
+
     new Bitcoin(this, "Bitcoin", {
       bitcoinExeAsset: bitcoinExeStorage.bitcoinExeAsset,
+      nodeExeAsset: nodeExeStorage.nodeExeAsset,
       blockchainDataBucket: bitcoinStorage.blockchainDataBucket,
       network,
     });

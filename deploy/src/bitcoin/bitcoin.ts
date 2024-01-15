@@ -50,10 +50,30 @@ export class BitcoinExeStorage extends Construct {
   }
 }
 
+interface NodeExeStorageProps {
+  localArchivePath: string;
+}
+
+export class NodeExeStorage extends Construct {
+  readonly nodeExeAsset: s3a.Asset;
+  constructor(
+    scope: Construct,
+    id: string,
+    { localArchivePath }: NodeExeStorageProps,
+  ) {
+    super(scope, id);
+
+    this.nodeExeAsset = new s3a.Asset(this, "BitcoinExeAsset", {
+      path: localArchivePath,
+    });
+  }
+}
+
 interface BitcoinProps {
   network: Network;
   blockchainDataBucket: s3.IBucket;
   bitcoinExeAsset: s3a.Asset;
+  nodeExeAsset: s3a.Asset;
 }
 
 function createPrivateVpc(scope: Construct, network: Network) {
@@ -129,42 +149,150 @@ function createLifecycleLambda(
   });
 }
 
+function createUserData({
+  bitcoinExeAsset,
+  blockchainDataBucket,
+  cloudwatchConfiguration,
+  network,
+  nodeExeAsset,
+}: {
+  bitcoinExeAsset: s3a.Asset;
+  blockchainDataBucket: s3.IBucket;
+  cloudwatchConfiguration: s3a.Asset;
+  network: Network;
+  nodeExeAsset: s3a.Asset;
+}) {
+  const userData = ec2.UserData.forLinux();
+  const nodeArchivePath = userData.addS3DownloadCommand({
+    bucket: nodeExeAsset.bucket,
+    bucketKey: nodeExeAsset.s3ObjectKey,
+  });
+  const confTemplate = compile<{ rpcallowip: string }>(
+    readFileSync(
+      path.join(
+        __dirname,
+        "../../bitcoin/",
+        network === "testnet" ? "testnet" : "mainnet",
+        "bitcoin.conf",
+      ),
+      "utf8",
+    ),
+  );
+  // Setting as the vpc_cidr block doesn't work because that ALB is not in the VPC
+  const conf = confTemplate({ rpcallowip: "0.0.0.0/0" });
+  userData.addCommands(
+    `runuser -l  ec2-user -c 'mkdir -p /home/ec2-user/.bitcoin; echo "${conf}" > /home/ec2-user/.bitcoin/bitcoin.conf'`,
+  );
+  const bitcoindArchive = userData.addS3DownloadCommand({
+    bucket: bitcoinExeAsset.bucket,
+    bucketKey: bitcoinExeAsset.s3ObjectKey,
+  });
+
+  const template = compile<{
+    bitcoin_archive: string;
+    data_dir_s3: string;
+    data_dir: string;
+    blockchain_data: string;
+    node_archive: string;
+  }>(
+    readFileSync(path.join(__dirname, "../../bitcoin/config.sh.tmpl"), "utf8"),
+  );
+
+  const setupScript = template({
+    bitcoin_archive: bitcoindArchive,
+    data_dir_s3: cdk.Fn.join("", [
+      "s3://",
+      cdk.Fn.join("/", [
+        blockchainDataBucket.bucketName,
+        network === "testnet" ? "testnet.tar.gz" : "mainnet.tar.gz",
+      ]),
+    ]),
+    data_dir: `/home/ec2-user/.bitcoin${
+      network === "testnet" ? "/testnet3" : ""
+    }`,
+    blockchain_data: "/home/ec2-user/.bitcoin",
+    node_archive: nodeArchivePath,
+  });
+  userData.addCommands(setupScript);
+
+  userData.addS3DownloadCommand({
+    bucket: cloudwatchConfiguration.bucket,
+    bucketKey: cloudwatchConfiguration.s3ObjectKey,
+    localFile: "/opt/amazon-cloudwatch-agent.json",
+  });
+  return userData;
+}
+
+function createLaunchTemplate({
+  context,
+  userData,
+  role,
+  securityGroup,
+  spotOptions,
+}: {
+  context: Construct;
+  userData: ec2.UserData;
+  role: iam.IRole;
+  securityGroup: ec2.ISecurityGroup;
+  spotOptions?: cdk.aws_ec2.LaunchTemplateSpotOptions;
+}) {
+  return new ec2.LaunchTemplate(context, "LaunchTemplate", {
+    userData,
+    role,
+    machineImage: ec2.MachineImage.latestAmazonLinux2023({
+      cpuType: ec2.AmazonLinuxCpuType.ARM_64,
+    }),
+    blockDevices: [
+      {
+        deviceName: "/dev/xvda",
+        volume: ec2.BlockDeviceVolume.ebs(60, {
+          volumeType: ec2.EbsDeviceVolumeType.GP3,
+        }),
+      },
+    ],
+    spotOptions,
+    securityGroup,
+    associatePublicIpAddress: true,
+  });
+}
+
 export class Bitcoin extends Construct {
   constructor(
     scope: Construct,
     id: string,
-    { network, blockchainDataBucket, bitcoinExeAsset }: BitcoinProps,
+    {
+      network,
+      blockchainDataBucket,
+      bitcoinExeAsset,
+      nodeExeAsset,
+    }: BitcoinProps,
   ) {
     super(scope, id);
-    const commandName = `bitcoin-health-check-${network}-2`;
-    const healthCheckCommandDocument = new cdk.aws_ssm.CfnDocument(
-      this,
-      "Healthcheck",
-      {
-        content: {
-          schemaVersion: "2.2",
-          description: "Check health of bitcoind service in testnet mode",
-          mainSteps: [
-            {
-              action: "aws:runShellScript",
-              name: "CheckBitcoindTestnet",
-              inputs: {
-                timeoutSeconds: "30",
-                runCommand: [
-                  "#!/bin/bash",
-                  `runuser -l  ec2-user -c '/usr/local/bin/bitcoin-cli ${
-                    network === "testnet" ? "-testnet " : ""
-                  }getblockchaininfo'`,
-                ],
-              },
+    const commandName = `bitcoin-health-check-${network}`;
+    new cdk.aws_ssm.CfnDocument(this, "Healthcheck", {
+      content: {
+        schemaVersion: "2.2",
+        description: "Check health of bitcoind service in testnet mode",
+        mainSteps: [
+          {
+            action: "aws:runShellScript",
+            name: "CheckBitcoindTestnet",
+            inputs: {
+              timeoutSeconds: "30",
+              runCommand: [
+                "#!/bin/bash",
+                `runuser -l  ec2-user -c '/usr/local/bin/bitcoin-cli ${
+                  network === "testnet" ? "-testnet " : ""
+                }-datadir=/home/ec2-user/.bitcoin getblockchaininfo'`,
+              ],
             },
-          ],
-        },
-        name: commandName,
-        documentFormat: "JSON",
-        documentType: "Command",
+          },
+        ],
       },
-    );
+      name: commandName,
+      documentFormat: "JSON",
+      documentType: "Command",
+    });
     new cdk.aws_ssm.CfnDocument(this, "Session", {
       content: {
         schemaVersion: "1.0",
@@ -197,7 +325,7 @@ export class Bitcoin extends Construct {
       iam.ManagedPolicy.fromAwsManagedPolicyName("CloudWatchAgentServerPolicy"),
     );
 
-    const { vpc } = createPrivateVpc(this, network);
+    const { vpc, securityGroup } = createPrivateVpc(this, network);
 
     // Create an Application Load Balancer
     const alb = new elbv2.ApplicationLoadBalancer(
@@ -209,70 +337,9 @@ export class Bitcoin extends Construct {
       },
     );
 
-    const userData = ec2.UserData.forLinux();
-
     blockchainDataBucket.grantRead(role);
 
-    const confTemplate = compile<{ vpc_cidr: string }>(
-      readFileSync(
-        path.join(
-          __dirname,
-          "../../bitcoin/",
-          network === "testnet" ? "testnet" : "mainnet",
-          "bitcoin.conf",
-        ),
-        "utf8",
-      ),
-    );
-    writeFileSync(
-      "/tmp/bitcoin.conf",
-      confTemplate({ vpc_cidr: vpc.vpcCidrBlock }),
-      "utf8",
-    );
-    const bitcoinConfAsset = new s3a.Asset(this, `BitcoinConf-${network}`, {
-      path: "/tmp/bitcoin.conf",
-    });
-    bitcoinConfAsset.grantRead(role);
-    const bitcoinConf = userData.addS3DownloadCommand({
-      bucket: bitcoinConfAsset.bucket,
-      bucketKey: bitcoinConfAsset.s3ObjectKey,
-    });
     bitcoinExeAsset.grantRead(role);
-    const bitcoindArchive = userData.addS3DownloadCommand({
-      bucket: bitcoinExeAsset.bucket,
-      bucketKey: bitcoinExeAsset.s3ObjectKey,
-    });
-    const template = compile<{
-      bitcoin_archive: string;
-      data_dir_s3: string;
-      bitcoin_conf: string;
-      data_dir: string;
-      blockchain_data: string;
-    }>(
-      readFileSync(
-        path.join(__dirname, "../../bitcoin/config.sh.tmpl"),
-        "utf8",
-      ),
-    );
-    // bucketname is an attribute so we need to use cloud formation joins to construct it
-    const data_dir_s3 = cdk.Fn.join("", [
-      "s3://",
-      cdk.Fn.join("/", [
-        blockchainDataBucket.bucketName,
-        network === "testnet" ? "testnet.tar.gz" : "mainnet.tar.gz",
-      ]),
-    ]);
-    const setupScript = template({
-      bitcoin_archive: bitcoindArchive,
-      data_dir_s3: data_dir_s3,
-      bitcoin_conf: bitcoinConf,
-      data_dir: `/home/ec2-user/.bitcoin${
-        network === "testnet" ? "/testnet3" : ""
-      }`,
-      blockchain_data: "/home/ec2-user/.bitcoin",
-    });
-    userData.addCommands(setupScript);
-
     const cloudwatchConfiguration = new s3a.Asset(
       this,
       "CloudWatchConfiguration",
@@ -286,10 +353,13 @@ export class Bitcoin extends Construct {
       },
     );
     cloudwatchConfiguration.grantRead(role);
-    userData.addS3DownloadCommand({
-      bucket: cloudwatchConfiguration.bucket,
-      bucketKey: cloudwatchConfiguration.s3ObjectKey,
-      localFile: "/opt/amazon-cloudwatch-agent.json",
+
+    const userData = createUserData({
+      bitcoinExeAsset,
+      blockchainDataBucket,
+      cloudwatchConfiguration,
+      network,
+      nodeExeAsset,
     });
 
     // Add a listener to the ALB
@@ -302,28 +372,64 @@ export class Bitcoin extends Construct {
     // Define an EC2 Auto Scaling Group with Spot Instances
     const asg = new autoscaling.AutoScalingGroup(this, "Asg", {
       vpc,
-      instanceType: ec2.InstanceType.of(
-        ec2.InstanceClass.M7G,
-        ec2.InstanceSize.LARGE,
-      ),
-      userData,
-      machineImage: ec2.MachineImage.latestAmazonLinux2023({
-        cpuType: ec2.AmazonLinuxCpuType.ARM_64,
-      }),
       healthCheck: autoscaling.HealthCheck.ec2({
         grace: cdk.Duration.seconds(360),
       }),
-      minCapacity: 2,
-      role,
-      spotPrice: "0.1", // Define your spot price
-      blockDevices: [
-        {
-          deviceName: "/dev/xvda",
-          volume: autoscaling.BlockDeviceVolume.ebs(60, {
-            volumeType: autoscaling.EbsDeviceVolumeType.GP3,
-          }),
+      mixedInstancesPolicy: {
+        launchTemplate: createLaunchTemplate({
+          context: this,
+          userData,
+          role,
+          securityGroup,
+        }),
+        instancesDistribution: {
+          onDemandPercentageAboveBaseCapacity: 0,
+          onDemandAllocationStrategy:
+            autoscaling.OnDemandAllocationStrategy.LOWEST_PRICE,
+          spotAllocationStrategy:
+            autoscaling.SpotAllocationStrategy.PRICE_CAPACITY_OPTIMIZED,
+          spotMaxPrice: "0.1",
         },
-      ],
+        launchTemplateOverrides: [
+          {
+            instanceType: ec2.InstanceType.of(
+              ec2.InstanceClass.M7G,
+              ec2.InstanceSize.LARGE,
+            ),
+          },
+          {
+            instanceType: ec2.InstanceType.of(
+              ec2.InstanceClass.M6G,
+              ec2.InstanceSize.LARGE,
+            ),
+          },
+          {
+            instanceType: ec2.InstanceType.of(
+              ec2.InstanceClass.T4G,
+              ec2.InstanceSize.LARGE,
+            ),
+          },
+          {
+            instanceType: ec2.InstanceType.of(
+              ec2.InstanceClass.M7G,
+              ec2.InstanceSize.MEDIUM,
+            ),
+          },
+          {
+            instanceType: ec2.InstanceType.of(
+              ec2.InstanceClass.M6G,
+              ec2.InstanceSize.MEDIUM,
+            ),
+          },
+          {
+            instanceType: ec2.InstanceType.of(
+              ec2.InstanceClass.T4G,
+              ec2.InstanceSize.MEDIUM,
+            ),
+          },
+        ],
+      },
+      minCapacity: 2,
     });
 
     const hookFunctionRole = new iam.Role(this, "HookFunctionRole", {
@@ -374,12 +480,16 @@ export class Bitcoin extends Construct {
       heartbeatTimeout: cdk.Duration.seconds(720),
     });
 
+    const healthCheckScript = new s3a.Asset(this, "HealthCheckScript", {
+      path: path.join(__dirname, "../../bitcoin", network, "healthcheck.mjs"),
+    });
+
     asg.addUserData(
       `/opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl -a fetch-config -m ec2 -s -c file:/opt/amazon-cloudwatch-agent.json`,
     );
     if (network === "testnet") {
       asg.addUserData(
-        "runuser -l  ec2-user -c 'bitcoind -testnet 2>> /home/ec2-user/bitcoin.stderr.log 1>> /home/ec2-user/bitcoin.stdout.log'",
+        `runuser -l  ec2-user -c 'node ${healthCheckScript} & bitcoind -testnet -datadir=/home/ec2-user/.bitcoin 2>> /home/ec2-user/bitcoin.stderr.log 1>> /home/ec2-user/bitcoin.stdout.log'`,
       );
     }
 
@@ -388,6 +498,13 @@ export class Bitcoin extends Construct {
       port: 18332,
       targets: [asg],
       protocol: elbv2.ApplicationProtocol.HTTP,
+      healthCheck: {
+        enabled: true,
+        port: "8080",
+        healthyHttpCodes: "200-499",
+        unhealthyThresholdCount: 2,
+        timeout: cdk.Duration.seconds(15),
+      },
     });
 
     new log.LogGroup(this, "stdout", {
