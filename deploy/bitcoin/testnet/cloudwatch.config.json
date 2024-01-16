@@ -15,6 +15,16 @@
             "file_path": "/home/ec2-user/bitcoin.stdout.log",
             "log_group_name": "bitcoin-testnet-stdout-log",
             "log_stream_name": "{instance_id}"
+          },
+          {
+            "file_path": "/home/ec2-user/electrs.stderr.log",
+            "log_group_name": "electrs-testnet-stderr-log",
+            "log_stream_name": "{instance_id}"
+          },
+          {
+            "file_path": "/home/ec2-user/electrs.stdout.log",
+            "log_group_name": "electrs-testnet-stdout-log",
+            "log_stream_name": "{instance_id}"
           }
         ]
       }

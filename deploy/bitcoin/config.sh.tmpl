@@ -7,12 +7,19 @@ BITCOIN_FOLDER=dirname $BITCOIN_ARCHIVE
 DATA_DIR_S3={{data_dir_s3}}
 DATA_DIR={{data_dir}}
 BLOCKCHAIN_DATA={{blockchain_data}}
+ELECTRS_INDEX_DATA_S3={{electrs_index_data_s3}}
+ELECTRS_INDEX_DATA={{electrs_index_data}}
 
 # extract node
 cd $NODE_FOLDER
 tar -xJf $NODE_ARCHIVE
 mv node*/bin/* /usr/local/bin
 rm -rf node-*
+
+# extract electrs index
+mkdir -p $ELECTRS_INDEX_DATA
+cd $ELECTRS_INDEX_DATA
+aws s3 cp $ELECTRS_INDEX_DATA_S3 - | tar xzf -
 
 # extract bitcoin
 cd $BITCOIN_FOLDER
@@ -27,3 +34,4 @@ aws s3 cp $DATA_DIR_S3 - | tar xzf -
 
 # assign ownership to ec2-user
 chown -R ec2-user:ec2-user $BLOCKCHAIN_DATA
+chown -R ec2-user:ec2-user $ELECTRS_INDEX_DATA

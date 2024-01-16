@@ -4,6 +4,7 @@ import {
   Bitcoin,
   BitcoinExeStorage,
   BitcoinStorage,
+  ElectrsExeStorage,
   NodeExeStorage,
 } from "./bitcoin.js";
 import path from "path";
@@ -57,6 +58,10 @@ export class BitcoinStack extends cdk.Stack {
       localArchivePath,
     });
 
+    const electrsExeStorage = new ElectrsExeStorage(this, "ElectrsExeStorage", {
+      localArchivePath: path.join(__dirname, "../../electrs/electrs"),
+    });
+
     const nodeExeStorage = new NodeExeStorage(this, "NodeExeStorage", {
       localArchivePath: path.join(
         __dirname,
@@ -66,6 +71,7 @@ export class BitcoinStack extends cdk.Stack {
 
     new Bitcoin(this, "Bitcoin", {
       bitcoinExeAsset: bitcoinExeStorage.bitcoinExeAsset,
+      electrsExeAsset: electrsExeStorage.electrsExeAsset,
       nodeExeAsset: nodeExeStorage.nodeExeAsset,
       blockchainDataBucket: bitcoinStorage.blockchainDataBucket,
       network,

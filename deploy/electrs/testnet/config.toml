@@ -1,0 +1,5 @@
+cookie_file = "/home/ec2-user/.bitcoin/testnet3/.cookie"
+db_dir = "/home/ec2-user/db"
+network = "testnet"
+electrum_rpc_addr = "0.0.0.0:60001"
+log_filters = "DEBUG"

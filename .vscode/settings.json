@@ -3,6 +3,7 @@
     "cblock",
     "cbor",
     "Claimables",
+    "electrs",
     "fundings",
     "inscriptor",
     "localstack",
