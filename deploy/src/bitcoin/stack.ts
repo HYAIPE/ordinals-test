@@ -1,5 +1,6 @@
 import { Construct } from "constructs";
 import * as cdk from "aws-cdk-lib";
+import * as ec2 from "aws-cdk-lib/aws-ec2";
 import {
   Bitcoin,
   BitcoinExeStorage,
@@ -9,6 +10,7 @@ import {
 } from "./bitcoin.js";
 import path from "path";
 import { fileURLToPath } from "url";
+import { MariaDB } from "./mempool/mariadb.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -69,7 +71,7 @@ export class BitcoinStack extends cdk.Stack {
       ),
     });
 
-    new Bitcoin(this, "Bitcoin", {
+    const bitcoin = new Bitcoin(this, "Bitcoin", {
       bitcoinExeAsset: bitcoinExeStorage.bitcoinExeAsset,
       electrsExeAsset: electrsExeStorage.electrsExeAsset,
       nodeExeAsset: nodeExeStorage.nodeExeAsset,
@@ -77,8 +79,32 @@ export class BitcoinStack extends cdk.Stack {
       network,
     });
 
+    new MariaDB(this, "MariaDb", {
+      bitcoinVpc: bitcoin.vpc,
+      initialLoad: process.env.INITIAL_LOAD === "true",
+    });
+
     new cdk.CfnOutput(this, "BlockchainDataBucket", {
       value: bitcoinStorage.blockchainDataBucket.bucketName,
+    });
+  }
+}
+
+export class MariaDbStack extends cdk.Stack {
+  constructor(scope: Construct, id: string, { ...props }: {}) {
+    super(scope, id, props);
+
+    const bitcoinVpc =
+      (process.env.BITCOIN_VPC_ID &&
+        ec2.Vpc.fromLookup(this, "BitcoinVpc", {
+          vpcId: process.env.BITCOIN_VPC_ID,
+        })) ||
+      new ec2.Vpc(this, "BitcoinVpc", {
+        maxAzs: 2,
+      });
+    new MariaDB(this, "MariaDb", {
+      bitcoinVpc: bitcoinVpc,
+      initialLoad: process.env.INITIAL_LOAD === "true",
     });
   }
 }

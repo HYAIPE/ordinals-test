@@ -1,10 +1,10 @@
 import { AdminRoute } from "@/routes/Admin";
-import { AddressPurpose } from "sats-connect";
+import { AddressPurpose, BitcoinNetworkType } from "sats-connect";
 
 export default function Page() {
   return (
     <AdminRoute
-      initialBitcoinNetwork="Testnet"
+      initialBitcoinNetwork={BitcoinNetworkType.Testnet}
       initialBitcoinPurpose={AddressPurpose.Ordinals}
     />
   );

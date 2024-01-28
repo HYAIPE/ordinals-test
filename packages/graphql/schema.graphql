@@ -1,0 +1,360 @@
+type Nonce {
+  nonce: String!
+  messageToSign: String!
+  domain: String!
+  expiration: String!
+  issuedAt: String!
+  uri: String!
+  version: String
+  chainId: Int
+  pubKey: String!
+}
+
+type Web3User {
+  address: ID!
+  type: BlockchainNetwork!
+  roles: [Role!]!
+  allowedActions: [Permission!]!
+
+  token: String
+}
+
+type Web3LoginUser {
+  address: ID!
+  user: Web3User!
+  token: String!
+}
+
+type Mutation {
+  nonceEthereum(address: ID!, chainId: Int!): Nonce!
+  nonceBitcoin(address: ID!): Nonce!
+}
+
+type Query {
+  userByAddress(address: ID!): Web3User!
+}
+
+type Query {
+  inscriptionTransaction(id: ID!): InscriptionTransaction
+}
+
+enum PermissionAction {
+  CREATE
+  UPDATE
+  DELETE
+  LIST
+  GET
+  USE
+  ADMIN
+}
+
+enum PermissionResource {
+  ALL
+  USER
+  ADMIN
+  ROLE
+  PRESALE
+  AFFILIATE
+  COLLECTION
+}
+
+type Permission {
+  action: PermissionAction!
+  resource: PermissionResource!
+  identifier: String
+}
+
+input PermissionInput {
+  action: PermissionAction!
+  resource: PermissionResource!
+  identifier: String
+}
+
+type Role {
+  id: ID!
+  name: String!
+  userCount: Int!
+  permissions: [Permission!]!
+
+  bindToUser(userAddress: String!): Web3User!
+  unbindFromUser(userAddress: String!): Web3User!
+  addPermissions(permissions: [PermissionInput!]!): Role!
+  removePermissions(permissions: [PermissionInput!]!): Role!
+  delete: Boolean!
+}
+
+type Query {
+  role(id: ID!): Role
+  roles: [Role!]!
+}
+
+type Mutation {
+  createRole(name: String!, permissions: [PermissionInput!]): Role!
+  role(id: ID!): Role!
+}
+
+type InscriptionTransaction {
+  inscriptions: [InscriptionTransactionContent!]!
+  overhead: Int!
+  padding: Int!
+  initScript: [BitcoinScriptItem!]!
+  initTapKey: String!
+  initLeaf: String!
+  initCBlock: String!
+
+  count: Int!
+}
+
+type InscriptionTransactionContent {
+  leaf: String!
+  tapKey: String!
+  cblock: String!
+  txsize: Int!
+  fee: Int!
+  script: [BitcoinScriptItem!]!
+}
+
+type InscriptionData {
+  textContent: String
+  base64Content: String
+  contentType: String!
+}
+
+enum FeeLevel {
+  GLACIAL
+  LOW
+  MEDIUM
+  HIGH
+}
+
+input InscriptionDataInput {
+  textContent: String
+  base64Content: String
+  contentType: String!
+}
+
+input InscriptionRequest {
+  files: [InscriptionDataInput!]!
+  destinationAddress: String!
+  network: BitcoinNetwork!
+  feeLevel: FeeLevel
+  feePerByte: Int
+}
+
+enum FundingStatus {
+  FUNDING
+  FUNDED
+  GENESIS
+  REVEALED
+}
+
+type InscriptionFunding {
+  id: ID!
+
+  fundingAmountBtc: String!
+  fundingAmountSats: Int!
+  fundingAddress: String!
+  network: BitcoinNetwork!
+  qrValue: String!
+  qrSrc: String!
+  inscriptionTransaction: InscriptionTransaction!
+  status: FundingStatus!
+  fundingTxId: String
+  fundingTxUrl: String
+  fundingGenesisTxId: String
+  fundingGenesisTxUrl: String
+  fundingRevealTxIds: [String!]
+  fundingRevealTxUrls: [String!]
+
+  inscriptionContent(tapKey: String!): InscriptionData!
+}
+
+type Query {
+  inscriptionFunding(id: ID!): InscriptionFunding
+}
+
+type KeyValue {
+  key: String!
+  value: String!
+}
+input KeyValueInput {
+  key: String!
+  value: String!
+}
+
+type Collection {
+  id: ID!
+  name: String!
+  totalCount: Int!
+  maxSupply: Int!
+
+  metadata: [KeyValue!]!
+  updateMetadata(metadata: [KeyValueInput!]!): Collection!
+}
+
+input CollectionInput {
+  name: String!
+  maxSupply: Int!
+  meta: String
+}
+
+type Mutation {
+  createCollection(input: CollectionInput!): Collection!
+  deleteCollection(id: ID!): Boolean!
+  collection(id: ID!): Collection!
+}
+
+type Query {
+  collections: [Collection!]!
+  collection(id: ID!): Collection!
+}
+
+enum BitcoinNetwork {
+  MAINNET
+  TESTNET
+  REGTEST
+}
+
+enum BlockchainNetwork {
+  BITCOIN
+  ETHEREUM
+}
+
+type Query {
+  currentBitcoinFees(
+    network: BitcoinNetwork!
+    speed: FeeLevel
+    feePerByte: Int
+  ): Int!
+}
+
+type BitcoinScriptItem {
+  text: String
+  base64: String
+}
+
+input AxolotlClaimRequest {
+  claimingAddress: String!
+  network: BitcoinNetwork!
+  feeLevel: FeeLevel
+  feePerByte: Int
+  collectionId: ID!
+}
+
+input AxolotlOpenEditionRequest {
+  destinationAddress: String!
+  claimCount: Int
+  network: BitcoinNetwork!
+  feeLevel: FeeLevel
+  feePerByte: Int
+  collectionId: ID!
+}
+
+type AxolotlFunding {
+  id: ID!
+
+  inscriptionFunding: InscriptionFunding
+
+  tokenIds: [Int!]!
+
+  destinationAddress: String!
+}
+
+type AxolotlProblem {
+  code: String!
+  message: String!
+}
+
+type AxolotlOpenEditionResponse {
+  problems: [AxolotlProblem!]
+  data: AxolotlFunding
+}
+
+type AxolotlFundingPage {
+  items: [AxolotlFunding]
+  totalCount: Int!
+  page: Int!
+  cursor: String
+}
+
+input AxolotlAvailableClaimedRequest {
+  claimingAddress: String!
+  collectionId: ID!
+}
+
+input AxolotlAvailableOpenEditionRequest {
+  destinationAddress: String
+  collectionId: ID!
+}
+
+type AxolotlAvailableClaimedFunding {
+  id: ID!
+  destinationAddress: String!
+  claimingAddress: String!
+  status: FundingStatus!
+  network: BitcoinNetwork
+  funding: InscriptionFunding
+  tokenId: Int
+}
+
+type AxolotlAvailableOpenEditionFunding {
+  id: ID!
+  destinationAddress: String!
+  status: FundingStatus!
+  network: BitcoinNetwork
+  funding: InscriptionFunding
+  tokenIds: [Int!]!
+}
+
+type AxolotlFeeEstimate {
+  tipPerTokenSats: Int!
+  tipPerTokenBtc: String!
+  totalInscriptionSats: Int!
+  totalInscriptionBtc: String!
+  totalFeeSats: Int!
+  totalFeeBtc: String!
+  feePerByte: Int!
+}
+
+type Mutation {
+  #requestFundingAddress(request: InscriptionRequest!): InscriptionFunding!
+  #axolotlFundingClaimRequest(request: AxolotlClaimRequest!): [AxolotlFunding!]!
+  axolotlFundingOpenEditionRequest(
+    request: AxolotlOpenEditionRequest!
+  ): AxolotlOpenEditionResponse!
+}
+
+type Query {
+  # axolotlAvailableClaimedFundingClaims(
+  #   request: AxolotlAvailableClaimedRequest!
+  # ): [AxolotlAvailableClaimedFunding!]!
+  axolotlAvailableOpenEditionFundingClaims(
+    request: AxolotlAvailableOpenEditionRequest!
+  ): [AxolotlAvailableOpenEditionFunding!]!
+  axolotlEstimateFee(
+    network: BitcoinNetwork!
+    feeLevel: FeeLevel
+    feePerByte: Int
+    count: Int
+  ): AxolotlFeeEstimate!
+}
+
+type Mutation {
+  siwe(address: ID!, jwe: String!): Web3LoginUser!
+  siwb(address: ID!, jwe: String!): Web3LoginUser!
+  signOutEthereum: Boolean!
+  signOutBitcoin: Boolean!
+}
+
+type Query {
+  self: Web3User
+}
+
+type AppInfo {
+  name: String!
+  pubKey: String!
+}
+
+type Query {
+  appInfo: AppInfo!
+}

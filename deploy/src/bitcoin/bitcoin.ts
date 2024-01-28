@@ -1,5 +1,5 @@
 import { Construct } from "constructs";
-import { readFileSync, writeFileSync } from "fs";
+import { readFileSync } from "fs";
 import * as cdk from "aws-cdk-lib";
 import * as ec2 from "aws-cdk-lib/aws-ec2";
 import * as s3 from "aws-cdk-lib/aws-s3";
@@ -26,7 +26,7 @@ export class BitcoinStorage extends Construct {
 
     this.blockchainDataBucket = new s3.Bucket(this, "DataBucket", {
       blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
-      removalPolicy: cdk.RemovalPolicy.DESTROY,
+      removalPolicy: cdk.RemovalPolicy.RETAIN,
     });
   }
 }
@@ -165,8 +165,7 @@ function createLifecycleLambda(
     role,
   });
 }
-
-function createUserData({
+function createBtcUserData({
   bitcoinExeAsset,
   blockchainDataBucket,
   cloudwatchConfiguration,
@@ -308,6 +307,7 @@ function createLaunchTemplate({
 }
 
 export class Bitcoin extends Construct {
+  readonly vpc: ec2.IVpc;
   constructor(
     scope: Construct,
     id: string,
@@ -396,6 +396,7 @@ export class Bitcoin extends Construct {
     );
 
     const { vpc, securityGroup } = createPublicVpc(this, network);
+    this.vpc = vpc;
 
     // Create an Application Load Balancer
     const albSecurityGroup = new ec2.SecurityGroup(
@@ -422,6 +423,11 @@ export class Bitcoin extends Construct {
       "allow health check",
     );
 
+    const nlb = new elbv2.NetworkLoadBalancer(this, "NLB", {
+      vpc,
+      internetFacing: true,
+    });
+
     blockchainDataBucket.grantRead(role);
     bitcoinExeAsset.grantRead(role);
     electrsExeAsset.grantRead(role);
@@ -445,7 +451,7 @@ export class Bitcoin extends Construct {
     );
     cloudwatchConfiguration.grantRead(role);
 
-    const userData = createUserData({
+    const userData = createBtcUserData({
       bitcoinExeAsset,
       blockchainDataBucket,
       cloudwatchConfiguration,
@@ -463,18 +469,23 @@ export class Bitcoin extends Construct {
       open: true,
     });
 
-    const electrumListener = alb.addListener("Listener-electrum", {
+    const electrsListener = nlb.addListener("ElectrsListener", {
       port: network === "testnet" ? 60001 : 50001,
-      protocol: elbv2.ApplicationProtocol.HTTP,
-      open: true,
+      protocol: elbv2.Protocol.TCP,
     });
 
-    const electrumSslListener = alb.addListener("Listener-electrum", {
-      port: network === "testnet" ? 60002 : 50002,
-      protocol: elbv2.ApplicationProtocol.HTTP,
-      sslPolicy: elbv2.SslPolicy.RECOMMENDED,
-      open: true,
-    });
+    // const electrumListener = alb.addListener("Listener-electrum", {
+    //   port: network === "testnet" ? 60001 : 50001,
+    //   protocol: elbv2.ApplicationProtocol.HTTP,
+    //   open: true,
+    // });
+
+    // const electrumSslListener = alb.addListener("Listener-electrum", {
+    //   port: network === "testnet" ? 60002 : 50002,
+    //   protocol: elbv2.ApplicationProtocol.HTTP,
+    //   sslPolicy: elbv2.SslPolicy.RECOMMENDED,
+    //   open: true,
+    // });
 
     // Define an EC2 Auto Scaling Group with Spot Instances
     const asg = new autoscaling.AutoScalingGroup(this, "Asg", {
@@ -619,35 +630,41 @@ export class Bitcoin extends Construct {
       },
     });
 
-    electrumListener.addTargets("Electrum", {
+    electrsListener.addTargets("ElectrsTargets", {
       port: network === "testnet" ? 60001 : 50001,
+      protocol: elbv2.Protocol.TCP,
       targets: [asg],
-      protocol: elbv2.ApplicationProtocol.HTTP,
-
-      healthCheck: {
-        enabled: true,
-        port: "8080",
-        healthyHttpCodes: "200",
-        unhealthyThresholdCount: 2,
-        timeout: cdk.Duration.seconds(15),
-        healthyThresholdCount: 6,
-      },
     });
 
-    const sslElectrum = electrumSslListener.addTargets("ElectrumSSL", {
-      port: network === "testnet" ? 60001 : 50001,
-      targets: [asg],
-      protocol: elbv2.ApplicationProtocol.HTTPS,
+    // electrumListener.addTargets("Electrum", {
+    //   port: network === "testnet" ? 60001 : 50001,
+    //   targets: [asg],
+    //   protocol: elbv2.ApplicationProtocol.HTTP,
 
-      healthCheck: {
-        enabled: true,
-        port: "8080",
-        healthyHttpCodes: "200",
-        unhealthyThresholdCount: 2,
-        timeout: cdk.Duration.seconds(15),
-        healthyThresholdCount: 6,
-      },
-    });
+    //   healthCheck: {
+    //     enabled: true,
+    //     port: "8080",
+    //     healthyHttpCodes: "200",
+    //     unhealthyThresholdCount: 2,
+    //     timeout: cdk.Duration.seconds(15),
+    //     healthyThresholdCount: 6,
+    //   },
+    // });
+
+    // const sslElectrum = electrumSslListener.addTargets("ElectrumSSL", {
+    //   port: network === "testnet" ? 60001 : 50001,
+    //   targets: [asg],
+    //   protocol: elbv2.ApplicationProtocol.HTTPS,
+
+    //   healthCheck: {
+    //     enabled: true,
+    //     port: "8080",
+    //     healthyHttpCodes: "200",
+    //     unhealthyThresholdCount: 2,
+    //     timeout: cdk.Duration.seconds(15),
+    //     healthyThresholdCount: 6,
+    //   },
+    // });
 
     new log.LogGroup(this, "stdout", {
       retention: log.RetentionDays.TWO_WEEKS,
