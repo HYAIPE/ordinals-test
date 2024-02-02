@@ -49,6 +49,8 @@ interface SecretEnv {
   MAINNET_RPC_URL: string;
   MAINNET_ENS_ADMIN: string;
   TESTNET_MEMPOOL_URL: string;
+  MAINNET_MEMPOOL_URL: string;
+  MAINNET_MEMPOOL_AUTH: string;
 }
 
 function withSecretEnv(secretsFile: string) {

@@ -10,6 +10,7 @@ import {
   tap,
   startWith,
   timer,
+  delay,
 } from "rxjs";
 import Queue from "p-queue";
 import { IFundingDao } from "../dao/funding.js";
@@ -135,7 +136,7 @@ export function watchForFundings(
         `Starting to watch funding ${funding.id} for address ${funding.address} `,
       );
     }),
-    mergeMap((funding) =>
+    switchMap((funding) =>
       from([funding]).pipe(
         tap((funding) =>
           logger.info(
@@ -190,12 +191,12 @@ export function watchForFundings(
         }),
       ),
     ),
+    delay(1000),
   );
 
   // When $fundings is complete and we have a vout value, we can update the funding with the new txid and vout
   // This assumes the checkFundings observable emits individual funding results.
   pollForFundings$.subscribe(async (funding) => {
-    logger.info({ funding }, "Funding result");
     if (!funding) {
       logger.error("No funding found!");
       return;

@@ -46,6 +46,7 @@ export const resolvers: CollectionsModule.Resolvers = {
     ) => {
       const { fundingDao, requireMutation } = context;
       requireMutation(info);
+      await verifyAuthorizedUser(context, canPerformCreateCollection);
       const collections = await fundingDao.getCollectionByName(name);
       if (collections.length > 0) {
         throw new CollectionError("COLLECTION_ALREADY_EXISTS", name);

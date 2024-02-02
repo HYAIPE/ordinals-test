@@ -10,9 +10,7 @@ import {
   startWith,
   timer,
   map,
-  of,
-  reduce,
-  takeLast,
+  delay,
 } from "rxjs";
 import { SecretKey } from "@0xflick/crypto-utils";
 import Queue from "p-queue";
@@ -149,7 +147,7 @@ export function watchForGenesis(
       );
     }),
     tap((funding) => logger.info(`Enqueuing reveal funding ${funding.id}`)),
-    mergeMap((funded) => {
+    switchMap((funded) => {
       return from(
         Promise.all([
           fundingDao.getFunding(funded.id),
@@ -166,7 +164,7 @@ export function watchForGenesis(
         }),
       );
     }),
-    mergeMap((inscriptions) =>
+    switchMap((inscriptions) =>
       from(inscriptions).pipe(
         mergeMap(({ inscription, funded, doc }) =>
           from(
@@ -194,10 +192,11 @@ export function watchForGenesis(
         ),
       ),
     ),
+
     // tap((funding) => {
     //   logger.info(`Revealing ${funding.inscription.inscriptionAddress}`);
     // }),
-    mergeMap(({ inscription, funded, mempoolResponse, doc }) => {
+    switchMap(({ inscription, funded, mempoolResponse, doc }) => {
       const { txid, vout, amount } = mempoolResponse;
       return from(
         generateRevealTransaction({

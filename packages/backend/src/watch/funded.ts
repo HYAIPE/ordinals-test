@@ -10,15 +10,14 @@ import {
   tap,
   startWith,
   timer,
+  delay,
 } from "rxjs";
 import { SecretKey } from "@0xflick/crypto-utils";
 import Queue from "p-queue";
 import { IFundingDao, IFundingDocDao } from "../dao/funding.js";
 import { MempoolClient, createLogger } from "../index.js";
 import { ID_Collection } from "@0xflick/ordinals-models";
-import {
-  generateGenesisTransaction,
-} from "@0xflick/inscriptions";
+import { generateGenesisTransaction } from "@0xflick/inscriptions";
 
 const logger = createLogger({ name: "watch/genesis" });
 // Queue to process fundings
@@ -38,7 +37,6 @@ async function fetchFunding({
   mempoolBitcoinClient: MempoolClient["bitcoin"];
 }) {
   const txs = await mempoolBitcoinClient.addresses.getAddressTxs({ address });
-  logger.info({ txs }, "txs");
   for (const tx of txs) {
     for (let i = 0; i < tx.vout.length; i++) {
       const output = tx.vout[i];
@@ -303,6 +301,7 @@ export function watchForFunded(
         }),
       ),
     ),
+    delay(1000),
   );
 
   // When $fundings is complete and we have a vout value, we can update the funding with the new txid and vout

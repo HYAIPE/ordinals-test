@@ -440,7 +440,7 @@ export class FundingDao<
           sk: "funding",
         },
         ConditionExpression:
-          "attribute_exists(pk) AND size(revealTxids) = size(contentIds)",
+          "attribute_exists(pk) AND size(revealTxids) >= size(contentIds)",
         UpdateExpression: "SET fundingStatus = :fundingStatus",
         ExpressionAttributeValues: {
           ":fundingStatus": "revealed",
@@ -519,7 +519,7 @@ export class FundingDao<
           pk: id,
           sk: "collection",
         },
-        ConditionExpression: "attribute_exists(pk) AND totalCount <= maxSupply",
+        ConditionExpression: "attribute_exists(pk) AND totalCount < maxSupply",
         UpdateExpression: "ADD totalCount :one",
         ExpressionAttributeValues: {
           ":one": 1,
@@ -610,9 +610,9 @@ export class FundingDao<
   }
 
   async updateCollectionMeta(id: ID_Collection, meta: CollectionMeta) {
-    let updateExpression = Object.keys(meta).reduce((acc, key) => {
-      return `${acc} SET #${key} = :${key}`;
-    }, "");
+    let updateExpression = `SET ${Object.keys(meta).reduce((acc, key) => {
+      return `${acc.length > 0 ? `${acc},` : ""} #${key} = :${key}`;
+    }, "")}`;
     const expressionAttributeValues = Object.keys(meta).reduce(
       (acc, key) => ({
         ...acc,

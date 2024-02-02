@@ -6,6 +6,8 @@ import {
   regtestMempoolUrl,
   testnetMempoolUrl,
   tableNames,
+  mainnetMempoolAuth,
+  testnetMempoolAuth,
 } from "@0xflick/ordinals-backend";
 import { lazySingleton } from "@0xflick/ordinals-models";
 
@@ -100,9 +102,11 @@ export interface IConfigContext {
   axolotlInscriptionTipDestination: string;
   axolotlAllowanceContractAddress: `0x${string}`;
   axolotlAllowanceChainId: number;
-  bitcoinRegtestMempoolEndpoint: string;
-  bitcoinTestnetMempoolEndpoint: string;
-  bitcoinMainnetMempoolEndpoint: string;
+  bitcoinRegtestMempoolEndpoint: string | null;
+  bitcoinTestnetMempoolEndpoint: string | null;
+  bitcoinTestnetMempoolAuth: string | null;
+  bitcoinMainnetMempoolEndpoint: string | null;
+  bitcoinMainnetMempoolAuth: string | null;
   authMessageDomain: string;
   authMessageExpirationTimeSeconds: number;
   authMessageJwtClaimIssuer: string;
@@ -144,8 +148,14 @@ export function createConfigContext(): IConfigContext {
     get bitcoinTestnetMempoolEndpoint() {
       return testnetMempoolUrl.get();
     },
+    get bitcoinTestnetMempoolAuth() {
+      return testnetMempoolAuth.get();
+    },
     get bitcoinMainnetMempoolEndpoint() {
       return mainnetMempoolUrl.get();
+    },
+    get bitcoinMainnetMempoolAuth() {
+      return mainnetMempoolAuth.get();
     },
     get authMessageDomain() {
       return authMessageDomain.get();

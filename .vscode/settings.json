@@ -1,21 +1,32 @@
 {
   "cSpell.words": [
+    "adduser",
+    "apigw",
+    "apigwv",
     "cblock",
     "cbor",
     "Claimables",
     "electrs",
     "fundings",
+    "gpgcheck",
+    "gpgkey",
     "inscriptor",
     "localstack",
+    "mysqladmin",
+    "nocare",
+    "outfile",
     "rpcpassword",
     "rpcuser",
     "rpcwallet",
+    "runuser",
     "SIWB",
     "siwe",
     "tapkey",
     "tapscript",
     "txid",
     "wagmi",
+    "xvda",
+    "xvdb",
     "Xverse"
   ]
 }

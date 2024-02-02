@@ -51,9 +51,6 @@ export const Content: FC<{
       <PaymentModal
         open={selectedIndex !== null}
         handleClose={() => setSelectedIndex(null)}
-        handleConfirm={() => {
-          // TODO
-        }}
         qrSrc={
           selectedIndex !== null ? fundings?.[selectedIndex].funding?.qrSrc : ""
         }

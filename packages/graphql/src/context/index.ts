@@ -7,6 +7,8 @@ import { createBitcoinContext, IBitcoinContext } from "./bitcoin.js";
 import { createGraphqlContext, IGraphqlContext } from "./graphql.js";
 import { createEthereumContext, IEthereumContext } from "./ethereum.js";
 import { createWagmiContext, TWagmiContext } from "./wagmi.js";
+import { createLogContext, ILogContext } from "./log.js";
+import { createLogger } from "@0xflick/ordinals-backend";
 
 export type RawContext = DbContext &
   IConfigContext &
@@ -15,7 +17,9 @@ export type RawContext = DbContext &
   IBitcoinContext &
   IGraphqlContext &
   IEthereumContext &
-  TWagmiContext;
+  TWagmiContext &
+  ILogContext;
+
 export type Context = RawContext & ITokenContext;
 
 export function createContext(): RawContext {
@@ -33,5 +37,6 @@ export function createContext(): RawContext {
     ...createEthereumContext(config),
     ...createGraphqlContext(),
     ...createWagmiContext(),
+    ...createLogContext(createLogger({ name: "graphql" })),
   };
 }

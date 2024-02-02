@@ -27,6 +27,50 @@ import { openEditionStrategy } from "./strategy.js";
 import { bitcoinToSats } from "@0xflick/inscriptions";
 import { AxolotlError } from "./errors.js";
 
+function getConfig(config?: {
+  scriptUrl?: string;
+  revealDelta?: number;
+  tipAddress?: string;
+  tipAmount?: number;
+}): {
+  revealDelta: number;
+  scriptUrl: string;
+  tipAddress?: string;
+  tipAmount?: number;
+} {
+  let revealDelta: number;
+  let scriptUrl: string;
+  let tipAddress: string | undefined;
+  let tipAmount: number | undefined;
+  if (typeof config?.scriptUrl === "undefined") {
+    throw new AxolotlError(
+      "Regtest network bad config, missing script_url",
+      "BAD_CONFIG",
+    );
+  }
+  scriptUrl = config.scriptUrl;
+  revealDelta = config.revealDelta ?? 0;
+  if (
+    (typeof config.tipAddress !== "undefined" &&
+      typeof config.tipAmount === "undefined") ||
+    (typeof config.tipAddress === "undefined" &&
+      typeof config.tipAmount !== "undefined")
+  ) {
+    throw new AxolotlError(
+      "Must include a tip address and amount in config but only one was provided",
+      "BAD_CONFIG",
+    );
+  }
+  tipAddress = config.tipAddress!;
+  tipAmount = config.tipAmount!;
+  return {
+    revealDelta,
+    scriptUrl,
+    tipAddress,
+    tipAmount,
+  };
+}
+
 async function createTranscriptionFunding({
   address,
   inscriptions,
@@ -206,15 +250,86 @@ export const resolvers: AxolotlModule.Resolvers = {
       },
       context,
     ) => {
+      const fundingDao = context.typedFundingDao<
+        {},
+        {
+          regtest_tip_address?: string;
+          regtest_tip_amount?: string;
+          regtest_script_url?: string;
+          regtest_reveal_delta?: string;
+          testnet_tip_address?: string;
+          testnet_tip_amount?: string;
+          testnet_script_url?: string;
+          testnet_reveal_delta?: string;
+          mainnet_tip_address?: string;
+          mainnet_tip_amount?: string;
+          mainnet_script_url?: string;
+          mainnet_reveal_delta?: string;
+        }
+      >();
+
+      const collection = await fundingDao.getCollection(
+        collectionId as ID_Collection,
+      );
+      if (!collection) {
+        throw new AxolotlError(
+          `Collection with id ${collectionId} not found`,
+          "NO_COLLECTION_FOUND",
+        );
+      }
+
+      const { revealDelta, scriptUrl, tipAddress, tipAmount } = (() => {
+        switch (network) {
+          case "REGTEST":
+            return getConfig({
+              revealDelta: collection.meta?.regtest_reveal_delta
+                ? parseInt(collection.meta?.regtest_reveal_delta)
+                : undefined,
+              scriptUrl: collection.meta?.regtest_script_url,
+              tipAddress: collection.meta?.regtest_tip_address,
+              tipAmount: collection.meta?.regtest_tip_amount
+                ? parseInt(collection.meta?.regtest_tip_amount)
+                : undefined,
+            });
+          case "MAINNET":
+            return getConfig({
+              revealDelta: collection.meta?.mainnet_reveal_delta
+                ? parseInt(collection.meta?.mainnet_reveal_delta)
+                : undefined,
+              scriptUrl: collection.meta?.mainnet_script_url,
+              tipAddress: collection.meta?.mainnet_tip_address,
+              tipAmount: collection.meta?.mainnet_tip_amount
+                ? parseInt(collection.meta?.mainnet_tip_amount)
+                : undefined,
+            });
+          case "TESTNET":
+            return getConfig({
+              revealDelta: collection.meta?.testnet_reveal_delta
+                ? parseInt(collection.meta?.testnet_reveal_delta)
+                : undefined,
+              scriptUrl: collection.meta?.testnet_script_url,
+              tipAddress: collection.meta?.testnet_tip_address,
+              tipAmount: collection.meta?.testnet_tip_amount
+                ? parseInt(collection.meta?.testnet_tip_amount)
+                : undefined,
+            });
+        }
+      })();
+
       const inscriptions = await openEditionStrategy(context, {
         claimCount: claimCount ?? 1,
+        revealDelta,
+        scriptUrl,
+        tipAddress,
+        tipAmount,
         destinationAddress: destinationAddress as `0x${string}`,
         collectionId: collectionId as ID_Collection,
-        async inscriptionFactory(requests) {
+        async inscriptionFactory(
+          requests,
+          { revealDelta, scriptUrl, tipAddress, tipAmount },
+        ) {
           const {
             inscriptionBucket,
-            axolotlInscriptionTip,
-            axolotlInscriptionTipDestination,
             fundingDocDao,
             createMempoolBitcoinClient,
           } = context;
@@ -225,7 +340,7 @@ export const resolvers: AxolotlModule.Resolvers = {
             network: toBitcoinNetworkName(network),
             mempool: new MempoolModel(
               createMempoolBitcoinClient({
-                network: toBitcoinNetworkName("REGTEST"),
+                network: toBitcoinNetworkName(network),
               }),
             ),
             destinationAddress,
@@ -233,10 +348,12 @@ export const resolvers: AxolotlModule.Resolvers = {
             feePerByte,
             fundingDocDao,
             inscriptionBucket,
-            tip: axolotlInscriptionTip,
-            tipDestination: axolotlInscriptionTipDestination,
+            tip: tipAmount,
+            tipDestination: tipAddress,
             s3Client: context.s3Client,
             count: requests.length,
+            revealDelta,
+            scriptUrl,
           });
 
           return axolotlModel;
@@ -299,8 +416,7 @@ export const resolvers: AxolotlModule.Resolvers = {
       { createMempoolBitcoinClient, axolotlInscriptionTip },
     ) => {
       const client = createMempoolBitcoinClient({
-        // using "REGTEST" actually means we are using the local mempool instance
-        network: toBitcoinNetworkName("REGTEST"),
+        network: toBitcoinNetworkName(network),
       });
       return AxolotlModel.estimateFees({
         count: count ?? 1,

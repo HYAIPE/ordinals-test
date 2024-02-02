@@ -51,16 +51,7 @@ export const resolvers: InscriptionFundingModule.Resolvers = {
       const funding = await fundingDao.getFunding(p.id);
       return funding.fundingTxid ?? null;
     },
-    fundingTxUrl: async (
-      p,
-      _,
-      {
-        fundingDao,
-        bitcoinRegtestMempoolEndpoint,
-        bitcoinTestnetMempoolEndpoint,
-        bitcoinMainnetMempoolEndpoint,
-      },
-    ) => {
+    fundingTxUrl: async (p, _, { fundingDao }) => {
       const funding = await fundingDao.getFunding(p.id);
       if (!funding.fundingTxid) {
         return null;
@@ -68,25 +59,16 @@ export const resolvers: InscriptionFundingModule.Resolvers = {
       return getUrl({
         network: funding.network,
         id: funding.fundingTxid,
-        bitcoinRegtestMempoolEndpoint,
-        bitcoinTestnetMempoolEndpoint,
-        bitcoinMainnetMempoolEndpoint,
+        bitcoinRegtestMempoolEndpoint: "http://localhost",
+        bitcoinTestnetMempoolEndpoint: "https://mempool.space",
+        bitcoinMainnetMempoolEndpoint: "https://mempool.space",
       });
     },
     fundingGenesisTxId: async (p, _, { fundingDao }) => {
       const funding = await fundingDao.getFunding(p.id);
       return funding.genesisTxid ?? null;
     },
-    fundingGenesisTxUrl: async (
-      p,
-      _,
-      {
-        fundingDao,
-        bitcoinRegtestMempoolEndpoint,
-        bitcoinTestnetMempoolEndpoint,
-        bitcoinMainnetMempoolEndpoint,
-      },
-    ) => {
+    fundingGenesisTxUrl: async (p, _, { fundingDao }) => {
       const funding = await fundingDao.getFunding(p.id);
       if (!funding.genesisTxid) {
         return null;
@@ -94,25 +76,16 @@ export const resolvers: InscriptionFundingModule.Resolvers = {
       return getUrl({
         network: funding.network,
         id: funding.genesisTxid,
-        bitcoinRegtestMempoolEndpoint,
-        bitcoinTestnetMempoolEndpoint,
-        bitcoinMainnetMempoolEndpoint,
+        bitcoinRegtestMempoolEndpoint: "http://localhost",
+        bitcoinTestnetMempoolEndpoint: "https://mempool.space",
+        bitcoinMainnetMempoolEndpoint: "https://mempool.space",
       });
     },
     fundingRevealTxIds: async (p, _, { fundingDao }) => {
       const funding = await fundingDao.getFunding(p.id);
       return funding.revealTxids ?? null;
     },
-    fundingRevealTxUrls: async (
-      p,
-      _,
-      {
-        fundingDao,
-        bitcoinRegtestMempoolEndpoint,
-        bitcoinTestnetMempoolEndpoint,
-        bitcoinMainnetMempoolEndpoint,
-      },
-    ) => {
+    fundingRevealTxUrls: async (p, _, { fundingDao }) => {
       const funding = await fundingDao.getFunding(p.id);
       if (!funding.revealTxids) {
         return null;
@@ -121,9 +94,9 @@ export const resolvers: InscriptionFundingModule.Resolvers = {
         getUrl({
           network: funding.network,
           id: txid,
-          bitcoinRegtestMempoolEndpoint,
-          bitcoinTestnetMempoolEndpoint,
-          bitcoinMainnetMempoolEndpoint,
+          bitcoinRegtestMempoolEndpoint: "http://localhost",
+          bitcoinTestnetMempoolEndpoint: "https://mempool.space",
+          bitcoinMainnetMempoolEndpoint: "https://mempool.space",
         }),
       );
     },

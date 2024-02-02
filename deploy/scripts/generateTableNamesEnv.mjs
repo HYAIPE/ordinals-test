@@ -5,7 +5,7 @@ const outputs = JSON.parse(
 
 const tableNames = {};
 let inscriptionBucketName;
-for (const [key, value] of Object.entries(outputs["ordinal-backend"])) {
+for (const [key, value] of Object.entries(outputs["ordinals"])) {
   if (key.startsWith("DynamoDBRbacTableName")) {
     tableNames.rbac = value;
   } else if (key.startsWith("DynamoDBUserNonceTable")) {

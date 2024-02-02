@@ -80,13 +80,15 @@ program
 program
   .command("bulk-mint <address>, <glob>")
   .option("-n, --network <network>", "Bitcoin network", "regtest")
+  .option("-f, --fee-rate <fee-rate>", "Fee rate in satoshis per vbyte", Number)
   .option("-o, --output <output>", "Output file")
   .option("-p, --privkey <privkey>", "Private key")
   .description("Mint ordinals in bulk")
-  .action(async (address, glob, { network, output, privkey }) => {
+  .action(async (address, glob, { network, output, privkey, feeRate }) => {
     await bulkMint({
       address,
       globStr: glob,
+      feeRate,
       network,
       outputFile: output,
       privKey: privkey,

@@ -5,8 +5,10 @@
   "type": "module",
   "license": "MIT",
   "scripts": {
-    "start": "AWS_ACCESS_KEY_ID=test AWS_SECRET_ACCESS_KEY=test node --loader ts-node/esm src/index.ts | bunyan",
-    "dev": "AWS_ACCESS_KEY_ID=test AWS_SECRET_ACCESS_KEY=test nodemon --watch src --exec \"node --loader ts-node/esm --inspect\" src/index.ts | bunyan"
+    "start": "node --loader ts-node/esm src/index.ts | bunyan",
+    "start:localstack": "AWS_ACCESS_KEY_ID=test AWS_SECRET_ACCESS_KEY=test node --loader ts-node/esm src/index.ts | bunyan",
+    "dev:localstack": "AWS_ACCESS_KEY_ID=test AWS_SECRET_ACCESS_KEY=test nodemon --watch src --exec \"node --loader ts-node/esm --inspect\" src/index.ts | bunyan",
+    "dev": "nodemon --watch src --exec \"node --loader ts-node/esm --inspect\" src/index.ts | bunyan"
   },
   "nodemonConfig": {
     "delay": 2000
@@ -19,6 +21,7 @@
     "typescript": "^5.1.6"
   },
   "dependencies": {
+    "@0xflick/mempool.js": "^2.3.10",
     "@graphql-tools/load-files": "^7.0.0",
     "apollo-server": "^3.12.0",
     "apollo-server-core": "^3.12.0",

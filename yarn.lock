@@ -34,18 +34,10 @@
     "@graphql-typed-document-node/core" "^3.1.0"
     ramda "^0.29.0"
 
-"@0xflick/mempool.js@^2.3.0":
-  version "2.3.0"
-  resolved "https://registry.yarnpkg.com/@0xflick/mempool.js/-/mempool.js-2.3.0.tgz#909bfe0abf92f5c4107e56fec3c67a9e752ed615"
-  integrity sha512-6QyHa/0vHyEKOyMupeyUJlowddSDjgPovgSngaFLbS/gtvOuH5GVsyHeRr6YmscriO95b7PE73jMh18qiorp3Q==
-  dependencies:
-    axios "0.24.0"
-    ws "8.3.0"
-
-"@0xflick/mempool.js@^2.3.3":
-  version "2.3.3"
-  resolved "https://registry.yarnpkg.com/@0xflick/mempool.js/-/mempool.js-2.3.3.tgz#88c9925c56c9babc56619c197683f152299f4677"
-  integrity sha512-EE1zBLmHKPVyTWrOVm6KaOCFTh4aGNDuRdY5JgiRQAJvyhRhROv40OB2cC+ni/pkiMltLBoRo9/YPE1VRvXx8g==
+"@0xflick/mempool.js@^2.3.10":
+  version "2.3.10"
+  resolved "https://registry.yarnpkg.com/@0xflick/mempool.js/-/mempool.js-2.3.10.tgz#12987b30062ffd6771f7d66056c364e695833139"
+  integrity sha512-kIAVQ2RWv2cY0ViIdEMYqNvjGGP8i6fpKxR9emqO/hpJBJKBCEcdnMFbX0ooUH9iYmVFizkgQ6/TWGCCm7kQ0g==
   dependencies:
     axios "0.24.0"
     ws "8.3.0"
@@ -2791,6 +2783,16 @@
   resolved "https://registry.yarnpkg.com/@bcoe/v8-coverage/-/v8-coverage-0.2.3.tgz#75a2e8b51cb758a7553d6804a5932d7aace75c39"
   integrity sha512-0hYQ8SB4Db5zvZB4axdMHGwEaQjkZzFjQiN9LVYvIFB2nSUHW9tYpxWriPrWDASIxiaXax83REcLxuSdnGPZtw==
 
+"@captemulation/graphql-modules@^2.1.3":
+  version "2.1.3"
+  resolved "https://registry.yarnpkg.com/@captemulation/graphql-modules/-/graphql-modules-2.1.3.tgz#27a748de8932e7efeabac030275a5f1cea46e769"
+  integrity sha512-DQ8l3oGz3kTN+SokQ34mLOLZo1WydqXYuHhe6HJA7kDfOx2L+jYeGy2D3d3a/uG5OH2VwRzGCjJxJbcRnqKQmQ==
+  dependencies:
+    "@graphql-tools/schema" "^10.0.0"
+    "@graphql-tools/wrap" "^10.0.0"
+    "@graphql-typed-document-node/core" "^3.1.0"
+    ramda "^0.29.0"
+
 "@chainsafe/as-sha256@^0.3.1":
   version "0.3.1"
   resolved "https://registry.yarnpkg.com/@chainsafe/as-sha256/-/as-sha256-0.3.1.tgz#3639df0e1435cab03f4d9870cc3ac079e57a6fc9"
@@ -2858,6 +2860,11 @@
   version "1.3.0"
   resolved "https://registry.yarnpkg.com/@cmdcode/tapscript/-/tapscript-1.3.0.tgz#6a6153469744f98fa2884fcaa97561c50a06566b"
   integrity sha512-FasfnnYs7yVKXEiOX49Dm11iRpXPo2OFNheMP0UNYc78KSNDkhSv3WGqCEQdqIaqRG2ABnlmCKo0y3MADAMDzA==
+
+"@codegenie/serverless-express@^4.12.5":
+  version "4.13.0"
+  resolved "https://registry.yarnpkg.com/@codegenie/serverless-express/-/serverless-express-4.13.0.tgz#ab382d69d71b3afa2a620a808a47a161543c3dd3"
+  integrity sha512-xjTotGExm+2j45T6XTvDuTJO1105jKLf152j9nXXeJboYH3dwd8Ted6guv+jDFNouf0uKOO7AhGRQdCTpLVIiw==
 
 "@coinbase/wallet-sdk@3.9.1":
   version "3.9.1"
@@ -7443,6 +7450,11 @@
   resolved "https://registry.yarnpkg.com/@types/aws-lambda/-/aws-lambda-8.10.119.tgz#aaf010a9c892b3e29a290e5c49bfe8bcec82c455"
   integrity sha512-Vqm22aZrCvCd6I5g1SvpW151jfqwTzEZ7XJ3yZ6xaZG31nUEOEyzzVImjRcsN8Wi/QyPxId/x8GTtgIbsy8kEw==
 
+"@types/aws-lambda@^8.10.76":
+  version "8.10.131"
+  resolved "https://registry.yarnpkg.com/@types/aws-lambda/-/aws-lambda-8.10.131.tgz#76fcd36e6a4a4666c7ea7503bf0e3e86c0a9cdb2"
+  integrity sha512-IWmFpqnVDvskYWnNSiu/qlRn80XlIOU0Gy5rKCl/NjhnI95pV8qIHs6L5b+bpHhyzuOSzjLgBcwgFSXrC1nZWA==
+
 "@types/babel__core@^7.1.14":
   version "7.20.1"
   resolved "https://registry.yarnpkg.com/@types/babel__core/-/babel__core-7.20.1.tgz#916ecea274b0c776fec721e333e55762d3a9614b"
@@ -8051,6 +8063,13 @@
   dependencies:
     "@typescript-eslint/types" "5.59.9"
     eslint-visitor-keys "^3.3.0"
+
+"@vendia/serverless-express@^4.3.9":
+  version "4.12.6"
+  resolved "https://registry.yarnpkg.com/@vendia/serverless-express/-/serverless-express-4.12.6.tgz#332a3c3e2c07069dbb8d3e95d69b23de2fe6dec2"
+  integrity sha512-ePsIPk3VQwgm5nh/JGBtTKQs5ZOF7REjHxC+PKk/CHvhlKQkJuUU365uPOlxuLJhC+BAefDznDRReWxpnKjmYg==
+  dependencies:
+    "@codegenie/serverless-express" "^4.12.5"
 
 "@wagmi/chains@1.6.0":
   version "1.6.0"
@@ -9036,6 +9055,35 @@ apollo-server-core@^3.12.0:
     uuid "^9.0.0"
     whatwg-mimetype "^3.0.0"
 
+apollo-server-core@^3.13.0:
+  version "3.13.0"
+  resolved "https://registry.yarnpkg.com/apollo-server-core/-/apollo-server-core-3.13.0.tgz#ad6601fbb34cc97eedca27a9fb0b5738d11cd27d"
+  integrity sha512-v/g6DR6KuHn9DYSdtQijz8dLOkP78I5JSVJzPkARhDbhpH74QNwrQ2PP2URAPPEDJ2EeZNQDX8PvbYkAKqg+kg==
+  dependencies:
+    "@apollo/utils.keyvaluecache" "^1.0.1"
+    "@apollo/utils.logger" "^1.0.0"
+    "@apollo/utils.usagereporting" "^1.0.0"
+    "@apollographql/apollo-tools" "^0.5.3"
+    "@apollographql/graphql-playground-html" "1.6.29"
+    "@graphql-tools/mock" "^8.1.2"
+    "@graphql-tools/schema" "^8.0.0"
+    "@josephg/resolvable" "^1.0.0"
+    apollo-datasource "^3.3.2"
+    apollo-reporting-protobuf "^3.4.0"
+    apollo-server-env "^4.2.1"
+    apollo-server-errors "^3.3.1"
+    apollo-server-plugin-base "^3.7.2"
+    apollo-server-types "^3.8.0"
+    async-retry "^1.2.1"
+    fast-json-stable-stringify "^2.1.0"
+    graphql-tag "^2.11.0"
+    loglevel "^1.6.8"
+    lru-cache "^6.0.0"
+    node-abort-controller "^3.0.1"
+    sha.js "^2.4.11"
+    uuid "^9.0.0"
+    whatwg-mimetype "^3.0.0"
+
 apollo-server-env@^4.2.1:
   version "4.2.1"
   resolved "https://registry.yarnpkg.com/apollo-server-env/-/apollo-server-env-4.2.1.tgz#ea5b1944accdbdba311f179e4dfaeca482c20185"
@@ -9064,6 +9112,34 @@ apollo-server-express@^3.12.0:
     body-parser "^1.19.0"
     cors "^2.8.5"
     parseurl "^1.3.3"
+
+apollo-server-express@^3.13.0:
+  version "3.13.0"
+  resolved "https://registry.yarnpkg.com/apollo-server-express/-/apollo-server-express-3.13.0.tgz#0d8d9bbba3b8b8264912d215f63fd44e74d5f42a"
+  integrity sha512-iSxICNbDUyebOuM8EKb3xOrpIwOQgKxGbR2diSr4HP3IW8T3njKFOoMce50vr+moOCe1ev8BnLcw9SNbuUtf7g==
+  dependencies:
+    "@types/accepts" "^1.3.5"
+    "@types/body-parser" "1.19.2"
+    "@types/cors" "2.8.12"
+    "@types/express" "4.17.14"
+    "@types/express-serve-static-core" "4.17.31"
+    accepts "^1.3.5"
+    apollo-server-core "^3.13.0"
+    apollo-server-types "^3.8.0"
+    body-parser "^1.19.0"
+    cors "^2.8.5"
+    parseurl "^1.3.3"
+
+apollo-server-lambda@^3.13.0:
+  version "3.13.0"
+  resolved "https://registry.yarnpkg.com/apollo-server-lambda/-/apollo-server-lambda-3.13.0.tgz#c9ce06e54c5b551254bc7716be93c0c906b715cc"
+  integrity sha512-DIwKwWo7tDHGP8aRDEHiGObxIqEeFUIJfx6qD0UIPlPix2Pgo87CJhviUi22MFpmLM8N8YF8ns42QJSB8hlWGw==
+  dependencies:
+    "@types/aws-lambda" "^8.10.76"
+    "@vendia/serverless-express" "^4.3.9"
+    apollo-server-core "^3.13.0"
+    apollo-server-express "^3.13.0"
+    express "^4.17.1"
 
 apollo-server-plugin-base@^3.7.2:
   version "3.7.2"

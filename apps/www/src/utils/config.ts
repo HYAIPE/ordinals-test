@@ -1,6 +1,15 @@
 import { Chain, mainnet, goerli, sepolia } from "@wagmi/chains";
 export const supportedAppChains = [mainnet, goerli, sepolia] as const;
 
+export const webConnectProjectId = {
+  get() {
+    if (!process.env.NEXT_PUBLIC_WEB_CONNECT_PROJECT_ID) {
+      throw new Error("NEXT_PUBLIC_WEB_CONNECT_PROJECT_ID is not set");
+    }
+    return process.env.NEXT_PUBLIC_WEB_CONNECT_PROJECT_ID;
+  },
+};
+
 export const infuraKey = {
   get() {
     if (!process.env.NEXT_PUBLIC_INFURA_KEY) {

@@ -11,6 +11,12 @@ type InscriptionFactoryFn<T extends AxolotlModel> = (
     destinationAddress: string;
     index: number;
   }[],
+  config: {
+    scriptUrl: string;
+    revealDelta: number;
+    tipAddress?: string;
+    tipAmount?: number;
+  },
 ) => Promise<T>;
 
 export async function openEditionStrategy<T extends AxolotlModel>(
@@ -20,10 +26,18 @@ export async function openEditionStrategy<T extends AxolotlModel>(
     destinationAddress,
     collectionId,
     inscriptionFactory,
+    revealDelta,
+    scriptUrl,
+    tipAddress,
+    tipAmount,
   }: {
     claimCount: number;
     destinationAddress: `0x${string}`;
     collectionId: ID_Collection;
+    tipAmount?: number;
+    tipAddress?: string;
+    revealDelta: number;
+    scriptUrl: string;
     inscriptionFactory: InscriptionFactoryFn<T>;
   },
 ) {
@@ -48,7 +62,12 @@ export async function openEditionStrategy<T extends AxolotlModel>(
       index: existingFundings.length + i,
     });
   }
-  const inscriptionDoc = await inscriptionFactory(claimables);
+  const inscriptionDoc = await inscriptionFactory(claimables, {
+    revealDelta,
+    scriptUrl,
+    tipAddress,
+    tipAmount,
+  });
 
   await openEditionClaimsDao.putBatch(
     inscriptionDoc.tokenIds.map((_, index) => {

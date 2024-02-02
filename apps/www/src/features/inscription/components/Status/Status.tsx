@@ -73,7 +73,7 @@ export const Status: FC<{
     variables: {
       id: fundingId,
     },
-    pollInterval: 1000,
+    pollInterval: 5000,
   });
 
   if (!data || loading) {

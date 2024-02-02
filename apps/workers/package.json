@@ -12,6 +12,6 @@
     "typescript": "5.1.3"
   },
   "dependencies": {
-    "@0xflick/mempool.js": "^2.3.3"
+    "@0xflick/mempool.js": "^2.3.10"
   }
 }

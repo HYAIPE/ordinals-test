@@ -36,11 +36,17 @@ export const tableNames = lazySingleton(() => {
 });
 
 export const regtestMempoolUrl = lazySingleton(() => {
-  return process.env.REGTEST_MEMPOOL_URL ?? "http://localhost:80";
+  return process.env.REGTEST_MEMPOOL_URL ?? null;
 });
 export const testnetMempoolUrl = lazySingleton(() => {
-  return process.env.TESTNET_MEMPOOL_URL ?? "https://mempool.space";
+  return process.env.TESTNET_MEMPOOL_URL ?? null;
+});
+export const testnetMempoolAuth = lazySingleton(() => {
+  return process.env.TESTNET_MEMPOOL_AUTH ?? null;
 });
 export const mainnetMempoolUrl = lazySingleton(() => {
-  return process.env.MAINNET_MEMPOOL_URL ?? "https://mempool.space";
+  return process.env.MAINNET_MEMPOOL_URL ?? null;
+});
+export const mainnetMempoolAuth = lazySingleton(() => {
+  return process.env.MAINNET_MEMPOOL_AUTH ?? null;
 });

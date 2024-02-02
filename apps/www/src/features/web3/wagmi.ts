@@ -13,6 +13,7 @@ import {
   appName,
   infuraKey,
   supportedChains,
+  webConnectProjectId,
 } from "@/utils/config";
 import { lazySingleton } from "@/utils/factory";
 
@@ -42,7 +43,7 @@ export const appConnectors = lazySingleton<TAppConnectors[]>(() => {
     new WalletConnectConnector({
       chains,
       options: {
-        projectId: "dab55e435303632d6ce634a4f32a652b",
+        projectId: webConnectProjectId.get(),
       },
     }),
     new CoinbaseWalletConnector({

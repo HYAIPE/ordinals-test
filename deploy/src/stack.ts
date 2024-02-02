@@ -6,6 +6,8 @@ import { fileURLToPath } from "url";
 import { InscriptionsBus } from "./inscription-bus.js";
 import { Storage } from "./storage.js";
 import { DynamoDB } from "./dynamodb.js";
+import { Www } from "./distribution.js";
+import { Graphql } from "./graphql.js";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 interface IProps extends cdk.StackProps {}
@@ -14,10 +16,38 @@ export class BackendStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props: IProps) {
     const { ...rest } = props;
     super(scope, id, rest);
-    new Storage(this, "Storage", {});
-    new DynamoDB(this, "DynamoDB", {});
-    new InscriptionsBus(this, "NftMetadataBus", {
-      lambdas: false,
+    const { inscriptionBucket } = new Storage(this, "Storage", {});
+    const {
+      claimsTable,
+      fundingTable,
+      openEditionClaimsTable,
+      rbacTable,
+      userNonceTable,
+    } = new DynamoDB(this, "DynamoDB", {});
+    // new InscriptionsBus(this, "NftMetadataBus", {
+    //   lambdas: false,
+    // });
+    const { api: graphqlApi } = new Graphql(this, "Graphql", {
+      domainName: "bitflick.xyz",
+      claimsTable,
+      fundingTable,
+      openEditionClaimsTable,
+      rbacTable,
+      userNonceTable,
+      inscriptionBucket,
+    });
+    const graphqlApiUrl = cdk.Fn.select(
+      1,
+      cdk.Fn.split("//", graphqlApi.apiEndpoint),
+    );
+    new cdk.CfnOutput(this, "GraphqlApiUrl", {
+      value: graphqlApiUrl,
+    });
+    new Www(this, "Www", {
+      // Adding cert manually because cloudflare
+      noCert: true,
+      domain: "bitflick.xyz",
+      graphqlApi,
     });
   }
 }

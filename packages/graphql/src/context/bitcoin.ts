@@ -13,23 +13,41 @@ export function createBitcoinContext(
     | "bitcoinRegtestMempoolEndpoint"
     | "bitcoinTestnetMempoolEndpoint"
     | "bitcoinMainnetMempoolEndpoint"
+    | "bitcoinMainnetMempoolAuth"
+    | "bitcoinTestnetMempoolAuth"
   >,
 ): IBitcoinContext {
-  const urlForNetworkName = (network: BitcoinNetworkNames): string => {
+  const urlForNetworkName = (
+    network: BitcoinNetworkNames,
+  ): [string | null, string | null] => {
     switch (network) {
       case "regtest":
-        return config.bitcoinRegtestMempoolEndpoint;
+        return [config.bitcoinRegtestMempoolEndpoint, null];
       case "testnet":
-        return config.bitcoinTestnetMempoolEndpoint;
+        return [
+          config.bitcoinTestnetMempoolEndpoint,
+          config.bitcoinTestnetMempoolAuth,
+        ];
       case "mainnet":
-        return config.bitcoinMainnetMempoolEndpoint;
+        return [
+          config.bitcoinMainnetMempoolEndpoint,
+          config.bitcoinMainnetMempoolAuth,
+        ];
       default:
         throw new Error(`Unknown Bitcoin network: ${network}`);
     }
   };
   return {
     createMempoolBitcoinClient({ network }) {
-      const url = new URL(urlForNetworkName(network));
+      let [urlStr, auth] = urlForNetworkName(network);
+      if (urlStr !== null) {
+        // Prevent mempool client from mutating the URL
+        network = "regtest";
+      }
+      if (!urlStr) {
+        urlStr = "https://mempool.space";
+      }
+      const url = new URL(urlStr);
       const protocol = url.protocol.slice(0, -1);
       if (!["http", "https"].includes(protocol)) {
         throw new Error(`Unsupported protocol: ${protocol}`);
@@ -38,6 +56,13 @@ export function createBitcoinContext(
         network,
         hostname: url.host,
         protocol: protocol as "http" | "https",
+        config: {
+          ...(auth && {
+            headers: {
+              Authorization: `Basic ${Buffer.from(auth).toString("base64")}`,
+            },
+          }),
+        },
       }).bitcoin;
     },
   };

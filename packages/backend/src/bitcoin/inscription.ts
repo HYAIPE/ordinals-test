@@ -21,7 +21,7 @@ export async function createInscriptionTransaction({
   address: string;
   network: BitcoinNetworkNames;
   feeRate: number;
-  tip: number;
+  tip?: number;
   inscriptions: InscriptionContent[];
 }): Promise<TInscriptionDoc & { files: InscriptionFile[] }> {
   const privKey = generatePrivKey();
@@ -44,7 +44,7 @@ export async function createInscriptionTransaction({
     network,
     privKey,
     feeRate,
-    tip,
+    tip: tip ?? 0,
     padding: 546,
   });
 
@@ -68,6 +68,6 @@ export async function createInscriptionTransaction({
     secKey: Buffer.from(secKey.raw).toString("hex"),
     totalFee,
     writableInscriptions: inscriptionsToWrite,
-    tip,
+    tip: tip ?? 0,
   };
 }

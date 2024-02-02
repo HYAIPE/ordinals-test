@@ -20,12 +20,14 @@ export async function bulkMint({
   globStr,
   outputFile,
   privKey,
+  feeRate,
 }: {
   address: string;
   network: BitcoinNetworkNames;
   globStr: string;
   outputFile: string;
   privKey?: string;
+  feeRate: number;
 }) {
   privKey = privKey ?? generatePrivKey();
   console.log(`privKey: ${privKey}`);
@@ -51,7 +53,7 @@ export async function bulkMint({
     tip: 0,
     network,
     privKey,
-    feeRate: 11,
+    feeRate,
   });
   console.log(`Pay ${response.amount} to ${response.fundingAddress}`);
   let funded: readonly [string, number, number] | readonly [null, null, null] =
@@ -60,7 +62,7 @@ export async function bulkMint({
   do {
     funded = await addressReceivedMoneyInThisTx(
       response.fundingAddress,
-      network
+      network,
     );
     await new Promise((resolve) => setTimeout(resolve, 1000));
   } while (funded[0] == null);
@@ -89,7 +91,7 @@ export async function bulkMint({
   await loopTilAddressReceivesMoney(
     response.inscriptionsToWrite[0].inscriptionAddress,
     false,
-    network
+    network,
   );
 
   await new Promise((resolve) => setTimeout(resolve, 2000));
@@ -99,7 +101,7 @@ export async function bulkMint({
 
     const [txid, vout, amount] = await waitForInscriptionFunding(
       inscription,
-      network
+      network,
     );
 
     const revealTx = await generateRevealTransaction({
@@ -126,7 +128,7 @@ export async function bulkMint({
 
   await fs.promises.writeFile(
     outputFile,
-    JSON.stringify(inscriptionMap, null, 2)
+    JSON.stringify(inscriptionMap, null, 2),
   );
 }
 

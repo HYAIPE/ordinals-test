@@ -11,7 +11,9 @@ export class Storage extends Construct {
     super(scope, id);
 
     // Create the S3 buckets for inscriptions and axolotl inscriptions
-    const inscriptionBucket = new s3.Bucket(this, "InscriptionBucket");
+    const inscriptionBucket = new s3.Bucket(this, "InscriptionBucket", {
+      removalPolicy: cdk.RemovalPolicy.RETAIN,
+    });
     this.inscriptionBucket = inscriptionBucket;
     new cdk.CfnOutput(this, "InscriptionBucketName", {
       value: this.inscriptionBucket.bucketName,

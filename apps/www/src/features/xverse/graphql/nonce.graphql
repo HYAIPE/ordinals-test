@@ -1,7 +1,0 @@
-mutation BitcoinNonce($address: ID!) {
-  nonceBitcoin(address: $address) {
-    nonce
-    messageToSign
-    pubKey
-  }
-}

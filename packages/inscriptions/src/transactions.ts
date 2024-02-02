@@ -3,7 +3,14 @@
 import cbor from "cbor";
 import { BrotliOptions, brotliCompress, constants } from "zlib";
 import { promisify } from "util";
-import { Address, Script, Signer, Tap, Tx } from "@0xflick/tapscript";
+import {
+  Address,
+  Script,
+  Signer,
+  Tap,
+  Tx,
+  TxTemplate,
+} from "@0xflick/tapscript";
 import * as cryptoUtils from "@0xflick/crypto-utils";
 import {
   InvalidAddressError,
@@ -223,8 +230,7 @@ export async function generateFundingAddress({
       networkNamesToTapScriptName(network),
     );
 
-    const prefix = 160;
-    const txsize = prefix + data.byteLength;
+    const txsize = data.byteLength;
     const fee = Math.ceil(feeRate * txsize);
     total_fee += fee;
 
@@ -243,7 +249,7 @@ export async function generateFundingAddress({
   // we are covering 2 times the same outputs, once for seeder, once for the inscribers
   let total_fees =
     total_fee +
-    (69 + (inscriptionsToWrite.length + 1) * 2 * 31 + 10) * feeRate +
+    (69 + inscriptionsToWrite.length * 2 * 31 + 10) * feeRate +
     base_size * inscriptionsToWrite.length +
     padding * inscriptionsToWrite.length;
 
@@ -381,7 +387,7 @@ export async function generateGenesisTransaction({
   initCBlock,
   secKey,
 }: GenesisTransactionRequest) {
-  let outputs = [];
+  let outputs: TxTemplate["vout"] = [];
 
   for (let i = 0; i < inscriptions.length; i++) {
     outputs.push({
@@ -393,7 +399,7 @@ export async function generateGenesisTransaction({
   if (tip && tippingAddress && !isNaN(tip) && tip >= 500) {
     outputs.push({
       value: tip,
-      scriptPubKey: ["OP_1", Address.p2tr.decode(tippingAddress).hex],
+      scriptPubKey: Address.decode(tippingAddress).script,
     });
   }
 
@@ -410,6 +416,7 @@ export async function generateGenesisTransaction({
     ],
     vout: outputs,
   });
+  console.log(JSON.stringify(initRedeemTx, null, 2));
   const init_sig = await Signer.taproot.sign(secKey.raw, initRedeemTx, 0, {
     extension: initLeaf,
   });

@@ -14,6 +14,8 @@ const sepoliaEnsUniversalResolverAddress =
   process.env.NEXT_PUBLIC_SEPOLIA_ENS_UNIVERSAL_RESOLVER_ADDRESS ??
   "0x156381BB699B8637000a919ac35B46E4C9DB7545";
 
+const webConnectProjectId = process.env.NEXT_PUBLIC_WEB_CONNECT_PROJECT_ID ?? "";
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   transpilePackages: ["@0xflick/ordinals-rbac-models"],
@@ -27,6 +29,7 @@ const nextConfig = {
     NEXT_PUBLIC_SEPOLIA_ENS_REGISTRY_ADDRESS: sepoliaEnsRegistryAddress,
     NEXT_PUBLIC_SEPOLIA_ENS_UNIVERSAL_RESOLVER_ADDRESS:
       sepoliaEnsUniversalResolverAddress,
+    NEXT_PUBLIC_WEB_CONNECT_PROJECT_ID: webConnectProjectId,
   },
   webpack: (config) => {
     return {

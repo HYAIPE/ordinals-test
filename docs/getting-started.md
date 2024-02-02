@@ -83,3 +83,5 @@ Once the backend is running, bootstrap an admin user. By default, only the owner
 cd apps/cli
 yarn cli bootstrap --admin-address "0xbadbeef"
 ```
+
+Now we can create a collection:

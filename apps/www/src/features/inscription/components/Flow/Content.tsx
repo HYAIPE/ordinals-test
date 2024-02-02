@@ -11,14 +11,21 @@ export const Content: FC<{
   initialBitcoinNetwork: BitcoinNetworkType;
   initialBitcoinPurpose: AddressPurpose;
   step: "start" | "agreement" | "claim" | "pay" | "done";
-}> = ({ collectionId, initialBitcoinNetwork, initialBitcoinPurpose, step }) => {
+}> = ({ collectionId, initialBitcoinNetwork, step }) => {
   const router = useRouter();
 
   if (step === "start") {
     return (
       <Start
         onInscribe={() => {
-          router.push(`/testnet/agreement/${collectionId}`, {});
+          router.push(
+            `${
+              initialBitcoinNetwork === BitcoinNetworkType.Testnet
+                ? "/testnet"
+                : ""
+            }/agreement/${collectionId}`,
+            {}
+          );
         }}
       />
     );
@@ -28,21 +35,43 @@ export const Content: FC<{
     return (
       <AgreementModal
         onClose={() => {
-          router.push(`/testnet/start/${collectionId}`);
+          router.push(
+            `${
+              initialBitcoinNetwork === BitcoinNetworkType.Testnet
+                ? "/testnet"
+                : ""
+            }/start/${collectionId}`
+          );
         }}
         onAgree={() => {
-          router.push(`/testnet/claim/${collectionId}`);
+          router.push(
+            `${
+              initialBitcoinNetwork === BitcoinNetworkType.Testnet
+                ? "/testnet"
+                : ""
+            }/claim/${collectionId}`
+          );
         }}
       />
     );
   }
 
   if (step === "claim") {
-    return <ActiveClaim network={initialBitcoinNetwork} />;
+    return (
+      <ActiveClaim
+        network={initialBitcoinNetwork}
+        collectionId={collectionId}
+      />
+    );
   }
 
   if (step === "pay") {
-    return <ActiveClaim network={initialBitcoinNetwork} />;
+    return (
+      <ActiveClaim
+        network={initialBitcoinNetwork}
+        collectionId={collectionId}
+      />
+    );
   }
   return null;
 };

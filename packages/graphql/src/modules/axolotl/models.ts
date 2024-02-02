@@ -204,7 +204,8 @@ export class AxolotlModel implements IAxolotlMeta {
     const inscriptionContent: InscriptionContent = {
       content: Buffer.from(htmlContent, "utf8"),
       mimeType: "text/html",
-      compress: true,
+      // Until https://github.com/ordinals/ord/issues/2775 is fixed
+      // compress: true,
       metadata: {
         tokenId: 100,
         revealedAt: 1111111,
@@ -247,6 +248,8 @@ export class AxolotlModel implements IAxolotlMeta {
     tipDestination,
     s3Client,
     count,
+    scriptUrl,
+    revealDelta,
   }: {
     collectionId: ID_Collection;
     incrementingRevealDao: TAxolotlFundingDao;
@@ -257,38 +260,15 @@ export class AxolotlModel implements IAxolotlMeta {
     feePerByte?: InputMaybe<number>;
     feeLevel?: InputMaybe<FeeLevel>;
     inscriptionBucket: string;
-    tip: number;
-    tipDestination: string;
+    tip?: number;
+    tipDestination?: string;
     s3Client: S3Client;
     count: number;
+    scriptUrl: string;
+    revealDelta: number;
   }) {
-    const collection = await incrementingRevealDao.getCollection(collectionId);
-
-    if (!collection) {
-      throw new AxolotlError(
-        `No collection with id ${collectionId}`,
-        "NO_COLLECTION_FOUND",
-      );
-    }
-
-    const { config: configStr } = collection.meta ?? {};
-    const config: TAxolotlCollectionConfig =
-      typeof configStr === "undefined"
-        ? {
-            mainnet: undefined,
-            regtest: undefined,
-            testnet: undefined,
-          }
-        : JSON.parse(configStr);
-
-    const configNetwork = config[network];
-    if (!configNetwork) {
-      throw new Error(`No config for network ${network}`);
-    }
-    const scriptUrl = configNetwork.scriptName;
-    const revealBlockDelta = configNetwork.revealBlockDelta;
     const tipHeight = await mempool.tipHeight();
-    const revealedAt = tipHeight + revealBlockDelta;
+    const revealedAt = tipHeight + revealDelta;
 
     const problems: AxolotlProblem[] = [];
 
@@ -310,7 +290,8 @@ export class AxolotlModel implements IAxolotlMeta {
         const inscriptionContent: InscriptionContent = {
           content: Buffer.from(htmlContent, "utf8"),
           mimeType: "text/html",
-          compress: true,
+          // Until https://github.com/ordinals/ord/issues/2775 is fixed
+          // compress: true,
           metadata: {
             tokenId,
             revealedAt,
@@ -356,7 +337,7 @@ export class AxolotlModel implements IAxolotlMeta {
       address: destinationAddress,
       feeRate: finalFee,
       network,
-      tip: tip * inscriptionContents.length,
+      tip: tip ?? 0 * inscriptionContents.length,
       inscriptions: inscriptionContents,
     });
 
@@ -370,7 +351,7 @@ export class AxolotlModel implements IAxolotlMeta {
       timesChecked: 0,
       fundingAmountBtc,
       fundingAmountSat: Number(bitcoinToSats(fundingAmountBtc)),
-      tipAmountSat: tip * inscriptionContents.length,
+      tipAmountSat: tip ?? 0 * inscriptionContents.length,
       tipAmountDestination: tipDestination,
       meta: {
         tokenIds,
@@ -393,7 +374,7 @@ export class AxolotlModel implements IAxolotlMeta {
       secKey,
       totalFee,
       writableInscriptions,
-      tip,
+      tip: tip ?? 0,
     };
     const inscriptionFundingModel = new InscriptionFundingModel({
       id: addressModel.id,

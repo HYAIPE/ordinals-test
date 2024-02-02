@@ -18,7 +18,7 @@ export async function start() {
       collectionId: collection.id,
       fundingDao,
       fundingDocDao,
-      mempoolBitcoinClient: createMempoolBitcoinClient({ network: "regtest" }),
+      mempoolBitcoinClient: createMempoolBitcoinClient({ network: "mainnet" }),
       pollFundingsInterval: 5000,
     });
   }

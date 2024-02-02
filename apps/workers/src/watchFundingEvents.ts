@@ -4,7 +4,7 @@ import {
 } from "@0xflick/ordinals-backend";
 import { createMempoolBitcoinClient } from "./mempool.js";
 
-export async function start() {
+export async function start(network: "mainnet" | "testnet" = "testnet") {
   console.log("🚀 starting funding event watcher");
   const fundingDao = createDynamoDbFundingDao();
   const allCollections = await fundingDao.getAllCollections();
@@ -12,7 +12,7 @@ export async function start() {
     await watchForFundings({
       collectionId: collection.id,
       fundingDao,
-      mempoolBitcoinClient: createMempoolBitcoinClient({ network: "testnet" }),
+      mempoolBitcoinClient: createMempoolBitcoinClient({ network }),
       pollInterval: 20000,
     });
   }

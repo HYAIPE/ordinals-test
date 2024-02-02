@@ -5,7 +5,7 @@ import { start as startFundedEvents } from "./watchFundedEvents.js";
 import { start as startGenesisEvents } from "./watchGenesisEvents.js";
 
 await startGraphql();
-startGenesisEvents();
-startFundingEvents();
-startFundedEvents();
-await startWatchEvents();
+// startGenesisEvents();
+// startFundingEvents();
+// startFundedEvents();
+// await startWatchEvents();
