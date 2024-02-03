@@ -28,7 +28,9 @@ export class Www extends Construct {
     const domains = domain instanceof Array ? domain : [domain];
     const domainName = domains.join(".");
 
-    const environment = parse(textFromSecret(`${domainName}/.env.www`));
+    const environment = parse(
+      textFromSecret(`${domainName.replace("www.", "")}/.env.www`),
+    );
     const graphqlApiUrl = cdk.Fn.select(
       1,
       cdk.Fn.split("//", graphqlApi.apiEndpoint),
@@ -99,7 +101,7 @@ export class Www extends Construct {
       nextjsPath: "../apps/www",
       environment: {
         ...environment,
-        NEXT_PUBLIC_GRAPHQL_ENDPOINT: "/api/graphql",
+        NEXT_PUBLIC_GRAPHQL_ENDPOINT: `https://${domainName}/api/graphql`,
       },
     });
 

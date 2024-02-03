@@ -125,19 +125,7 @@ export const Pay: FC<{
     ) {
       setDoSend(true);
     }
-  }, [
-    data?.inscriptionFunding?.fundingAmountSats,
-    data?.inscriptionFunding?.fundingAddress,
-    isConnected,
-    currentTarget.purpose,
-    currentTarget.network,
-    network,
-    networkSelect,
-    connect,
-    sendBtc,
-    router,
-    fundingId,
-  ]);
+  }, [data?.inscriptionFunding?.fundingAmountSats, data?.inscriptionFunding?.fundingAddress, isConnected, currentTarget.purpose, currentTarget.network, network, networkSelect, connect]);
 
   if (!data || loading) {
     return <Loading />;

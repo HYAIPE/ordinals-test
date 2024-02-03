@@ -117,33 +117,36 @@ export const handler: APIGatewayProxyHandlerV2 = async (event) => {
       const canvas = new Canvas(569, 569);
       console.log("Rendering canvas");
       await renderCanvas(canvas, layers);
-      const ogMetaCanvas = new Canvas(800, 400);
+      const ogMetaCanvas = new Canvas(800, 420);
       const ogMetaCtx = ogMetaCanvas.getContext("2d");
       ogMetaCtx.fillStyle = "white";
-      ogMetaCtx.fillRect(0, 0, 800, 400);
-      ogMetaCtx.drawImage(canvas, 50, 50, 300, 300);
+      ogMetaCtx.fillRect(0, 0, 800, 420);
+      ogMetaCtx.drawImage(canvas, 40, 40, 310, 310);
       ogMetaCtx.fillStyle = "black";
       ogMetaCtx.textAlign = "center";
       ogMetaCtx.font = "50px Arial";
-      ogMetaCtx.fillText("Axolotl Valley", 580, 120);
+      ogMetaCtx.fillText("Axolotl Valley", 580, 80);
       ogMetaCtx.font = "40px Arial";
-      ogMetaCtx.fillText("Bitcoin Ordinal Mint", 580, 220);
-      ogMetaCtx.fillText("Reveals in 420 blocks", 580, 320);
+      ogMetaCtx.fillText("Bitcoin Ordinal Mint", 580, 180);
+      ogMetaCtx.fillText("Reveals in 420 blocks", 580, 250);
+      ogMetaCtx.font = "30px Arial";
+      ogMetaCtx.fillText("~0.00045 BTC per token", 580, 330);
 
       // Save canvas to S3
       console.log("Fetching image from canvas");
       const imageData = ogMetaCanvas.toBuffer("image/png", {
         compressionLevel: 8,
       });
-      console.log("Saving canvas to S3");
-      await s3WriteObject(s3Key, imageData);
-      console.log("Done");
+      // console.log("Saving canvas to S3");
+      // await s3WriteObject(s3Key, imageData);
+      // console.log("Done");
       return {
-        statusCode: 302,
+        statusCode: 200,
         headers: {
-          ["Location"]: `https://${imageHost}/${s3Key}`,
+          ["Content-Type"]: "image/png",
         },
-        body: "",
+        body: imageData.toString("base64"),
+        isBase64Encoded: true,
       };
     }
     console.log(`Seed image found in S3: ${s3Key}`);

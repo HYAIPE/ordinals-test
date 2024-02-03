@@ -69,7 +69,9 @@ export const handler: APIGatewayProxyHandlerV2 = async (event) => {
 
     const address = pathParameters.address;
     const amount = pathParameters.amount;
-    const qrValue = `bitcoin:${address}?amount=${amount}`;
+    const qrValue = `bitcoin:${address}?amount=${satsToBitcoin(
+      BigInt(amount),
+    )}`;
     console.log(`qrValue: ${qrValue}`);
 
     const s3Key = `qr/${address}/${amount}.png`;
@@ -81,38 +83,33 @@ export const handler: APIGatewayProxyHandlerV2 = async (event) => {
       const qrImg = await loadImage(qrSrc);
       // Render canvas
       console.log("Creating canvas");
-      const canvas = new Canvas(800, 400);
+      const canvas = new Canvas(800, 420);
       const ctx = canvas.getContext("2d");
 
       ctx.fillStyle = "black";
-      ctx.fillRect(0, 0, 800, 400);
-      ctx.drawImage(qrImg, 50, 50, 300, 300);
+      ctx.fillRect(0, 0, 800, 420);
+      ctx.drawImage(qrImg, 40, 40, 310, 310);
       ctx.fillStyle = "white";
       ctx.textAlign = "center";
       ctx.font = "30px Arial";
-      ctx.fillText("Payment request", 600, 100);
+      ctx.fillText("Payment request", 600, 150);
       ctx.font = "20px Arial";
-      ctx.fillText(`${satsToBitcoin(BigInt(amount))} BTC`, 600, 150);
-      ctx.fillText("to", 600, 200);
-      ctx.font = "10px Arial";
-      ctx.fillText(address, 600, 250);
+      ctx.fillText(`${satsToBitcoin(BigInt(amount))} BTC`, 600, 200);
+      ctx.fillText("to", 600, 250);
+      ctx.font = "15px Arial";
+      ctx.fillText(address, 600, 300);
 
-      // Save canvas to S3
-      console.log("Fetching image from canvas");
       const imageData = canvas.toBuffer("image/png", { compressionLevel: 8 });
-      console.log("Saving canvas to S3");
-      await s3WriteObject(s3Key, imageData);
-      console.log("Done");
+      // await s3WriteObject(s3Key, imageData);
       return {
-        statusCode: 302,
+        statusCode: 200,
         headers: {
-          ["Location"]: `https://${imageHost}/${s3Key}`,
+          ["Content-Type"]: "image/png",
         },
-        body: "",
+        body: imageData.toString("base64"),
+        isBase64Encoded: true,
       };
     }
-    console.log(`Seed image found in S3: ${s3Key}`);
-    console.log("Returning image");
     return {
       statusCode: 302,
       headers: {

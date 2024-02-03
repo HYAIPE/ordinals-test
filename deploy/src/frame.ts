@@ -102,6 +102,19 @@ export class Frame extends Construct {
     );
     seedBucket.grantReadWrite(qrCodeHandler);
 
+    const errorHandlerDir = prepareDockerBuild("frame-render-error");
+    const errorHandler = new lambda.DockerImageFunction(this, "ErrorHandler", {
+      code: lambda.DockerImageCode.fromImageAsset(errorHandlerDir, {
+        cmd: ["index.handler"],
+      }),
+      memorySize: 256,
+      timeout: cdk.Duration.seconds(5),
+      environment: {
+        ASSET_BUCKET: assetBucket.bucketName,
+      },
+    });
+    assetBucket.grantRead(errorHandler);
+
     const httpApi = new apigw2.HttpApi(this, "Canvas", {
       description: "This service serves image generating routes.",
       corsPreflight: {
@@ -133,6 +146,11 @@ export class Frame extends Construct {
       path: "/frame-og/qr/{address}/{amount}",
       methods: [apigw2.HttpMethod.GET, apigw2.HttpMethod.OPTIONS],
       integration: new HttpLambdaIntegration("frame-qr", qrCodeHandler),
+    });
+    httpApi.addRoutes({
+      path: "/frame-og/error/{header}/{message}",
+      methods: [apigw2.HttpMethod.GET, apigw2.HttpMethod.OPTIONS],
+      integration: new HttpLambdaIntegration("frame-error", errorHandler),
     });
 
     const imageApiUrl = cdk.Fn.select(

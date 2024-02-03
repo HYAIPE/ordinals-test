@@ -1,0 +1,10 @@
+{
+  "name": "@0xflick/ordinals-axolotl-valley-render",
+  "version": "0.0.1",
+  "main": "src/index.ts",
+  "type": "module",
+  "scripts": {},
+  "devDependencies": {
+    "typescript": "^5.1.3"
+  }
+}

@@ -6,11 +6,14 @@ export const SnackbarQueue: FC<{
 }> = ({ receivePush }) => {
   const [openSnackbar, setSnackbarOpen] = useState(false);
   const [toastQueue, setToastQueue] = useState<string[]>([]);
-  const toast = useCallback((message: string) => {
-    if (message === undefined) return;
-    setToastQueue([...toastQueue, message]);
-    setSnackbarOpen(true);
-  }, []);
+  const toast = useCallback(
+    (message: string) => {
+      if (message === undefined) return;
+      setToastQueue([...toastQueue, message]);
+      setSnackbarOpen(true);
+    },
+    [toastQueue]
+  );
   const onClose = useCallback(() => {
     setSnackbarOpen(false);
     setToastQueue(toastQueue.slice(1));
