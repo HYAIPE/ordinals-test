@@ -1,0 +1,17 @@
+mutation openEditionClaim($request: AxolotlOpenEditionRequest!) {
+  axolotlFundingOpenEditionRequest(request: $request) {
+    problems {
+      code
+      message
+    }
+    data {
+      id
+      inscriptionFunding {
+        id
+        fundingAddress
+        fundingAmountSats
+      }
+      tokenIds
+    }
+  }
+}
