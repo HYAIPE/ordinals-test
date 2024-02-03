@@ -72,7 +72,11 @@ export const Pay: FC<{
         .then(() => {
           setSuccessMessage("Payment sent");
           setTimeout(() => {
-            router.push(`/${network.toLowerCase()}/status/${fundingId}`);
+            router.push(
+              `${
+                network === BitcoinNetworkType.Testnet ? "/testnet" : ""
+              }/status/${fundingId}`
+            );
           }, 2000);
         })
         .catch((e) => {
@@ -85,6 +89,9 @@ export const Pay: FC<{
     data?.inscriptionFunding?.fundingAddress,
     data?.inscriptionFunding?.fundingAmountSats,
     sendBtc,
+    network,
+    router,
+    fundingId,
   ]);
 
   const sendXverse = useCallback(() => {

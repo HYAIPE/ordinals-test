@@ -47,7 +47,6 @@ export async function composeWithCanvas(
 export async function renderCanvas(canvas: Canvas, layers: ILayer[]) {
   const ctx = canvas.getContext("2d");
   ctx.clearRect(0, 0, canvas.width, canvas.height);
-
   for (const layer of [...layers].sort((a, b) => a.zIndex - b.zIndex)) {
     await layer.draw(ctx as any);
   }

@@ -4,10 +4,11 @@
   "main": "src/index.ts",
   "type": "module",
   "scripts": {
-    "build:cli": "esbuild src/cli.ts --banner:js=\"import { createRequire } from 'module';const require = createRequire(import.meta.url);\" --platform=node --format=esm --target=node16.14 --bundle --external:canvas --outfile=dist/cli.mjs",
+    "build:cli": "esbuild src/cli.ts --banner:js=\"import { createRequire } from 'module';const require = createRequire(import.meta.url);\" --platform=node --format=esm --target=node18 --bundle --external:canvas --outfile=dist/cli.mjs",
     "upload": "yarn build && node ./dist/copy-assets.js",
     "generate": "yarn cli",
-    "cli": "yarn build:cli && node ./dist/cli.mjs",
+    "cli": "node --loader ts-node/esm.mjs src/cli.ts",
+    "debug": "node --inspect-brk --loader ts-node/esm.mjs src/cli.ts",
     "sync-from-s3": "bash -c \"aws s3 sync s3://$(aws cloudformation describe-stacks --stack-name Assets --query 'Stacks[0].Outputs' --output json | jq -rc '.[] | select(.OutputKey==\"BucketName\") | .OutputValue')/properties properties\"",
     "sync-to-s3": "bash -c \"aws s3 sync properties s3://$(aws cloudformation describe-stacks --stack-name Assets --query 'Stacks[0].Outputs' --output json | jq -rc '.[] | select(.OutputKey==\"BucketName\") | .OutputValue')/properties\"",
     "build:ordinal": "esbuild --bundle --platform=browser --target=es2022 --external:canvas --outfile=web/script.js --tree-shaking=true --minify src/ordinal.ts"
@@ -32,7 +33,7 @@
   },
   "dependencies": {
     "@reduxjs/toolkit": "^1.7.2",
-    "canvas": "^2.9.3",
+    "canvas": "^2.11.2",
     "ethers": "^5.7.2",
     "ipfs-http-client": "^60.0.0",
     "minimist": "^1.2.5"

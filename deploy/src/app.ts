@@ -3,7 +3,7 @@
 import * as cdk from "aws-cdk-lib";
 import path from "path";
 import { fileURLToPath } from "url";
-import { BackendStack } from "./stack.js";
+import { BackendStack, FrameStack } from "./stack.js";
 import {
   BitcoinExeStack,
   BitcoinStack,
@@ -17,6 +17,13 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = new cdk.App();
 
 new BackendStack(app, "ordinals", {
+  env: {
+    account: process.env.CDK_DEFAULT_ACCOUNT,
+    region: "us-east-1",
+  },
+});
+
+new FrameStack(app, "frame", {
   env: {
     account: process.env.CDK_DEFAULT_ACCOUNT,
     region: "us-east-1",

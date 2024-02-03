@@ -11,6 +11,7 @@ import {
   timer,
   map,
   delay,
+  catchError,
 } from "rxjs";
 import { SecretKey } from "@0xflick/crypto-utils";
 import Queue from "p-queue";
@@ -131,7 +132,7 @@ export function watchForGenesis(
     startWith(0),
     takeUntil(stop$),
     tap(() =>
-      logger.info(`Polling for new funded inscriptions to fund reveal`),
+      logger.trace(`Polling for new funded inscriptions to fund reveal`),
     ),
     switchMap(() =>
       from(
@@ -142,11 +143,11 @@ export function watchForGenesis(
       ),
     ),
     tap((funded) => {
-      logger.info(
+      logger.trace(
         `Starting to watch genesis ${funded.id} for address ${funded.address} `,
       );
     }),
-    tap((funding) => logger.info(`Enqueuing reveal funding ${funding.id}`)),
+    tap((funding) => logger.trace(`Enqueuing reveal funding ${funding.id}`)),
     switchMap((funded) => {
       return from(
         Promise.all([
@@ -200,7 +201,7 @@ export function watchForGenesis(
       const { txid, vout, amount } = mempoolResponse;
       return from(
         generateRevealTransaction({
-          address: funded.address,
+          address: funded.destinationAddress,
           amount,
           inscription,
           secKey: new SecretKey(Buffer.from(doc.secKey, "hex")),
@@ -216,6 +217,11 @@ export function watchForGenesis(
           ).pipe(
             tap((txid) => {
               logger.info(`Reveal transaction ${txid} sent`);
+            }),
+            retry({
+              delay(error, retryCount) {
+                return timer(customBackoff(retryCount + funded.timesChecked));
+              },
             }),
           );
         }),
@@ -234,6 +240,9 @@ export function watchForGenesis(
   // When $fundings is complete and we have a vout value, we can update the funding with the new txid and vout
   // This assumes the checkFundings observable emits individual funding results.
   pollForGenesisFunded$.subscribe(async (reveal) => {
+    if (!reveal) {
+      return;
+    }
     logger.info(`Reveal ${reveal.id} is funded!`);
     notifier?.(reveal);
   });

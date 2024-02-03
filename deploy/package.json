@@ -5,6 +5,7 @@
   "license": "MIT",
   "type": "module",
   "scripts": {
+    "aws_docker_login": "aws ecr-public get-login-password --region us-east-1 | docker login --username AWS --password-stdin public.ecr.aws",
     "deploy:local": "AWS_REGION=us-east-1 cdklocal deploy --outputs-file outputs.json ordinals && node ./scripts/generateTableNamesEnv.mjs",
     "deploy": "cdk deploy"
   },

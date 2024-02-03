@@ -9,9 +9,10 @@ export async function start(network: "mainnet" | "testnet" = "testnet") {
   const fundingDao = createDynamoDbFundingDao();
   const allCollections = await fundingDao.getAllCollections();
   for (const collection of allCollections) {
-    await watchForFundings({
+    watchForFundings({
       collectionId: collection.id,
       fundingDao,
+      network: "mainnet",
       mempoolBitcoinClient: createMempoolBitcoinClient({ network }),
       pollInterval: 20000,
     });

@@ -2866,6 +2866,11 @@
   resolved "https://registry.yarnpkg.com/@codegenie/serverless-express/-/serverless-express-4.13.0.tgz#ab382d69d71b3afa2a620a808a47a161543c3dd3"
   integrity sha512-xjTotGExm+2j45T6XTvDuTJO1105jKLf152j9nXXeJboYH3dwd8Ted6guv+jDFNouf0uKOO7AhGRQdCTpLVIiw==
 
+"@coinbase/onchainkit@^0.4.1":
+  version "0.4.1"
+  resolved "https://registry.yarnpkg.com/@coinbase/onchainkit/-/onchainkit-0.4.1.tgz#fa8e41f33786a411fd3ed1ebf8c4412b2fe63ab2"
+  integrity sha512-bXaIw8qyk8+9jLizF5clv9pb5u8p5rLAK/z09+Z0ZsHUHr3AS6Akhnp9VF0uQXWRDhFohbA/8ZCOcMKdt/Ad3g==
+
 "@coinbase/wallet-sdk@3.9.1":
   version "3.9.1"
   resolved "https://registry.yarnpkg.com/@coinbase/wallet-sdk/-/wallet-sdk-3.9.1.tgz#503a14671bb392d653623ef2340934e213ac971f"
@@ -10088,7 +10093,7 @@ caniuse-lite@^1.0.30001503:
   resolved "https://registry.yarnpkg.com/caniuse-lite/-/caniuse-lite-1.0.30001509.tgz#2b7ad5265392d6d2de25cd8776d1ab3899570d14"
   integrity sha512-2uDDk+TRiTX5hMcUYT/7CSyzMZxjfGu0vAUjS2g0LSD8UoXOv0LtpH4LxGMemsiPq6LCVIUjNwVM0erkOkGCDA==
 
-canvas@^2.9.3:
+canvas@^2.11.2, canvas@^2.9.3:
   version "2.11.2"
   resolved "https://registry.yarnpkg.com/canvas/-/canvas-2.11.2.tgz#553d87b1e0228c7ac0fc72887c3adbac4abbd860"
   integrity sha512-ItanGBMrmRV7Py2Z+Xhs7cT+FNt5K0vPL4p9EZ/UX/Mu7hFbkxSjKF2KVtPwX7UYWp7dRKnrTvReflgrItJbdw==

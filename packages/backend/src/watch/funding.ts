@@ -11,12 +11,14 @@ import {
   startWith,
   timer,
   delay,
+  filter,
 } from "rxjs";
 import Queue from "p-queue";
 import { IFundingDao } from "../dao/funding.js";
 import { MempoolClient, createLogger } from "../index.js";
-import { ID_Collection } from "@0xflick/ordinals-models";
+import { BitcoinNetworkNames, ID_Collection } from "@0xflick/ordinals-models";
 import { bitcoinToSats } from "@0xflick/inscriptions";
+import { Address } from "@0xflick/tapscript";
 
 const logger = createLogger({ name: "watch/funding" });
 // Queue to process fundings
@@ -74,11 +76,13 @@ export function watchForFundings(
     fundingDao,
     mempoolBitcoinClient,
     pollInterval = 60000,
+    network = "testnet",
   }: {
     collectionId: ID_Collection;
     fundingDao: IFundingDao;
     mempoolBitcoinClient: MempoolClient["bitcoin"];
     pollInterval?: number;
+    network?: BitcoinNetworkNames;
   },
   notify?: (funding: {
     txid: string;
@@ -122,7 +126,7 @@ export function watchForFundings(
   const pollForFundings$ = interval(pollInterval).pipe(
     startWith(0),
     takeUntil(stop$),
-    tap(() => logger.info(`Polling for new fundings`)),
+    tap(() => logger.trace(`Polling for new fundings`)),
     switchMap(() =>
       from(
         fundingDao.listAllFundingsByStatus({
@@ -131,15 +135,21 @@ export function watchForFundings(
         }),
       ),
     ),
+    filter((funding) => {
+      const n = Address.decode(funding.address).network;
+      if (n === "main" && network === "mainnet") return true;
+      if (n === network) return true;
+      return false;
+    }),
     tap((funding) => {
-      logger.info(
+      logger.trace(
         `Starting to watch funding ${funding.id} for address ${funding.address} `,
       );
     }),
-    switchMap((funding) =>
+    mergeMap((funding) =>
       from([funding]).pipe(
         tap((funding) =>
-          logger.info(
+          logger.trace(
             {
               timesChecked: funding.timesChecked,
             },
@@ -150,7 +160,6 @@ export function watchForFundings(
           return from(enqueueFunding(funding)).pipe(
             catchError((error) => {
               if (error instanceof NoVoutFound) {
-                logger.info(`No vout found for ${funding.address}`);
                 const now = new Date();
                 return from(
                   fundingDao
@@ -166,7 +175,7 @@ export function watchForFundings(
                       throw error;
                     })
                     .then(() => {
-                      logger.info(
+                      logger.trace(
                         `Updated last checked for ${funding.address}`,
                       );
                       throw error;
@@ -187,44 +196,80 @@ export function watchForFundings(
                 return timer(customBackoff(retryCount));
               },
             }),
+            mergeMap(async (funding) => {
+              if (!funding) {
+                logger.error("No funding found!");
+                return;
+              }
+              try {
+                logger.info(
+                  `Funding ${funding.id} for ${funding.address} found!  Paid ${funding.fundedAmount} for a request of: ${funding.fundingAmountSat}`,
+                );
+                if (funding.fundedAmount < funding.fundingAmountSat) {
+                  logger.warn(
+                    `Funding ${funding.id} for ${funding.address} is underfunded`,
+                  );
+                } else {
+                  await fundingDao.addressFunded({
+                    fundingTxid: funding.txid,
+                    fundingVout: funding.vout,
+                    id: funding.id,
+                  });
+                  await fundingDao.updateFundingLastChecked({
+                    id: funding.id,
+                    lastChecked: new Date(),
+                    resetTimesChecked: true,
+                  });
+                  notify?.(funding);
+                }
+              } catch (error) {
+                logger.error(
+                  error,
+                  "Error updating address funded for",
+                  funding.address,
+                );
+              }
+            }),
           );
         }),
       ),
     ),
+
     delay(1000),
   );
 
   // When $fundings is complete and we have a vout value, we can update the funding with the new txid and vout
   // This assumes the checkFundings observable emits individual funding results.
   pollForFundings$.subscribe(async (funding) => {
-    if (!funding) {
-      logger.error("No funding found!");
-      return;
-    }
-    try {
-      logger.info(
-        `Funding ${funding.id} for ${funding.address} found!  Paid ${funding.fundedAmount} for a request of: ${funding.fundingAmountSat}`,
-      );
-      if (funding.fundedAmount < funding.fundingAmountSat) {
-        logger.warn(
-          `Funding ${funding.id} for ${funding.address} is underfunded`,
-        );
-      } else {
-        await fundingDao.addressFunded({
-          fundingTxid: funding.txid,
-          fundingVout: funding.vout,
-          id: funding.id,
-        });
-        await fundingDao.updateFundingLastChecked({
-          id: funding.id,
-          lastChecked: new Date(),
-          resetTimesChecked: true,
-        });
-        notify?.(funding);
-      }
-    } catch (error) {
-      logger.error(error, "Error updating address funded for", funding.address);
-    }
+    // logger.info({ funding }, "here");
+    // if (!funding) {
+    //   logger.error("No funding found!");
+    //   return;
+    // }
+    // try {
+    //   logger.info(
+    //     `Funding ${funding.id} for ${funding.address} found!  Paid ${funding.fundedAmount} for a request of: ${funding.fundingAmountSat}`,
+    //   );
+    //   if (funding.fundedAmount < funding.fundingAmountSat) {
+    //     logger.warn(
+    //       `Funding ${funding.id} for ${funding.address} is underfunded`,
+    //     );
+    //   } else {
+    //     await fundingDao.addressFunded({
+    //       fundingTxid: funding.txid,
+    //       fundingVout: funding.vout,
+    //       id: funding.id,
+    //     });
+    //     await fundingDao.updateFundingLastChecked({
+    //       id: funding.id,
+    //       lastChecked: new Date(),
+    //       resetTimesChecked: true,
+    //     });
+    //     notify?.(funding);
+    //   }
+    // } catch (error) {
+    //   logger.error(error, "Error updating address funded for", funding.address);
+    // }
   });
 
   return () => {

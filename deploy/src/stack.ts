@@ -8,6 +8,7 @@ import { Storage } from "./storage.js";
 import { DynamoDB } from "./dynamodb.js";
 import { Www } from "./distribution.js";
 import { Graphql } from "./graphql.js";
+import { Frame } from "./frame.js";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 interface IProps extends cdk.StackProps {}
@@ -27,6 +28,7 @@ export class BackendStack extends cdk.Stack {
     // new InscriptionsBus(this, "NftMetadataBus", {
     //   lambdas: false,
     // });
+
     const { api: graphqlApi } = new Graphql(this, "Graphql", {
       domainName: "bitflick.xyz",
       claimsTable,
@@ -43,11 +45,21 @@ export class BackendStack extends cdk.Stack {
     new cdk.CfnOutput(this, "GraphqlApiUrl", {
       value: graphqlApiUrl,
     });
+
     new Www(this, "Www", {
       // Adding cert manually because cloudflare
       noCert: true,
       domain: "bitflick.xyz",
       graphqlApi,
+    });
+  }
+}
+
+export class FrameStack extends cdk.Stack {
+  constructor(scope: Construct, id: string, props: IProps) {
+    super(scope, id, props);
+    new Frame(this, "Frame", {
+      imageDomainName: "frame.bitflick.xyz",
     });
   }
 }

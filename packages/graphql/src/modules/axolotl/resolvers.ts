@@ -413,7 +413,7 @@ export const resolvers: AxolotlModule.Resolvers = {
     axolotlEstimateFee: async (
       _,
       { network, feeLevel, feePerByte, count },
-      { createMempoolBitcoinClient, axolotlInscriptionTip },
+      { createMempoolBitcoinClient },
     ) => {
       const client = createMempoolBitcoinClient({
         network: toBitcoinNetworkName(network),
@@ -423,7 +423,7 @@ export const resolvers: AxolotlModule.Resolvers = {
         mempool: new MempoolModel(client),
         feeLevel,
         feePerByte,
-        tipPerToken: axolotlInscriptionTip,
+        tipPerToken: 25000,
       });
     },
     axolotlAvailableOpenEditionFundingClaims: async (_, params, context) => {

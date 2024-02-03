@@ -125,7 +125,7 @@ export function watchForFunded(
     startWith(0),
     takeUntil(stop$),
     tap(() =>
-      logger.info(`Polling for new funded inscriptions to fund genesis`),
+      logger.trace(`Polling for new funded inscriptions to fund genesis`),
     ),
     switchMap(() =>
       from(
@@ -136,14 +136,14 @@ export function watchForFunded(
       ),
     ),
     tap((funded) => {
-      logger.info(
+      logger.trace(
         `Starting to watch funded ${funded.id} for address ${funded.address} `,
       );
     }),
     switchMap((funded) =>
       from([funded]).pipe(
         tap((funding) =>
-          logger.info(`Enqueuing genesis funding ${funding.id}`),
+          logger.trace(`Enqueuing genesis funding ${funding.id}`),
         ),
         mergeMap((funded) => {
           return from(enqueueGenesisFunded(funded)).pipe(
@@ -168,7 +168,7 @@ export function watchForFunded(
                       );
                       throw error;
                     }
-                    logger.info(`Updated last checked for ${funded.id}`);
+                    logger.trace(`Updated last checked for ${funded.id}`);
                     throw error;
                   }),
                 );
@@ -211,10 +211,7 @@ export function watchForFunded(
                     `No funding txid or vout found for ${funded.id}`,
                   );
                 }
-                logger.info(
-                  { secKey: doc.secKey },
-                  "Generating genesis transaction",
-                );
+                logger.info("Generating genesis transaction");
                 const secKey = new SecretKey(Buffer.from(doc.secKey, "hex"));
                 try {
                   const genesisTx = await generateGenesisTransaction({
@@ -234,7 +231,6 @@ export function watchForFunded(
 
                   try {
                     logger.info(
-                      { genesisTx },
                       `Sending genesis funding ${funded.id} to mempool`,
                     );
                     const genesisTxid =

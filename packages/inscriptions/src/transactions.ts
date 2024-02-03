@@ -416,7 +416,6 @@ export async function generateGenesisTransaction({
     ],
     vout: outputs,
   });
-  console.log(JSON.stringify(initRedeemTx, null, 2));
   const init_sig = await Signer.taproot.sign(secKey.raw, initRedeemTx, 0, {
     extension: initLeaf,
   });

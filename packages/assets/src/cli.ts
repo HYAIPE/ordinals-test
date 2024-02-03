@@ -1,14 +1,13 @@
 import fs from "fs";
 import { Command, InvalidArgumentError } from "commander";
 import { utils } from "ethers";
-import { Image } from "canvas";
+import { Canvas, Image, loadImage } from "canvas";
 import cliProgress from "cli-progress";
-import operations from "./canvas/axolotlValley/generate";
-import { createCanvas } from "./canvas/canvas";
-import { renderCanvas } from "./canvas/core";
 import { fileURLToPath } from "url";
 import { resolve, dirname } from "path";
-import { generateNameflick } from "./generate-nameflick";
+import { createCanvas } from "./canvas/canvas.js";
+import { operations } from "@0xflick/ordinals-axolotl-valley-render";
+import { renderCanvas } from "./canvas/core.js";
 
 const program = new Command();
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -38,22 +37,85 @@ program
     const { metadata, layers } = await operations(
       seedBytes,
       async (imagePath) => {
+        console.log("Reading image", imagePath);
         const imgData = await fs.promises.readFile(
-          resolve(__dirname, "..", "..", "properties", imagePath)
+          resolve(
+            __dirname,
+            "..",
+            "properties",
+            imagePath.replace(".webp", ".PNG"),
+          ),
         );
-        const img = new Image();
-        img.src = imgData;
-        return img;
-      }
+        return new Promise<Image>((resolve, reject) => {
+          const img = new Image();
+          img.src = imgData;
+          console.log("Image src", img.src);
+          img.onload = () => {
+            console.log("Image loaded");
+            resolve(img);
+          };
+          img.onerror = (err) => {
+            console.error("Error loading image", err);
+            reject(err);
+          };
+        });
+      },
     );
-    await renderCanvas(canvas, layers);
+    await renderCanvas(canvas as Canvas, layers);
 
     // Save canvas image to file
     const outPath = "./out.png";
-    const outData = canvas.toBuffer("image/png");
-    fs.promises.writeFile(outPath, outData);
-    fs.promises.writeFile("out.json", JSON.stringify(metadata, null, 2));
-    console.log(metadata.seed);
+    if (`toBuffer` in canvas) {
+      const outData = canvas.toBuffer("image/png");
+      fs.promises.writeFile(outPath, outData);
+      fs.promises.writeFile("out.json", JSON.stringify(metadata, null, 2));
+      console.log(metadata.seed);
+    }
+  });
+
+program
+  .command("frame-teaser")
+  .option("-s, --seed <seed>", "Seed for random number generation")
+  .action(async ({ seed }) => {
+    const canvas = (await createCanvas(569, 569)) as Canvas;
+
+    let seedBytes: Uint8Array;
+    if (seed) {
+      seedBytes = utils.arrayify(seed);
+    } else {
+      seedBytes = randomUint8ArrayOfLength(32);
+    }
+    const { layers } = await operations(seedBytes, async (imagePath) => {
+      const imgData = await fs.promises.readFile(
+        resolve(
+          __dirname,
+          "..",
+          "properties",
+          imagePath.replace(".webp", ".PNG"),
+        ),
+      );
+      return loadImage(imgData);
+    });
+
+    await renderCanvas(canvas as Canvas, layers);
+    const ogMetaCanvas = (await createCanvas(800, 400)) as Canvas;
+    const ogMetaCtx = ogMetaCanvas.getContext("2d");
+    ogMetaCtx.fillStyle = "white";
+    ogMetaCtx.fillRect(0, 0, 800, 400);
+    ogMetaCtx.drawImage(canvas, 50, 50, 300, 300);
+    ogMetaCtx.fillStyle = "black";
+    ogMetaCtx.textAlign = "center";
+    ogMetaCtx.font = "50px Arial";
+    ogMetaCtx.fillText("Axolotl Valley", 580, 120);
+    ogMetaCtx.font = "40px Arial";
+    ogMetaCtx.fillText("Bitcoin Ordinal Mint", 580, 220);
+    ogMetaCtx.fillText("Reveals in 420 blocks", 580, 320);
+
+    // Save canvas image to file
+    const outPath = "./out.png";
+    const outData = ogMetaCanvas.toBuffer("image/png");
+    await fs.promises.writeFile(outPath, outData);
+    console.log("Wrote to", outPath);
   });
 
 function parseIntArg(value: string) {
@@ -64,11 +126,6 @@ function parseIntArg(value: string) {
   return parsedValue;
 }
 
-program.command("nameflick <name> <out>").action(async (name, out) => {
-  const buffer = await generateNameflick(name, 1);
-  await fs.promises.writeFile(out, buffer);
-});
-
 program
   .command("generate-all")
   .option("-n, --name <name>", "Name of collection", "Test")
@@ -76,12 +133,12 @@ program
   .option(
     "-n, --no-clean",
     "Don't clean the generated directory before generating",
-    false
+    false,
   )
   .action(async ({ count, noClean, name }) => {
     const bar = new cliProgress.SingleBar(
       {},
-      cliProgress.Presets.shades_classic
+      cliProgress.Presets.shades_classic,
     );
     bar.start(count, 0);
     const canvas = await createCanvas(569, 569);
@@ -103,30 +160,32 @@ program
               __dirname,
               "..",
               "properties_old",
-              imagePath.replace(".webp", ".PNG")
-            )
+              imagePath.replace(".webp", ".PNG"),
+            ),
           );
           const img = new Image();
           img.src = imgData;
           return img;
-        }
+        },
       );
-      await renderCanvas(canvas, layers);
-      const outData = canvas.toBuffer("image/png");
+      await renderCanvas(canvas as Canvas, layers);
+      if (`toBuffer` in canvas) {
+        const outData = canvas.toBuffer("image/png");
 
-      fs.promises.writeFile(`./generated/images/${i}.png`, outData);
-      fs.promises.writeFile(
-        `./generated/metadata/${i}`,
-        JSON.stringify(
-          {
-            ...metadata,
-            image: `${i}.png`,
-            name: `${name} #${i}`,
-          },
-          null,
-          2
-        )
-      );
+        fs.promises.writeFile(`./generated/images/${i}.png`, outData);
+        fs.promises.writeFile(
+          `./generated/metadata/${i}`,
+          JSON.stringify(
+            {
+              ...metadata,
+              image: `${i}.png`,
+              name: `${name} #${i}`,
+            },
+            null,
+            2,
+          ),
+        );
+      }
       bar.increment();
     }
     bar.stop();

@@ -13,6 +13,7 @@
     "@apollo/client": "^3.7.17",
     "@cmdcode/crypto-utils": "^1.9.8",
     "@cmdcode/tapscript": "^1.2.10",
+    "@coinbase/onchainkit": "^0.4.1",
     "@emotion/react": "^11.11.1",
     "@emotion/styled": "^11.11.0",
     "@mui/base": "^5.0.0-beta.29",
