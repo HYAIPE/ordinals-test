@@ -6,6 +6,7 @@ import {
   ClaimsDao,
   OpenEditionClaimsDao,
   createDynamoDbOpenEditionClaimsDao,
+  FundingDao,
 } from "@0xflick/ordinals-backend";
 import {
   RolePermissionsDAO,
@@ -20,11 +21,11 @@ import {
 import { IConfigContext } from "./config.js";
 
 export interface DbContext {
-  fundingDao: IFundingDao;
+  fundingDao: FundingDao;
   typedFundingDao<
     ItemMeta extends Record<string, any> = {},
     CollectionMeta extends Record<string, any> = {},
-  >(): IFundingDao<ItemMeta, CollectionMeta>;
+  >(): FundingDao<ItemMeta, CollectionMeta>;
   userRolesDao: UserRolesDAO;
   rolesDao: RolesDAO;
   rolePermissionsDao: RolePermissionsDAO;

@@ -48,6 +48,7 @@ export type TFundingCollectionDb<T extends Record<string, any>> = {
   pk: string;
   collectionId: string;
   collectionName: string;
+  pendingCount: number;
   maxSupply: number;
   totalCount: number;
 } & T;
@@ -159,8 +160,8 @@ export class FundingDao<
     id,
     fundingStatus,
   }: {
-    id: ID_Collection;
-    fundingStatus: TFundingStatus;
+    id?: ID_Collection;
+    fundingStatus?: TFundingStatus;
   }) {
     const results: {
       address: string;
@@ -179,8 +180,8 @@ export class FundingDao<
   }
 
   public listAllFundingsByStatus(opts: {
-    id: ID_Collection;
-    fundingStatus: TFundingStatus;
+    id?: ID_Collection;
+    fundingStatus?: TFundingStatus;
   }): AsyncGenerator<
     {
       address: string;
@@ -203,8 +204,8 @@ export class FundingDao<
     cursor,
     limit,
   }: {
-    id: ID_Collection;
-    fundingStatus: TFundingStatus;
+    id?: ID_Collection;
+    fundingStatus?: TFundingStatus;
   } & IPaginationOptions): Promise<
     IPaginatedResult<{
       address: string;
@@ -214,17 +215,36 @@ export class FundingDao<
       fundingAmountSat: number;
     }>
   > {
+    if (!id && !fundingStatus) {
+      throw new Error("Must provide either id or fundingStatus");
+    }
+    let keyConditionExpression: string;
+    let expressionAttributeValues: Record<string, any>;
+    if (id && fundingStatus) {
+      keyConditionExpression =
+        "collectionId = :collectionId AND fundingStatus = :sk";
+      expressionAttributeValues = {
+        ":collectionId": toCollectionId(id),
+        ":sk": fundingStatus,
+      };
+    } else if (id) {
+      keyConditionExpression = "collectionId = :collectionId";
+      expressionAttributeValues = {
+        ":collectionId": toCollectionId(id),
+      };
+    } else {
+      keyConditionExpression = "fundingStatus = :sk";
+      expressionAttributeValues = {
+        ":sk": fundingStatus,
+      };
+    }
     const pagination = decodeCursor(cursor);
     const result = await this.client.send(
       new QueryCommand({
         TableName: FundingDao.TABLE_NAME,
         IndexName: "collectionId-index",
-        KeyConditionExpression:
-          "collectionId = :collectionId AND fundingStatus = :sk",
-        ExpressionAttributeValues: {
-          ":collectionId": toCollectionId(id),
-          ":sk": fundingStatus,
-        },
+        KeyConditionExpression: keyConditionExpression,
+        ExpressionAttributeValues: expressionAttributeValues,
         ...(pagination && { ExclusiveStartKey: pagination.lastEvaluatedKey }),
         ...(limit && { Limit: limit }),
       }),
@@ -292,6 +312,50 @@ export class FundingDao<
         Key: {
           pk: id,
           sk: "funding",
+        },
+      }),
+    );
+  }
+
+  // public async pendingCountByCollection(id: ID_Collection) {
+  //   const db = await this.client.send(
+  //     new GetCommand({
+  //       TableName: FundingDao.TABLE_NAME,
+  //       Key: {
+  //         pk: id,
+  //         sk: "collection",
+  //       },
+  //     }),
+  //   );
+  //   if (!db.Item) {
+  //     throw new Error("Collection not found");
+  //   }
+  //   let pendingCount = (db.Item as TFundingCollectionDb<CollectionMeta>)
+  //     .pendingCount;
+  //   if (typeof pendingCount === "undefined") {
+  //     // backfill
+  //     const fundings = await this.listAllFundingsByStatus({
+  //       id,
+  //       fundingStatus: ""
+  //     });
+  //   }
+  // }
+
+  public async updatePendingCount(
+    id: ID_Collection,
+    pendingCount: number,
+  ): Promise<void> {
+    await this.client.send(
+      new UpdateCommand({
+        TableName: FundingDao.TABLE_NAME,
+        Key: {
+          pk: id,
+          sk: "collection",
+        },
+        ConditionExpression: "attribute_exists(pk)",
+        UpdateExpression: "ADD pendingCount :pendingCount",
+        ExpressionAttributeValues: {
+          ":pendingCount": pendingCount,
         },
       }),
     );
@@ -707,6 +771,7 @@ export class FundingDao<
   private toCollectionDb<T extends Record<string, any>>({
     id,
     maxSupply,
+    pendingCount,
     totalCount,
     name,
     meta,
@@ -717,6 +782,7 @@ export class FundingDao<
       collectionId: id,
       collectionName: name,
       maxSupply,
+      pendingCount,
       totalCount,
       ...(meta
         ? // remove undefined values
@@ -735,6 +801,7 @@ export class FundingDao<
     maxSupply,
     collectionName,
     totalCount,
+    pendingCount,
     ...meta
   }: TFundingCollectionDb<T>): TCollectionModel<T> {
     return {
@@ -742,6 +809,7 @@ export class FundingDao<
       maxSupply: maxSupply,
       name: collectionName,
       totalCount: totalCount,
+      pendingCount: pendingCount,
       meta: excludePrimaryKeys(meta) as T,
     };
   }

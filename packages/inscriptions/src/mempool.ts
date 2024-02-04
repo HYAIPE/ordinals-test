@@ -9,7 +9,7 @@ export function urlForNetworkName(network: BitcoinNetworkNames) {
     case "testnet":
       return "https://mempool.space/testnet";
     case "regtest":
-      return "http://localhost";
+      return "http://localhost:4080";
   }
 }
 
@@ -22,7 +22,7 @@ export async function broadcastTx(rawTx: string, network: BitcoinNetworkNames) {
 
 export async function addressReceivedMoneyInThisTx(
   address: string,
-  network: BitcoinNetworkNames
+  network: BitcoinNetworkNames,
 ) {
   const url = urlForNetworkName(network);
   let txid: string;
@@ -49,14 +49,14 @@ export async function addressReceivedMoneyInThisTx(
 
 export async function waitForInscriptionFunding(
   inscription: WritableInscription,
-  network: BitcoinNetworkNames
+  network: BitcoinNetworkNames,
 ) {
   let funded: readonly [string, number, number] | readonly [null, null, null] =
     [null, null, null];
   do {
     funded = await addressReceivedMoneyInThisTx(
       inscription.inscriptionAddress,
-      network
+      network,
     );
     await new Promise((resolve) => setTimeout(resolve, 1000));
   } while (funded[0] == null);
@@ -67,7 +67,7 @@ export async function waitForInscriptionFunding(
 export async function addressOnceHadMoney(
   address: string,
   includeMempool: boolean,
-  network: BitcoinNetworkNames
+  network: BitcoinNetworkNames,
 ) {
   let url = urlForNetworkName(network);
   let nonjson;
@@ -89,7 +89,7 @@ export async function addressOnceHadMoney(
 export async function loopTilAddressReceivesMoney(
   address: string,
   includeMempool: boolean,
-  network: BitcoinNetworkNames
+  network: BitcoinNetworkNames,
 ) {
   let itReceivedMoney = false;
 
@@ -102,7 +102,7 @@ export async function loopTilAddressReceivesMoney(
             itReceivedMoney = await addressOnceHadMoney(
               address,
               includeMempool,
-              network
+              network,
             );
           } catch (e) {}
           let msg = await isDataSetYet(itReceivedMoney);

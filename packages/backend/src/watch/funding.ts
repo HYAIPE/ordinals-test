@@ -12,46 +12,17 @@ import {
   timer,
   delay,
   filter,
+  map,
+  concatMap,
+  EMPTY,
 } from "rxjs";
-import Queue from "p-queue";
 import { IFundingDao } from "../dao/funding.js";
 import { MempoolClient, createLogger } from "../index.js";
 import { BitcoinNetworkNames, ID_Collection } from "@0xflick/ordinals-models";
-import { bitcoinToSats } from "@0xflick/inscriptions";
 import { Address } from "@0xflick/tapscript";
+import { NoVoutFound, enqueueCheckTxo } from "./mempool.js";
 
 const logger = createLogger({ name: "watch/funding" });
-// Queue to process fundings
-const processingQueue = new Queue({ concurrency: 5 });
-
-class NoVoutFound extends Error {
-  constructor({ address }: { address: string }) {
-    super(`No vout found for address ${address}`);
-  }
-}
-
-async function fetchFunding({
-  address,
-  mempoolBitcoinClient,
-}: {
-  address: string;
-  mempoolBitcoinClient: MempoolClient["bitcoin"];
-}) {
-  const txs = await mempoolBitcoinClient.addresses.getAddressTxs({ address });
-  for (const tx of txs) {
-    for (let i = 0; i < tx.vout.length; i++) {
-      const output = tx.vout[i];
-      if (output.scriptpubkey_address === address) {
-        return {
-          txid: tx.txid,
-          vout: i,
-          amount: output.value,
-        };
-      }
-    }
-  }
-  throw new NoVoutFound({ address });
-}
 
 function customBackoff(retries: number) {
   if (retries < 10) return 3000;
@@ -61,6 +32,28 @@ function customBackoff(retries: number) {
   if (retries < 50) return 10 * 60 * 1000;
   return 60 * 60 * 1000;
 }
+
+type TPollFunding = {
+  address: string;
+  id: string;
+  lastChecked?: Date | undefined;
+  timesChecked: number;
+  fundingAmountSat: number;
+};
+
+export async function pollForFundings({
+  fundings,
+  fundingDao,
+  mempoolBitcoinClient,
+  pollInterval = 60000,
+  network = "testnet",
+}: {
+  fundings: TPollFunding[];
+  fundingDao: IFundingDao;
+  mempoolBitcoinClient: MempoolClient["bitcoin"];
+  pollInterval?: number;
+  network?: BitcoinNetworkNames;
+}) {}
 
 /*
  * Periodically fetches all fundings that we are waiting for the user to fund
@@ -87,37 +80,13 @@ export function watchForFundings(
   notify?: (funding: {
     txid: string;
     vout: number;
-    fundedAmount: number;
+    amount: number;
     address: string;
     id: string;
     fundingAmountSat: number;
   }) => void,
 ) {
   logger.info(`Watching for fundings for collection ${collectionId}`);
-  const enqueueFunding = (funding: {
-    address: string;
-    id: string;
-    fundingAmountSat: number;
-  }) => {
-    return processingQueue.add(() => checkFunding(funding));
-  };
-  const checkFunding = async (funding: {
-    address: string;
-    id: string;
-    fundingAmountSat: number;
-  }) => {
-    const { address } = funding;
-    const { txid, vout, amount } = await fetchFunding({
-      address,
-      mempoolBitcoinClient,
-    });
-    return {
-      ...funding,
-      txid,
-      vout,
-      fundedAmount: amount,
-    };
-  };
 
   // Use a Subject as a notifier to cancel all ongoing observables when needed.
   const stop$ = new Subject();
@@ -157,55 +126,34 @@ export function watchForFundings(
           ),
         ),
         mergeMap((funding) => {
-          return from(enqueueFunding(funding)).pipe(
-            catchError((error) => {
-              if (error instanceof NoVoutFound) {
-                const now = new Date();
-                return from(
-                  fundingDao
-                    .updateFundingLastChecked({
-                      id: funding.id,
-                      lastChecked: now,
-                    })
-                    .catch((error) => {
-                      logger.error(
-                        error,
-                        "Error updating funding last checked",
-                      );
-                      throw error;
-                    })
-                    .then(() => {
-                      logger.trace(
-                        `Updated last checked for ${funding.address}`,
-                      );
-                      throw error;
-                    }),
-                );
-              }
-              logger.error(
-                error,
-                "Error checking funding for",
-                funding.address,
-              );
-              throw error;
+          return from(
+            enqueueCheckTxo({
+              address: funding.address,
+              mempoolBitcoinClient,
             }),
-            retry({
-              resetOnSuccess: true,
-              count: funding.timesChecked,
-              delay(error, retryCount) {
-                return timer(customBackoff(retryCount));
-              },
+          ).pipe(
+            map((mempoolResponse) => {
+              if (!mempoolResponse)
+                throw new NoVoutFound({ address: funding.address });
+              return {
+                ...funding,
+                ...mempoolResponse,
+              };
             }),
+
+            // retry({
+            //   resetOnSuccess: true,
+            //   count: funding.timesChecked,
+            //   delay(error, retryCount) {
+            //     return timer(customBackoff(retryCount));
+            //   },
+            // }),
             mergeMap(async (funding) => {
-              if (!funding) {
-                logger.error("No funding found!");
-                return;
-              }
               try {
                 logger.info(
-                  `Funding ${funding.id} for ${funding.address} found!  Paid ${funding.fundedAmount} for a request of: ${funding.fundingAmountSat}`,
+                  `Funding ${funding.id} for ${funding.address} found!  Paid ${funding.amount} for a request of: ${funding.fundingAmountSat}`,
                 );
-                if (funding.fundedAmount < funding.fundingAmountSat) {
+                if (funding.amount < funding.fundingAmountSat) {
                   logger.warn(
                     `Funding ${funding.id} for ${funding.address} is underfunded`,
                   );
@@ -230,12 +178,42 @@ export function watchForFundings(
                 );
               }
             }),
+            catchError((error) => {
+              if (error instanceof NoVoutFound) {
+                // const now = new Date();
+                // return from(
+                //   fundingDao
+                //     .updateFundingLastChecked({
+                //       id: funding.id,
+                //       lastChecked: now,
+                //     })
+                //     .catch((error) => {
+                //       logger.error(
+                //         error,
+                //         "Error updating funding last checked",
+                //       );
+                //       throw error;
+                //     })
+                //     .then(() => {
+                //       logger.trace(
+                //         `Updated last checked for ${funding.address}`,
+                //       );
+                //       throw error;
+                //     }),
+                // );
+                return EMPTY;
+              }
+              logger.error(
+                error,
+                "Error checking funding for",
+                funding.address,
+              );
+              return EMPTY;
+            }),
           );
-        }),
+        }, 12),
       ),
     ),
-
-    delay(1000),
   );
 
   // When $fundings is complete and we have a vout value, we can update the funding with the new txid and vout
@@ -273,7 +251,6 @@ export function watchForFundings(
   });
 
   return () => {
-    processingQueue.clear();
     stop$.next(void 0);
     stop$.complete();
   };

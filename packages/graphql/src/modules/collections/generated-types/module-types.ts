@@ -4,7 +4,7 @@ import type * as gm from "@0xflick/graphql-modules";
 export namespace CollectionsModule {
   interface DefinedFields {
     KeyValue: 'key' | 'value';
-    Collection: 'id' | 'name' | 'totalCount' | 'maxSupply' | 'metadata' | 'updateMetadata';
+    Collection: 'id' | 'name' | 'totalCount' | 'pendingCount' | 'maxSupply' | 'metadata' | 'updateMetadata';
     Mutation: 'createCollection' | 'deleteCollection' | 'collection';
     Query: 'collections' | 'collection';
   };
@@ -47,6 +47,7 @@ export namespace CollectionsModule {
       id?: gm.Middleware[];
       name?: gm.Middleware[];
       totalCount?: gm.Middleware[];
+      pendingCount?: gm.Middleware[];
       maxSupply?: gm.Middleware[];
       metadata?: gm.Middleware[];
       updateMetadata?: gm.Middleware[];

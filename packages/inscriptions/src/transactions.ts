@@ -346,7 +346,6 @@ export async function generateRefundTransaction({
     extension: Tap.encodeScript(refundScript),
   });
   refundTx.vin[0].witness = [sig.hex, refundScript, refundCBlock];
-  // console.log(inspect(refundTx, false, 10, true));
   const isValid = Signer.taproot.verifyTx(refundTx, 0, {
     pubkey: pubKey,
   });

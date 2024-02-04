@@ -1,0 +1,16 @@
+query CollectionStatusQuery($collectionId: ID!) {
+  revealedFundings: inscriptionFundings(
+    query: { collectionId: $collectionId, fundingStatus: REVEALED }
+  ) {
+    fundings {
+      id
+      fundingRevealTxIds
+    }
+  }
+  collection(id: $collectionId) {
+    id
+    name
+    totalCount
+    maxSupply
+  }
+}

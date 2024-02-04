@@ -9,7 +9,7 @@ import { OpenEditionClaimsDao } from "./openEdition.js";
 export function createDynamoDbFundingDao<
   ItemMeta extends Record<string, any> = {},
   CollectionMeta extends Record<string, any> = {},
->(): IFundingDao<ItemMeta, CollectionMeta> {
+>(): FundingDao<ItemMeta, CollectionMeta> {
   const allTableNames = tableNames.get();
   FundingDao.TABLE_NAME = allTableNames.funding ?? FundingDao.TABLE_NAME;
   return new FundingDao<ItemMeta, CollectionMeta>(getDb());

@@ -2,7 +2,11 @@ import { bitcoinToSats } from "@0xflick/inscriptions";
 import { InscriptionTransactionModel } from "../inscriptionTransaction/models.js";
 import { InscriptionFundingModule } from "./generated-types/module-types.js";
 import { getFundingModel, getUrl } from "./controllers.js";
-import { toGraphqlFundingStatus } from "../axolotl/transforms.js";
+import {
+  fromGraphqlFundingStatus,
+  toGraphqlFundingStatus,
+} from "../axolotl/transforms.js";
+import { ID_Collection } from "@0xflick/ordinals-models";
 
 export const resolvers: InscriptionFundingModule.Resolvers = {
   Query: {
@@ -18,6 +22,42 @@ export const resolvers: InscriptionFundingModule.Resolvers = {
         inscriptionBucket,
         s3Client,
       });
+    },
+    inscriptionFundings: async (
+      _,
+      { query: { collectionId, fundingStatus, next, limit } },
+      { fundingDao, fundingDocDao, inscriptionBucket, s3Client },
+    ) => {
+      if (!collectionId && !fundingStatus) {
+        return {
+          problems: [
+            {
+              message: "Must provide either collectionId or fundingStatus",
+            },
+          ],
+        };
+      }
+      const fundings = await fundingDao.listAllFundingByStatusPaginated({
+        id: collectionId as ID_Collection,
+        fundingStatus: fundingStatus
+          ? fromGraphqlFundingStatus(fundingStatus)
+          : undefined,
+        cursor: next ?? undefined,
+        limit: limit ?? undefined,
+      });
+      return {
+        fundings: fundings.items.map((f) =>
+          getFundingModel({
+            id: f.id,
+            fundingDao,
+            fundingDocDao,
+            inscriptionBucket,
+            s3Client,
+          }),
+        ),
+        next: fundings.cursor,
+        count: fundings.count,
+      };
     },
   },
   InscriptionFunding: {

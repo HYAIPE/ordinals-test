@@ -84,6 +84,7 @@ export const resolvers: CollectionsModule.Resolvers = {
         name,
         totalCount: 0,
         maxSupply,
+        pendingCount: 0,
         meta: metadata,
       };
       await fundingDao.createCollection(model);

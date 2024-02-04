@@ -1,0 +1,22 @@
+{
+  "extends": "@0xflick/tsconfig/tsconfig.base.json",
+  "compilerOptions": {
+    "lib": ["dom", "dom.iterable", "esnext"],
+    "module": "NodeNext",
+    "target": "ES2022",
+    "composite": true /* Enable the use of the ES2015 module loader. */,
+    "rootDir": "./src" /* Specify the root folder within your source files. */,
+    "outDir": "dist" /* Specify an output folder for all emitted files. */,
+    "paths": {},
+    "noErrorTruncation": true,
+    "noImplicitAny": true,
+    "noImplicitThis": true,
+    "alwaysStrict": true,
+    "strictBindCallApply": true,
+    "strictFunctionTypes": true,
+    "strictNullChecks": false
+    // "strictPropertyInitialization": false
+  },
+  "include": ["src/**/*.ts"],
+  "references": []
+}

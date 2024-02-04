@@ -169,8 +169,30 @@ type InscriptionFunding {
   inscriptionContent(tapKey: String!): InscriptionData!
 }
 
+input InscriptionFundingQuery {
+  collectionId: ID
+  fundingStatus: FundingStatus
+  next: String
+  limit: Int
+}
+
+type InscriptionFundingProblem {
+  code: String
+  message: String
+}
+
+type InscriptionFundingsResult {
+  fundings: [InscriptionFunding!]
+  problems: [InscriptionFundingProblem!]
+  next: String
+  count: Int
+}
+
 type Query {
   inscriptionFunding(id: ID!): InscriptionFunding
+  inscriptionFundings(
+    query: InscriptionFundingQuery!
+  ): InscriptionFundingsResult!
 }
 
 type KeyValue {
@@ -186,6 +208,7 @@ type Collection {
   id: ID!
   name: String!
   totalCount: Int!
+  pendingCount: Int!
   maxSupply: Int!
 
   metadata: [KeyValue!]!

@@ -59,6 +59,7 @@ export async function bulkMint({
   let funded: readonly [string, number, number] | readonly [null, null, null] =
     [null, null, null];
   console.log("Waiting for funding...");
+
   do {
     funded = await addressReceivedMoneyInThisTx(
       response.fundingAddress,

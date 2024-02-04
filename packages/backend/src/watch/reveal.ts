@@ -14,7 +14,6 @@ import {
   catchError,
 } from "rxjs";
 import { SecretKey } from "@0xflick/crypto-utils";
-import Queue from "p-queue";
 import { IFundingDao, IFundingDocDao } from "../dao/funding.js";
 import { MempoolClient, createLogger } from "../index.js";
 import {
@@ -23,39 +22,9 @@ import {
   TFundingStatus,
 } from "@0xflick/ordinals-models";
 import { generateRevealTransaction } from "@0xflick/inscriptions";
+import { enqueueCheckTxo } from "./mempool.js";
 
 const logger = createLogger({ name: "watch/reveal" });
-// Queue to process fundings
-const processingQueue = new Queue({ concurrency: 5 });
-
-class NoVoutFound extends Error {
-  constructor({ address }: { address: string }) {
-    super(`No vout found for address ${address}`);
-  }
-}
-
-async function fetchFunding({
-  address,
-  mempoolBitcoinClient,
-}: {
-  address: string;
-  mempoolBitcoinClient: MempoolClient["bitcoin"];
-}) {
-  const txs = await mempoolBitcoinClient.addresses.getAddressTxs({ address });
-  for (const tx of txs) {
-    for (let i = 0; i < tx.vout.length; i++) {
-      const output = tx.vout[i];
-      if (output.scriptpubkey_address === address) {
-        return {
-          txid: tx.txid,
-          vout: i,
-          amount: output.value,
-        };
-      }
-    }
-  }
-  throw new NoVoutFound({ address });
-}
 
 function customBackoff(retries: number) {
   if (retries < 10) return 3000;
@@ -107,22 +76,6 @@ export function watchForGenesis(
   }) => void,
 ) {
   logger.info(`Watching for funded genesis for collection ${collectionId}`);
-  const enqueueGenesisFunded = (funding: { address: string }) => {
-    return processingQueue.add(() => checkGenesis(funding));
-  };
-  const checkGenesis = async (funding: { address: string }) => {
-    const { address } = funding;
-    const { txid, vout, amount } = await fetchFunding({
-      address,
-      mempoolBitcoinClient,
-    });
-    return {
-      ...funding,
-      txid,
-      vout,
-      amount,
-    };
-  };
 
   // Use a Subject as a notifier to cancel all ongoing observables when needed.
   const stop$ = new Subject();
@@ -147,7 +100,7 @@ export function watchForGenesis(
         `Starting to watch genesis ${funded.id} for address ${funded.address} `,
       );
     }),
-    tap((funding) => logger.trace(`Enqueuing reveal funding ${funding.id}`)),
+    tap((funding) => logger.debug(`Enqueuing reveal funding ${funding.id}`)),
     switchMap((funded) => {
       return from(
         Promise.all([
@@ -165,12 +118,13 @@ export function watchForGenesis(
         }),
       );
     }),
-    switchMap((inscriptions) =>
+    mergeMap((inscriptions) =>
       from(inscriptions).pipe(
         mergeMap(({ inscription, funded, doc }) =>
           from(
-            enqueueGenesisFunded({
+            enqueueCheckTxo({
               address: inscription.inscriptionAddress,
+              mempoolBitcoinClient,
             }),
           ).pipe(
             retry({
@@ -197,7 +151,7 @@ export function watchForGenesis(
     // tap((funding) => {
     //   logger.info(`Revealing ${funding.inscription.inscriptionAddress}`);
     // }),
-    switchMap(({ inscription, funded, mempoolResponse, doc }) => {
+    mergeMap(({ inscription, funded, mempoolResponse, doc }) => {
       const { txid, vout, amount } = mempoolResponse;
       return from(
         generateRevealTransaction({
@@ -226,10 +180,12 @@ export function watchForGenesis(
           );
         }),
         tap(async (revealTxid) => {
-          await fundingDao.revealFunded({
-            id: funded.id,
-            revealTxid,
-          });
+          if (revealTxid) {
+            await fundingDao.revealFunded({
+              id: funded.id,
+              revealTxid,
+            });
+          }
         }),
         map(() => {
           return funded;
@@ -239,16 +195,20 @@ export function watchForGenesis(
   );
   // When $fundings is complete and we have a vout value, we can update the funding with the new txid and vout
   // This assumes the checkFundings observable emits individual funding results.
-  pollForGenesisFunded$.subscribe(async (reveal) => {
-    if (!reveal) {
-      return;
-    }
-    logger.info(`Reveal ${reveal.id} is funded!`);
-    notifier?.(reveal);
+  pollForGenesisFunded$.subscribe({
+    next: async (reveal) => {
+      if (!reveal) {
+        return;
+      }
+      logger.info(`Reveal ${reveal.id} is funded!`);
+      notifier?.(reveal);
+    },
+    error(err) {
+      logger.error(err);
+    },
   });
 
   return () => {
-    processingQueue.clear();
     stop$.next(void 0);
     stop$.complete();
   };

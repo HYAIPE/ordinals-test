@@ -130,6 +130,7 @@ export type Collection = {
   maxSupply: Scalars['Int']['output'];
   metadata: Array<KeyValue>;
   name: Scalars['String']['output'];
+  pendingCount: Scalars['Int']['output'];
   totalCount: Scalars['Int']['output'];
   updateMetadata: Collection;
 };
@@ -195,6 +196,27 @@ export type InscriptionFunding = {
 
 export type InscriptionFundingInscriptionContentArgs = {
   tapKey: Scalars['String']['input'];
+};
+
+export type InscriptionFundingProblem = {
+  __typename?: 'InscriptionFundingProblem';
+  code?: Maybe<Scalars['String']['output']>;
+  message?: Maybe<Scalars['String']['output']>;
+};
+
+export type InscriptionFundingQuery = {
+  collectionId?: InputMaybe<Scalars['ID']['input']>;
+  fundingStatus?: InputMaybe<FundingStatus>;
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  next?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type InscriptionFundingsResult = {
+  __typename?: 'InscriptionFundingsResult';
+  count?: Maybe<Scalars['Int']['output']>;
+  fundings?: Maybe<Array<InscriptionFunding>>;
+  next?: Maybe<Scalars['String']['output']>;
+  problems?: Maybe<Array<InscriptionFundingProblem>>;
 };
 
 export type InscriptionRequest = {
@@ -363,6 +385,7 @@ export type Query = {
   collections: Array<Collection>;
   currentBitcoinFees: Scalars['Int']['output'];
   inscriptionFunding?: Maybe<InscriptionFunding>;
+  inscriptionFundings: InscriptionFundingsResult;
   inscriptionTransaction?: Maybe<InscriptionTransaction>;
   role?: Maybe<Role>;
   roles: Array<Role>;
@@ -398,6 +421,11 @@ export type QueryCurrentBitcoinFeesArgs = {
 
 export type QueryInscriptionFundingArgs = {
   id: Scalars['ID']['input'];
+};
+
+
+export type QueryInscriptionFundingsArgs = {
+  query: InscriptionFundingQuery;
 };
 
 

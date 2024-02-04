@@ -103,6 +103,7 @@ export interface IFundingDao<
   ): Promise<IPaginatedResult<TCollectionModel<CollectionMeta>>>;
   deleteCollection(id: ID_Collection): Promise<void>;
   incrementCollectionTotalCount(id: ID_Collection): Promise<number>;
+  updatePendingCount(id: ID_Collection, pendingCount: number): Promise<void>;
   updateMaxSupply(id: ID_Collection, maxSupply: number): Promise<void>;
   updateCollectionMeta(
     id: ID_Collection,

@@ -5,6 +5,7 @@ export class CollectionModel {
   public name: string;
   public totalCount: number;
   public maxSupply: number;
+  public pendingCount: number;
   public meta: Record<string, any>;
 
   constructor(model: TCollectionModel) {
@@ -12,6 +13,7 @@ export class CollectionModel {
     this.name = model.name;
     this.totalCount = model.totalCount;
     this.maxSupply = model.maxSupply;
+    this.pendingCount = model.pendingCount;
     this.meta = model.meta ?? {};
   }
 }

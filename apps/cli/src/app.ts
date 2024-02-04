@@ -35,6 +35,7 @@ program
   .command("mint <file>")
   .option("-n, --network <network>", "Bitcoin network", "regtest")
   .option("-a, --address <address>", "Address to mint to")
+  .option("-p, --padding <amount>", "Padding amount", Number, 546)
   .option("-m, --mime-type <mime-type>", "Mime type of file")
   .option("-f, --fee-rate <fee-rate>", "Fee rate in satoshis per vbyte")
   .option("-w, --rpcwallet <wallet>", "Bitcoin Wallet name", "default")
@@ -58,6 +59,7 @@ program
         metadataFile,
         send,
         compress,
+        padding,
       },
     ) => {
       console.log(`Compress ${compress}`);
@@ -73,6 +75,7 @@ program
         noSend: !send,
         metadataFile,
         compress,
+        padding,
       });
     },
   );

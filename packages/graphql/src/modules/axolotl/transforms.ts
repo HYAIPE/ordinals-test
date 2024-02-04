@@ -31,3 +31,20 @@ export function toGraphqlFundingStatus(status: TFundingStatus): FundingStatus {
       throw new Error(`Unsupported funding status: ${status}`);
   }
 }
+
+export function fromGraphqlFundingStatus(
+  status: FundingStatus,
+): TFundingStatus {
+  switch (status) {
+    case "FUNDED":
+      return "funded";
+    case "FUNDING":
+      return "funding";
+    case "GENESIS":
+      return "genesis";
+    case "REVEALED":
+      return "revealed";
+    default:
+      throw new Error(`Unsupported funding status: ${status}`);
+  }
+}

@@ -113,9 +113,9 @@ export async function sendBitcoin({
   const args = [
     ...(networkFlag ? [networkFlag] : []),
     ...(bitcoinDataDir ? ["-datadir=" + bitcoinDataDir] : []),
-    "-rpcuser=" + rpcuser,
-    "-rpcpassword=" + rpcpassword,
-    "-rpcwallet=" + rpcwallet,
+    ...(rpcuser ? ["-rpcuser=" + rpcuser] : []),
+    ...(rpcpassword ? ["-rpcpassword=" + rpcpassword] : []),
+    ...(rpcwallet ? ["-rpcwallet=" + rpcwallet] : []),
     "-named",
     "send",
     "outputs=" + JSON.stringify(Object.fromEntries(outputs)),

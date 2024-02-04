@@ -24,6 +24,7 @@ export async function mintSingle({
   noSend,
   metadataFile,
   compress,
+  padding = 546,
 }: {
   address: string;
   file: string;
@@ -36,6 +37,7 @@ export async function mintSingle({
   noSend: boolean;
   metadataFile?: string;
   compress?: boolean;
+  padding?: number;
 }) {
   const content = await fs.promises.readFile(file);
   const metadata = metadataFile
@@ -54,7 +56,7 @@ export async function mintSingle({
         compress,
       },
     ],
-    padding: 546,
+    padding,
     tip: 0,
     network,
     privKey,

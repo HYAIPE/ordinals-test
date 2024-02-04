@@ -11,46 +11,16 @@ import {
   startWith,
   timer,
   delay,
+  map,
 } from "rxjs";
 import { SecretKey } from "@0xflick/crypto-utils";
-import Queue from "p-queue";
 import { IFundingDao, IFundingDocDao } from "../dao/funding.js";
 import { MempoolClient, createLogger } from "../index.js";
 import { ID_Collection } from "@0xflick/ordinals-models";
 import { generateGenesisTransaction } from "@0xflick/inscriptions";
+import { NoVoutFound, enqueueCheckTxo } from "./mempool.js";
 
 const logger = createLogger({ name: "watch/genesis" });
-// Queue to process fundings
-const processingQueue = new Queue({ concurrency: 5 });
-
-class NoVoutFound extends Error {
-  constructor({ address }: { address: string }) {
-    super(`No vout found for address ${address}`);
-  }
-}
-
-async function fetchFunding({
-  address,
-  mempoolBitcoinClient,
-}: {
-  address: string;
-  mempoolBitcoinClient: MempoolClient["bitcoin"];
-}) {
-  const txs = await mempoolBitcoinClient.addresses.getAddressTxs({ address });
-  for (const tx of txs) {
-    for (let i = 0; i < tx.vout.length; i++) {
-      const output = tx.vout[i];
-      if (output.scriptpubkey_address === address) {
-        return {
-          txid: tx.txid,
-          vout: i,
-          amount: output.value,
-        };
-      }
-    }
-  }
-  throw new NoVoutFound({ address });
-}
 
 function customBackoff(retries: number) {
   if (retries < 10) return 3000;
@@ -93,29 +63,6 @@ export function watchForFunded(
   }) => void,
 ) {
   logger.info(`Watching for funded outputs for collection ${collectionId}`);
-  const enqueueGenesisFunded = (funding: { address: string; id: string }) => {
-    return processingQueue.add(() => checkFunded(funding));
-  };
-  const checkFunded = async (funding: { address: string; id: string }) => {
-    const { address } = funding;
-    try {
-      const { txid, vout, amount } = await fetchFunding({
-        address,
-        mempoolBitcoinClient,
-      });
-      return {
-        ...funding,
-        txid,
-        vout,
-        amount,
-      };
-    } catch (error) {
-      if (!(error instanceof NoVoutFound)) {
-        logger.error(error, "Error fetching funding for", funding.address);
-      }
-      throw error;
-    }
-  };
 
   // Use a Subject as a notifier to cancel all ongoing observables when needed.
   const stop$ = new Subject();
@@ -146,29 +93,39 @@ export function watchForFunded(
           logger.trace(`Enqueuing genesis funding ${funding.id}`),
         ),
         mergeMap((funded) => {
-          return from(enqueueGenesisFunded(funded)).pipe(
+          return from(
+            enqueueCheckTxo({ address: funded.address, mempoolBitcoinClient }),
+          ).pipe(
+            map((mempoolResponse) => {
+              if (!mempoolResponse)
+                throw new NoVoutFound({ address: funded.address });
+              return {
+                ...funded,
+                ...mempoolResponse,
+              };
+            }),
             catchError((error) => {
               logger.error(error, "Error checking funding for", funded.address);
               if (error instanceof NoVoutFound) {
                 logger.info(
                   `No payment found for ${funded.address} so submitting payment on behalf of ${funded.id}}`,
                 );
-                const now = new Date();
+                // const now = new Date();
                 return from(
                   Promise.resolve().then(async () => {
-                    try {
-                      fundingDao.updateFundingLastChecked({
-                        id: funded.id,
-                        lastChecked: now,
-                      });
-                    } catch (error) {
-                      logger.error(
-                        error,
-                        "Error updating funding last checked",
-                      );
-                      throw error;
-                    }
-                    logger.trace(`Updated last checked for ${funded.id}`);
+                    // try {
+                    //   fundingDao.updateFundingLastChecked({
+                    //     id: funded.id,
+                    //     lastChecked: now,
+                    //   });
+                    // } catch (error) {
+                    //   logger.error(
+                    //     error,
+                    //     "Error updating funding last checked",
+                    //   );
+                    //   throw error;
+                    // }
+                    // logger.trace(`Updated last checked for ${funded.id}`);
                     throw error;
                   }),
                 );
@@ -297,7 +254,7 @@ export function watchForFunded(
         }),
       ),
     ),
-    delay(1000),
+    delay(5000),
   );
 
   // When $fundings is complete and we have a vout value, we can update the funding with the new txid and vout
@@ -307,7 +264,6 @@ export function watchForFunded(
   });
 
   return () => {
-    processingQueue.clear();
     stop$.next(void 0);
     stop$.complete();
   };

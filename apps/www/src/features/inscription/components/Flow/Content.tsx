@@ -1,6 +1,6 @@
 import { FC } from "react";
 
-import { Start } from "../Start";
+import { Start } from "../Start/Start";
 import { AgreementModal } from "../AgreementModal";
 import { ActiveClaim } from "../ActiveClaim";
 import { AddressPurpose, BitcoinNetworkType } from "sats-connect";
@@ -17,6 +17,7 @@ export const Content: FC<{
   if (step === "start") {
     return (
       <Start
+        collectionId={collectionId}
         onInscribe={() => {
           router.push(
             `${

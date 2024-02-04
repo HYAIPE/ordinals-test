@@ -8,6 +8,7 @@ export type TCollectionModel<T = Record<string, any>> = {
   id: ID_Collection;
   name: string;
   maxSupply: number;
+  pendingCount: number;
   totalCount: number;
   meta?: T;
 };
