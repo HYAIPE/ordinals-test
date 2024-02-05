@@ -9,6 +9,7 @@ import {
   Signer,
   Tap,
   Tx,
+  TxData,
   TxTemplate,
 } from "@0xflick/tapscript";
 import * as cryptoUtils from "@0xflick/crypto-utils";
@@ -29,6 +30,7 @@ import {
   networkNamesToTapScriptName,
   satsToBitcoin,
   scriptDataToSerializedScript,
+  serializeTxidAndIndexWithStripping,
   serializedScriptToScriptData,
 } from "./utils.js";
 import { createQR } from "./qrcode.js";
@@ -63,6 +65,10 @@ export interface FundingAddressRequest {
   network: BitcoinNetworkNames;
   privKey: string;
   feeRate: number;
+  parentInscriptions?: {
+    txid: string;
+    index: number;
+  }[];
 }
 
 export interface FundingAddressResponse {
@@ -90,6 +96,7 @@ export async function generateFundingAddress({
   network,
   privKey,
   feeRate,
+  parentInscriptions,
 }: FundingAddressRequest): Promise<FundingAddressResponse> {
   const files: InscriptionFile[] = [];
   if (!isValidAddress(address)) {
@@ -215,6 +222,14 @@ export async function generateFundingAddress({
       ec.encode("ord"),
       "01",
       mimetype,
+      ...(parentInscriptions && parentInscriptions?.length > 0
+        ? parentInscriptions
+            .map(({ txid, index }) => [
+              "03",
+              serializeTxidAndIndexWithStripping(txid, index),
+            ])
+            .flat()
+        : []),
       ...chunks.map((chunk) => ["05", chunk]).flat(),
       ...(compress ? ["09", ec.encode("br")] : []),
       "OP_0",
@@ -435,18 +450,56 @@ export interface RevealTransactionRequest {
   amount: number;
   address: string;
   secKey: cryptoUtils.SecretKey;
+  parentTxs?: (Required<TxTemplate>["vin"]["0"] & {
+    value: number;
+    secKey: cryptoUtils.SecretKey;
+    parentVout: Required<TxTemplate>["vout"]["0"];
+  })[];
 }
 
-export async function generateRevealTransaction({
+export function generateRevealTransaction({
   address,
   inscription,
   vout,
   txid,
   amount,
   secKey,
-}: RevealTransactionRequest): Promise<string> {
-  const redeemtx = Tx.create({
+}: RevealTransactionRequest): string {
+  return Tx.encode(
+    generateRevealTransactionData({
+      address,
+      inscription,
+      vout,
+      txid,
+      amount,
+      secKey,
+    }),
+  ).hex;
+}
+
+export function generateRevealTransactionData({
+  address,
+  inscription,
+  vout,
+  txid,
+  amount,
+  secKey,
+  parentTxs,
+}: RevealTransactionRequest): TxData {
+  const redeemTx = Tx.create({
     vin: [
+      ...(parentTxs?.map(({ parentVout: _, value, secKey, ...vin }) => {
+        let pubKey = secKey.pub.x;
+
+        const [tPub] = Tap.getPubKey(pubKey);
+        return {
+          ...vin,
+          prevout: {
+            value,
+            scriptPubKey: ["OP_1", tPub],
+          },
+        };
+      }) || []),
       {
         txid,
         vout,
@@ -457,20 +510,54 @@ export async function generateRevealTransaction({
       },
     ],
     vout: [
+      ...(parentTxs?.map(({ parentVout }) => parentVout) || []),
       {
         value: amount - inscription.fee,
         scriptPubKey: ["OP_1", Address.p2tr.decode(address).hex],
       },
     ],
   });
-  const sig = await Signer.taproot.sign(secKey.raw, redeemtx, 0, {
-    extension: inscription.leaf,
-  });
-  redeemtx.vin[0].witness = [
+
+  // If there are parent transactions inputs, sign them
+  if (parentTxs) {
+    for (let i = 0; i < parentTxs?.length || 0; i++) {
+      const { secKey } = parentTxs[i];
+      let pubKey = secKey.pub.x;
+
+      const [tPub] = Tap.getPubKey(pubKey);
+      const [tSecKey] = Tap.getSecKey(secKey);
+
+      const sig = Signer.taproot.sign(tSecKey, redeemTx, i);
+      redeemTx.vin[i].witness = [sig];
+      const isValid = Signer.taproot.verifyTx(redeemTx, i, {
+        pubkey: tPub,
+      });
+      if (!isValid) {
+        throw new Error("Invalid signature");
+      }
+    }
+  }
+  const sig = Signer.taproot.sign(
+    secKey.raw,
+    redeemTx,
+    redeemTx.vin.length - 1,
+    {
+      extension: inscription.leaf,
+    },
+  );
+  redeemTx.vin[redeemTx.vin.length - 1].witness = [
     sig.hex,
     serializedScriptToScriptData(inscription.script),
     inscription.cblock,
   ];
-  const rawtx2 = Tx.encode(redeemtx).hex;
-  return rawtx2;
+
+  const pubKey = secKey.pub.x;
+  const isValid = Signer.taproot.verifyTx(redeemTx, redeemTx.vin.length - 1, {
+    pubkey: pubKey,
+  });
+
+  if (!isValid) {
+    throw new Error("Invalid signature");
+  }
+  return redeemTx;
 }

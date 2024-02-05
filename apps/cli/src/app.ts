@@ -9,11 +9,13 @@ import { generatePrivateKey } from "./commands/generatePrivateKey.js";
 import { testMintOrdinals } from "./commands/testMintOrdinal.js";
 import { bulkMint } from "./commands/bulkMint.js";
 import { mintSingle } from "./commands/mintSingle.js";
+import { mintChild } from "./commands/mintChild.js";
 import { nonceBitcoin, nonceEthereum } from "./commands/login/nonce.js";
 import { siwe } from "./commands/login/siwe.js";
 import { collectionCreate } from "./commands/collection/create.js";
 import { testOne } from "./commands/test/one.js";
 import { bootstrap } from "./commands/bootstrap/index.js";
+import { generateReceiverAddress } from "./commands/taproot.js";
 const program = new Command();
 
 program
@@ -21,6 +23,14 @@ program
   .description("Generate a new private key")
   .action(() => {
     generatePrivateKey();
+  });
+
+program
+  .command("receive")
+  .description("Generate a tapscript address")
+  .option("-n, --network <network>", "Bitcoin network", "regtest")
+  .action(({ network }) => {
+    generateReceiverAddress({ network });
   });
 
 program
@@ -36,6 +46,18 @@ program
   .option("-n, --network <network>", "Bitcoin network", "regtest")
   .option("-a, --address <address>", "Address to mint to")
   .option("-p, --padding <amount>", "Padding amount", Number, 546)
+  .option("--parent-inscription <parent-inscription>", "Parent inscription")
+  .option(
+    "--parent-key <parent-key>",
+    "Parent security key used to generate p2tr",
+  )
+  .option("--parent-txid <parent-txid>", "Parent txid")
+  .option("--parent-index <parent-index>", "Parent index")
+  .option(
+    "--parent-destination-address <destination-parent-address>",
+    "Destination parent address",
+    "auto",
+  )
   .option("-m, --mime-type <mime-type>", "Mime type of file")
   .option("-f, --fee-rate <fee-rate>", "Fee rate in satoshis per vbyte")
   .option("-w, --rpcwallet <wallet>", "Bitcoin Wallet name", "default")
@@ -60,23 +82,57 @@ program
         send,
         compress,
         padding,
+        parentInscription,
+        parentTxid,
+        parentIndex,
+        parentDestinationAddress,
+        parentKey,
       },
     ) => {
-      console.log(`Compress ${compress}`);
-      await mintSingle({
-        file,
-        network,
-        address,
-        mimeType,
-        feeRate,
-        rpcpassword,
-        rpcuser,
-        rpcwallet,
-        noSend: !send,
-        metadataFile,
-        compress,
-        padding,
-      });
+      if (
+        parentInscription &&
+        parentIndex &&
+        parentTxid &&
+        parentDestinationAddress &&
+        parentKey
+      ) {
+        console.log("Minting child");
+        await mintChild({
+          file,
+          network,
+          address,
+          mimeType,
+          feeRate,
+          rpcpassword,
+          rpcuser,
+          rpcwallet,
+          noSend: !send,
+          metadataFile,
+          compress,
+          padding,
+          destinationParentAddress: parentDestinationAddress,
+          parentInscription,
+          parentIndex,
+          parentTxid,
+          parentSecKey: parentKey,
+        });
+      } else {
+        console.log("Minting single");
+        await mintSingle({
+          file,
+          network,
+          address,
+          mimeType,
+          feeRate,
+          rpcpassword,
+          rpcuser,
+          rpcwallet,
+          noSend: !send,
+          metadataFile,
+          compress,
+          padding,
+        });
+      }
     },
   );
 

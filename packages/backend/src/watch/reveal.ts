@@ -153,7 +153,7 @@ export function watchForGenesis(
     // }),
     mergeMap(({ inscription, funded, mempoolResponse, doc }) => {
       const { txid, vout, amount } = mempoolResponse;
-      return from(
+      return from([
         generateRevealTransaction({
           address: funded.destinationAddress,
           amount,
@@ -162,7 +162,7 @@ export function watchForGenesis(
           txid,
           vout,
         }),
-      ).pipe(
+      ]).pipe(
         mergeMap((revealTx) => {
           return from(
             mempoolBitcoinClient.transactions.postTx({
@@ -174,6 +174,10 @@ export function watchForGenesis(
             }),
             retry({
               delay(error, retryCount) {
+                logger.error(
+                  error,
+                  `Error sending reveal transaction for ${funded.id}`,
+                );
                 return timer(customBackoff(retryCount + funded.timesChecked));
               },
             }),

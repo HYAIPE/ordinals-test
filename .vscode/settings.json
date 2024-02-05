@@ -24,6 +24,7 @@
     "tapkey",
     "tapscript",
     "txid",
+    "vouts",
     "wagmi",
     "xvda",
     "xvdb",

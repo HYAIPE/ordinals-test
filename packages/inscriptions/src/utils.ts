@@ -155,3 +155,31 @@ export async function validateAddress(
 ) {
   return validate(address, networkNamesToNetworkEnum(network));
 }
+
+export function serializeTxidAndIndexWithStripping(
+  txid: string,
+  index: number,
+) {
+  // Convert the txid from a hex string to a Buffer in reverse order (little-endian for the txid)
+  let txidBuffer = Buffer.from(txid, "hex").reverse();
+
+  // Convert the index to a 4-byte little-endian buffer
+  let indexBuffer = Buffer.alloc(4);
+  indexBuffer.writeUInt32LE(index);
+
+  // Determine the number of index bytes to include (strip trailing zeros, but include at least one byte)
+  let indexBytesToInclude = 0;
+  for (let i = 0; i < 4; i++) {
+    if (indexBuffer[i] !== 0) {
+      indexBytesToInclude = i + 1;
+    }
+  }
+
+  // Concatenate txid and the relevant index bytes
+  let serializedBuffer = Buffer.concat([
+    txidBuffer,
+    indexBuffer.slice(0, indexBytesToInclude),
+  ]);
+
+  return serializedBuffer.toString("hex");
+}

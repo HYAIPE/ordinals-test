@@ -39,9 +39,11 @@ export function createMempoolBitcoinClient({
   if (!["http", "https"].includes(protocol)) {
     throw new Error(`Unsupported protocol: ${protocol}`);
   }
+
+  console.log(`Creating mempool client for ${network} at ${u}`);
   return createMempoolClient({
     network,
-    hostname: url.hostname,
+    hostname: url.host,
     protocol: protocol as "http" | "https",
     config: {
       ...(auth && {
